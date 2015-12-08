@@ -41,11 +41,15 @@ int volume(int l, int w, int h)
 	return l*w*h;
 }
 
-int main()
+int main(int argc, char **argv)
 {
-	std::fstream input("day2.input");
-	if (!input.is_open()) {
-		std::cout << "Could not open file\n";
+	if (argc != 2) {
+		std::cerr << "Incorrect number of arguments provided\n";
+		return 1;
+	}
+	std::fstream input(argv[1]);
+	if (!input) {
+		std::cerr << "Could not open input file\n";
 		return 1;
 	}
 

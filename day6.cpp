@@ -13,9 +13,13 @@ std::pair<int, int> get_coord(const std::string &coordstr)
 	return std::make_pair(x, y);
 }
 
-int main()
+int main(int argc, char **argv)
 {
-	std::fstream input("day6.input");
+	if (argc != 2) {
+		std::cerr << "Incorrect number of arguments provided\n";
+		return 1;
+	}
+	std::fstream input(argv[1]);
 	if (!input) {
 		std::cerr << "Could not open input file\n";
 		return 1;

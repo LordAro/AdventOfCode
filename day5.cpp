@@ -34,11 +34,15 @@ bool contains_pair_of_pair(const std::string &line)
 	return false;
 }
 
-int main()
+int main(int argc, char **argv)
 {
-	std::fstream input("day5.input");
+	if (argc != 2) {
+		std::cerr << "Incorrect number of arguments provided\n";
+		return 1;
+	}
+	std::fstream input(argv[1]);
 	if (!input) {
-		std::cout << "Could not open input file\n";
+		std::cerr << "Could not open input file\n";
 		return 1;
 	}
 

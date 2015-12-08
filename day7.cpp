@@ -76,9 +76,13 @@ uint16_t process_gate(const std::string &gate)
 	return processed;
 }
 
-int main()
+int main(int argc, char **argv)
 {
-	std::fstream input("day7.input");
+	if (argc != 2) {
+		std::cerr << "Incorrect number of arguments provided\n";
+		return 1;
+	}
+	std::fstream input(argv[1]);
 	if (!input) {
 		std::cerr << "Could not open input file\n";
 		return 1;
