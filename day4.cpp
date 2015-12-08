@@ -1,7 +1,7 @@
 #include <openssl/md5.h>
 
 #include <iostream>
-#include <string>
+#include <fstream>
 
 std::string secret = "ckczppom";
 
@@ -15,8 +15,21 @@ std::string bytetostr(unsigned char array[MD5_DIGEST_LENGTH])
 	return std::string(hexstr);
 }
 
-int main()
+int main(int argc, char **argv)
 {
+	if (argc != 2) {
+		std::cerr << "Incorrect number of arguments provided\n";
+		return 1;
+	}
+	std::fstream input(argv[1]);
+	if (!input) {
+		std::cerr << "Could not open input file\n";
+		return 1;
+	}
+
+	std::string secret;
+	std::getline(input, secret);
+
 	bool found5 = false;
 	for (int i = 1; ; i++) {
 		std::string newstr = secret + std::to_string(i);

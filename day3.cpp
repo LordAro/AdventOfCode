@@ -18,11 +18,15 @@ bool is_in(const std::vector<Pos> &vec, const Pos &x)
 	return std::find(vec.begin(), vec.end(), x) != vec.end();
 }
 
-int main()
+int main(int argc, char **argv)
 {
-	std::fstream input("day3.input");
-	if (!input.is_open()) {
-		std::cout << "Could not open input file\n";
+	if (argc != 2) {
+		std::cerr << "Incorrect number of arguments provided\n";
+		return 1;
+	}
+	std::fstream input(argv[1]);
+	if (!input) {
+		std::cerr << "Could not open input file\n";
 		return 1;
 	}
 
