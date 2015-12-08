@@ -1,7 +1,10 @@
+CXX=clang++
+FLAGS=-g -Wall -std=c++14
+
 %:
-	clang++ -o builds/day$@ -g -Wall -std=c++14 day$@.cpp
+	${CXX} -o builds/day$@ ${FLAGS} day$@.cpp
 	./builds/day$@
 
 4:
-	clang++ -o builds/day$@ -g -Wall -lssl -lcrypto -std=c++14 day$@.cpp
+	${CXX} -o builds/day$@ ${FLAGS} -lssl -lcrypto day$@.cpp
 	./builds/day$@
