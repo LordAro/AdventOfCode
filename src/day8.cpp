@@ -6,7 +6,7 @@ int decoded_strlen(const std::string &str)
 {
 	int str_len = 0;
 	bool skip_check = false;
-	for (int i = 0; i < str.size(); i++) {
+	for (size_t i = 0; i < str.size(); i++) {
 		if (skip_check) {
 			str_len++;
 			skip_check = false;

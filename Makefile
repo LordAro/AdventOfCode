@@ -1,5 +1,5 @@
 CXX=clang++
-FLAGS=-g -Wall -std=c++14
+FLAGS=-Wall -Wextra -pedantic -std=c++14
 
 %:
 	${CXX} -o builds/day$@ ${FLAGS} src/day$@.cpp

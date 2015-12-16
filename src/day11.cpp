@@ -40,11 +40,11 @@ bool contains_any_of(const std::string &line, const std::initializer_list<std::s
 	return false;
 }
 
-bool contains_separate_pairs(const std::string &line, int num)
+bool contains_separate_pairs(const std::string &line, size_t num)
 {
 	std::string found_chrs;
 	for (size_t i = 0; i < line.size() - 1; i++) {
-		if (line[i] == line[i + 1] && found_chrs.find(line[i] == std::string::npos)) {
+		if (line[i] == line[i + 1] && found_chrs.find(line[i]) == std::string::npos) {
 			found_chrs += line[i];
 			i++; // Non overlapping
 		}
