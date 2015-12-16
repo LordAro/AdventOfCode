@@ -30,9 +30,13 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	Pos normal_pos{0, 0};
+
 	Pos santa_pos{0, 0};
 	Pos robo_pos{0, 0};
-	std::vector<Pos> visited = {santa_pos};
+
+	std::vector<Pos> visited = {normal_pos};
+	std::vector<Pos> robo_assisted_visited = {santa_pos};
 
 	int move_num = 0;
 
@@ -40,19 +44,24 @@ int main(int argc, char **argv)
 	while (input >> move) {
 		auto &cur_pos = move_num % 2 == 0 ? santa_pos : robo_pos;
 		switch (move) {
-			case '^': cur_pos.y++; break;
-			case 'v': cur_pos.y--; break;
-			case '>': cur_pos.x++; break;
-			case '<': cur_pos.x--; break;
+			case '^': cur_pos.y++; normal_pos.y++; break;
+			case 'v': cur_pos.y--; normal_pos.y--; break;
+			case '>': cur_pos.x++; normal_pos.x++; break;
+			case '<': cur_pos.x--; normal_pos.x--; break;
 		}
 
-		if (!is_in(visited, cur_pos)) {
-			visited.push_back(cur_pos);
+		if (!is_in(visited, normal_pos)) {
+			visited.push_back(normal_pos);
+		}
+		if (!is_in(robo_assisted_visited, cur_pos)) {
+			robo_assisted_visited.push_back(cur_pos);
 		}
 		move_num++;
 	}
 
 	std::cout << "Houses that have received at least one present: " << visited.size() << "\n";
+	std::cout << "Houses that have received at least one present (when Santa is helped by Robo-Santa): "
+	          << robo_assisted_visited.size() << "\n";
 
 	return 0;
 }
