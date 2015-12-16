@@ -8,9 +8,9 @@ bool contains_voxels(const std::string &line, int num)
 	return std::count_if(line.begin(), line.end(), is_voxel) >= num;
 }
 
-bool has_two_of_same(const std::string &line, int gap)
+bool has_two_of_same(const std::string &line, size_t gap)
 {
-	for (int i = 0; i < line.size() - (gap + 1); i++) {
+	for (size_t i = 0; i < line.size() - (gap + 1); i++) {
 		if (line[i] == line[i + (gap + 1)]) return true;
 	}
 	return false;
@@ -26,7 +26,7 @@ bool contains_any_of(const std::string &line, const std::initializer_list<std::s
 
 bool contains_pair_of_pair(const std::string &line)
 {
-	for (int i = 0; i < line.size() - 3; i++) {
+	for (size_t i = 0; i < line.size() - 3; i++) {
 		std::string pair = line.substr(i, 2);
 		std::string remaining = line.substr(i+2, line.size());
 		if (remaining.find(pair) != std::string::npos) return true;

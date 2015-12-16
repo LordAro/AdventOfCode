@@ -17,7 +17,7 @@ int max_happiness(const graph_t &graph)
 	int max = 0;
 	do {
 		int total = 0;
-		for (int i = 0; i < keys.size() - 1; i++) {
+		for (size_t i = 0; i < keys.size() - 1; i++) {
 			total += graph.at(keys[i]).at(keys[i + 1]);
 			total += graph.at(keys[i + 1]).at(keys[i]);
 		}

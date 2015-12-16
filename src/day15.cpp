@@ -77,7 +77,7 @@ int main(int argc, char **argv)
 		int fla = 0;
 		int tex = 0;
 		int cal = 0;
-		for (int i = 0; i < items.size(); i++) {
+		for (size_t i = 0; i < items.size(); i++) {
 			cap += items[i].capacity   * comb[i];
 			dur += items[i].durability * comb[i];
 			fla += items[i].flavour    * comb[i];
