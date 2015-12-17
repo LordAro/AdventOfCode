@@ -101,14 +101,14 @@ int main(int argc, char **argv)
 
 	}
 
-	std::cout << "Maximum cookie score: " << max_score << "\n";
-	std::cout << "With a combination: ";
+	std::cout << "Maximum cookie score: " << max_score;
+	std::cout << " with combination: ";
 	for (const auto &it : best_comb) std::cout << it << " ";
-	std::cout << "\n\n";
+	std::cout << "\n";
 
 	// Part2
-	std::cout << "Maximum low-cal cookie score: " << max_lowcal_score << "\n";
-	std::cout << "With a combination: ";
+	std::cout << "Maximum low-cal cookie score: " << max_lowcal_score;
+	std::cout << " with combination: ";
 	for (const auto &it : best_lowcal_comb) std::cout << it << " ";
 	std::cout << "\n";
 
