@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <cmath>
 
 struct Person {
 	Person(int hp, int dam, int arm) : hitpoints(hp), damage(dam), armour(arm)
@@ -31,12 +32,7 @@ bool PlayGame(Person boss, Person player)
 {
 	float p_damage = std::max(1, player.damage - boss.armour);
 	float b_damage = std::max(1, boss.damage - player.armour);
-	for (;;) {
-		boss.hitpoints -= p_damage; // Player takes first hit
-		if (boss.hitpoints <= 0) return true;
-		player.hitpoints -= b_damage;
-		if (player.hitpoints <= 0) return false;
-	}
+	return std::ceil(player.hitpoints / b_damage) >= std::ceil(boss.hitpoints / p_damage);
 }
 
 int main(int argc, char **argv)
