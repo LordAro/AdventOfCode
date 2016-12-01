@@ -19,26 +19,37 @@ fn main() {
 
     let mut cur_dir = 0; // North
     let mut locs = vec![(0, 0)]; // Starting point
+    let mut visited: Option<(i32, i32)> = None;
     for dir in &dirs {
         cur_dir = match dir.chars().nth(0).unwrap() {
             'L' => (cur_dir + (4 - 1)) % 4,
             'R' => (cur_dir + 1) % 4,
             _ => panic!("Weird turning direction: {:?}\n", dir.chars().nth(0)),
         };
+
         let dist: i32 = dir.chars().skip(1).collect::<String>().parse().unwrap();
-        let old_pos = locs.last().unwrap();
-        let mut cur_pos = match cur_dir {
-            0 => (old_pos.0 + dist, old_pos.1),
-            1 => (old_pos.0, old_pos.1 + dist),
-            2 => (old_pos.0 - dist, old_pos.1),
-            3 => (old_pos.0, old_pos.1 - dist),
-            _ => panic!("Current direction is not a direction: {}", cur_dir),
-        };
-        let tmp = &mut locs;
-        tmp.push(cur_pos);
+        let old_pos = locs.last().unwrap().clone();
+        for i in 1..dist + 1 {
+            let cur_pos = match cur_dir {
+                0 => (old_pos.0 + i, old_pos.1),
+                1 => (old_pos.0, old_pos.1 + i),
+                2 => (old_pos.0 - i, old_pos.1),
+                3 => (old_pos.0, old_pos.1 - i),
+                _ => panic!("Current direction is not a direction: {}", cur_dir),
+            };
+
+            // See if we've visited this point before
+            for loc in &locs {
+                if !visited.is_some() && cur_pos == *loc {
+                    visited = Some(cur_pos);
+                }
+            }
+            locs.push(cur_pos);
+        }
     }
     let last = locs.last().unwrap();
     let abs = last.0.abs() + last.1.abs();
     println!("Final distance: {} blocks", abs);
-    println!("Visited twice: {} blocks", abs);
+    let visitabs = visited.unwrap().0.abs() + visited.unwrap().1.abs();
+    println!("Visited twice: {} blocks", visitabs);
 }
