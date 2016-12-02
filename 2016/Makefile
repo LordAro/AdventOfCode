@@ -1,4 +1,4 @@
-FLAGS=
+FLAGS=-Wwarnings -Wbad-style -Wfuture-incompatible -Wunused
 
 CUR_SLNS=$(shell ls src/day* | cut -d/ -f2 | cut -d. -f1 | cut -dy -f2 | sort -n)
 
