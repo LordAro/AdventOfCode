@@ -1,12 +1,10 @@
 use std::fs::File;
 use std::env;
-use std::io::{self, Write, Read};
-use std::process::exit;
+use std::io::Read;
 
 fn main() {
-    if env::args().count() != 2 {
-        io::stderr().write(b"Incorrect number of arguments provided\n").unwrap();
-        exit(1);
+    if env::args().len() != 2 {
+        panic!("Incorrect number of arguments provided\n");
     }
     let mut input = match File::open(&env::args().nth(1).unwrap()) {
         Err(why) => panic!("Could not open input file: {}\n", why),
@@ -15,19 +13,20 @@ fn main() {
 
     let mut fstr = String::new();
     input.read_to_string(&mut fstr).unwrap();
-    let dirs: Vec<_> = fstr.split(',').map(|dir| dir.trim()).collect();
+    let instructions: Vec<_> = fstr.split(',').map(|dir| dir.trim()).collect();
 
     let mut cur_dir = 0; // North
     let mut locs = vec![(0, 0)]; // Starting point
     let mut visited: Option<(i32, i32)> = None;
-    for dir in &dirs {
-        cur_dir = match dir.chars().nth(0).unwrap() {
+    for ins in &instructions {
+        let dir = ins.chars().nth(0);
+        cur_dir = match dir.unwrap() {
             'L' => (cur_dir + (4 - 1)) % 4,
             'R' => (cur_dir + 1) % 4,
-            _ => panic!("Weird turning direction: {:?}\n", dir.chars().nth(0)),
+            _ => panic!("Weird turning direction: {:?}\n", dir),
         };
 
-        let dist: i32 = dir.chars().skip(1).collect::<String>().parse().unwrap();
+        let dist: i32 = ins.chars().skip(1).collect::<String>().parse().unwrap();
         let old_pos = locs.last().unwrap().clone();
         for i in 1..dist + 1 {
             let cur_pos = match cur_dir {
@@ -38,18 +37,16 @@ fn main() {
                 _ => panic!("Current direction is not a direction: {}", cur_dir),
             };
 
-            // See if we've visited this point before
-            for loc in &locs {
-                if !visited.is_some() && cur_pos == *loc {
-                    visited = Some(cur_pos);
-                }
+            // See if we've visited this point before, if we haven't already found a point
+            if locs.iter().any(|&l| l == cur_pos) {
+                visited = visited.or(Some(cur_pos));
             }
             locs.push(cur_pos);
         }
     }
-    let last = locs.last().unwrap();
-    let abs = last.0.abs() + last.1.abs();
-    println!("Final distance: {} blocks", abs);
-    let visitabs = visited.unwrap().0.abs() + visited.unwrap().1.abs();
-    println!("Visited twice: {} blocks", visitabs);
+
+    let l = locs.last().unwrap();
+    println!("Final distance: {} blocks", l.0.abs() + l.1.abs());
+    let v = visited.unwrap();
+    println!("Visited twice: {} blocks", v.0.abs() + v.1.abs());
 }
