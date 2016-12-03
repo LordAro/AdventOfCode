@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <algorithm>
+#include <numeric>
 
 std::vector<int> GetFactors(int num)
 {

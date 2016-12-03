@@ -6,6 +6,7 @@
 #include <vector>
 #include <iomanip>
 #include <algorithm>
+#include <numeric>
 #include <climits>
 
 using graph_t = std::vector<std::vector<int>>;
