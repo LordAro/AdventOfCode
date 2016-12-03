@@ -35,10 +35,8 @@ fn main() {
                     && trans[j][1] + trans[j][2] > trans[j][0] {
                     count2 += 1;
                 }
+            trans[j].clear();
             }
-            trans[0].clear();
-            trans[1].clear();
-            trans[2].clear();
         }
     }
     println!("Number of valid row triangles: {}", count);
