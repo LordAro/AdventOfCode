@@ -43,7 +43,7 @@ fn main() {
     let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap());
 
     let rooms: Vec<_> = input.lines()
-        .map(|l| l.unwrap().rsplitn(2, '-').map(String::from).collect::<Vec<String>>())
+        .map(|l| l.unwrap().rsplitn(2, '-').map(String::from).collect::<Vec<_>>())
         .map(|l| {
             let cc: Vec<_> = l[0].trim_right_matches(']').split('[').collect();
             Room {
