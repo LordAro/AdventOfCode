@@ -5,14 +5,7 @@ use std::env;
 use std::io::{BufReader, BufRead};
 use crypto::md5::Md5;
 use crypto::digest::Digest;
-
-fn to_hex_digit(i: u8) -> char {
-    match i {
-        0...9 => (i + ('0' as u8)) as char,
-        10...15 => (i - 10 + ('a' as u8)) as char,
-        _ => unreachable!(),
-    }
-}
+use std::char;
 
 fn main() {
     if env::args().len() != 2 {
@@ -36,20 +29,20 @@ fn main() {
         hasher.result(&mut output);
         let first_five = output[0] as i32 + output[1] as i32 + (output[2] >> 4) as i32;
         if first_five == 0 {
-            let sixth = (output[2] & 0xFF) as u8;
+            let sixth = output[2] & 0xFF;
             // 1st password
             if password.len() < 8 {
-                password.push(to_hex_digit(sixth));
+                password.push(char::from_digit(sixth as u32, 16).unwrap());
             }
 
             // 2nd password
-            let seventh = (output[3] >> 4) as u8;
+            let seventh = output[3] >> 4;
             if sixth < 8 {
                 // Surprisingly difficult to replace a character in a string
                 password2 = password2.chars()
                     .enumerate()
                     .map(|(i, c)| if i == sixth as usize && c == '.' {
-                        to_hex_digit(seventh)
+                        char::from_digit(seventh as u32, 16).unwrap()
                     } else {
                         c
                     })
