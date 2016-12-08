@@ -1,8 +1,9 @@
 [package]
 name = "AdventofCode"
-version = "2016.7.0"
+version = "2016.8.0"
 authors = ["Charles Pigott <charlespigott@googlemail.com>"]
 
 [dependencies]
-rust-crypto = "^0.2"
 itertools = "^0.5"
+regex = "^0.1"
+rust-crypto = "^0.2"
