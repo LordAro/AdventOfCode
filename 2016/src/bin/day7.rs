@@ -24,10 +24,11 @@ fn find_aba(v: &Vec<String>) -> Vec<String> {
         .map(|s| s.chars().collect::<Vec<_>>())
         .collect::<Vec<_>>()
         .iter()
-        .map(|v| v.windows(3).collect::<Vec<_>>())
-        .flat_map(|v| v.into_iter())
-        .filter(|v| v[0] == v[2])
-        .map(|v| v.iter().cloned().collect::<String>())
+        .flat_map(|v| {
+            v.windows(3)
+                .filter(|v| v[0] == v[2])
+                .map(|v| v.iter().cloned().collect::<String>())
+        })
         .collect::<Vec<_>>()
 }
 
