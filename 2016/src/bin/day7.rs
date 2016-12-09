@@ -7,29 +7,18 @@ use std::iter::FromIterator;
 use itertools::{Itertools, Either};
 
 fn contains_abba_pair(s: &str) -> bool {
-    for i in 0..s.len() - 3 {
-        let abba: (_, _, _, _) = s.chars().skip(i).take(4).next_tuple().unwrap();
-        if abba.0 == abba.3 && abba.1 == abba.2 && abba.0 != abba.1 {
-            return true;
-        }
-    }
-    return false;
+    s.chars()
+        .tuple_windows()
+        .filter(|&(a, b, c, d)| a == d && b == c && a != b)
+        .count() != 0
 }
 
-fn find_aba(v: &Vec<String>) -> Vec<String> {
-    // ridiculous oneliner, but no mutable state!
-    // gets length 3 "windows" of each String, filters the ones that are aba format, then converts
-    // the remaining ones back into Strings
+fn find_aba(v: &[String]) -> Vec<String> {
     v.iter()
-        .map(|s| s.chars().collect::<Vec<_>>())
-        .collect::<Vec<_>>()
-        .iter()
-        .flat_map(|v| {
-            v.windows(3)
-                .filter(|v| v[0] == v[2])
-                .map(|v| v.iter().cloned().collect::<String>())
-        })
-        .collect::<Vec<_>>()
+        .flat_map(|s| s.chars().tuple_windows())
+        .filter(|&(a, _, c)| a == c)
+        .map(|(a, b, c)| [a, b, c].iter().cloned().collect())
+        .collect()
 }
 
 fn main() {
