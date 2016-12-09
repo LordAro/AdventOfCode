@@ -17,16 +17,18 @@ fn contains_abba_pair(s: &str) -> bool {
 }
 
 fn find_aba(v: &Vec<String>) -> Vec<String> {
-    let mut out = vec![];
-    for s in v.iter() {
-        for i in 0..s.len() - 2 {
-            let aba: Vec<char> = s.chars().skip(i).take(3).collect();
-            if aba[0] == aba[2] {
-                out.push(aba.into_iter().collect());
-            }
-        }
-    }
-    return out;
+    // ridiculous oneliner, but no mutable state!
+    // gets length 3 "windows" of each String, filters the ones that are aba format, then converts
+    // the remaining ones back into Strings
+    v.iter()
+        .map(|s| s.chars().collect::<Vec<_>>())
+        .collect::<Vec<_>>()
+        .iter()
+        .map(|v| v.windows(3).collect::<Vec<_>>())
+        .flat_map(|v| v.into_iter())
+        .filter(|v| v[0] == v[2])
+        .map(|v| v.iter().cloned().collect::<String>())
+        .collect::<Vec<_>>()
 }
 
 fn main() {
