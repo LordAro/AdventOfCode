@@ -4,3 +4,4 @@ version = "2017.1.0"
 authors = ["Charles Pigott <charlespigott@googlemail.com>"]
 
 [dependencies]
+itertools = "^0.7"
