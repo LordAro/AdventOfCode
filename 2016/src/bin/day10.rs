@@ -19,8 +19,9 @@ fn main() {
     let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap());
 
     let initial_re = Regex::new(r"value ([0-9]+) goes to bot ([0-9]+)").unwrap();
-    let give_re = Regex::new(r"bot ([0-9]+) gives low to (bot|output) ([0-9]+) and high to (bot|output) ([0-9]+)")
-        .unwrap();
+    let give_re = Regex::new(
+        r"bot ([0-9]+) gives low to (bot|output) ([0-9]+) and high to (bot|output) ([0-9]+)",
+    ).unwrap();
 
     // Uses a Vec to store only 2 items, for simplicity
     let mut bots: HashMap<i32, Vec<i32>> = HashMap::new();

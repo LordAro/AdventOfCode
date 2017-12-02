@@ -57,7 +57,8 @@ fn main() {
     let count: u32 = rooms.iter().map(|r| r.sector).sum();
     println!("Value of valid rooms: {}", count);
 
-    let target_sector: u32 = rooms.iter()
+    let target_sector: u32 = rooms
+        .iter()
         .filter(|r| rotn(&r.name, r.sector) == "northpoleobjectstorage")
         .map(|r| r.sector)
         .sum();

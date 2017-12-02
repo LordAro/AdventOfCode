@@ -53,7 +53,10 @@ fn main() {
         .map(|l| l.unwrap())
         .collect();
 
-    let prog: Vec<Vec<_>> = input.iter().map(|l| l.split_whitespace().collect()).collect();
+    let prog: Vec<Vec<_>> = input
+        .iter()
+        .map(|l| l.split_whitespace().collect())
+        .collect();
 
     let mut registers: HashMap<char, i32> = HashMap::new();
     registers.insert('a', 0);

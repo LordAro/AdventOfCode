@@ -8,20 +8,25 @@ use crypto::md5::Md5;
 use crypto::digest::Digest;
 
 fn get_triple(arr: &[u8; 32]) -> Option<char> {
-    arr.windows(3)
-        .find(|t| t[0] == t[1] && t[1] == t[2])
-        .map(|t| char::from_digit(t[0] as u32, 16).unwrap())
+    arr.windows(3).find(|t| t[0] == t[1] && t[1] == t[2]).map(
+        |t| {
+            char::from_digit(t[0] as u32, 16).unwrap()
+        },
+    )
 }
 
 fn get_quintuple(arr: &[u8; 32]) -> Option<char> {
     arr.windows(5)
-        .find(|t| t[0] == t[1] && t[1] == t[2] && t[2] == t[3] && t[3] == t[4])
+        .find(|t| {
+            t[0] == t[1] && t[1] == t[2] && t[2] == t[3] && t[3] == t[4]
+        })
         .map(|t| char::from_digit(t[0] as u32, 16).unwrap())
 }
 
 fn get_new_keys(idx: u64, arr: &[u8; 32], existing_triples: &mut Vec<(u64, char)>) -> Vec<u64> {
     if let Some(c) = get_quintuple(&arr) {
-        let matches = existing_triples.iter()
+        let matches = existing_triples
+            .iter()
             .filter(|&&(ti, tc)| tc == c && ti < idx && idx < ti + 1000)
             .map(|&(ti, _)| ti)
             .collect();

@@ -99,21 +99,19 @@ fn main() {
         let l = line.unwrap();
         for c in l.chars() {
             cur_pos2 = match c {
-                    'U' => up2(cur_pos2),
-                    'L' => left2(cur_pos2),
-                    'R'_ => right2(cur_pos2),
-                    'D' => down2(cur_pos2),
-                    _ => panic!("Unrecognised character"),
-                }
-                .unwrap();
+                'U' => up2(cur_pos2),
+                'L' => left2(cur_pos2),
+                'R' => right2(cur_pos2),
+                'D' => down2(cur_pos2),
+                _ => panic!("Unrecognised character"),
+            }.unwrap();
             cur_pos = match c {
-                    'U' => up(cur_pos),
-                    'L' => left(cur_pos),
-                    'R'_ => right(cur_pos),
-                    'D' => down(cur_pos),
-                    _ => panic!("Unrecognised character"),
-                }
-                .unwrap();
+                'U' => up(cur_pos),
+                'L' => left(cur_pos),
+                'R' => right(cur_pos),
+                'D' => down(cur_pos),
+                _ => panic!("Unrecognised character"),
+            }.unwrap();
         }
         code.push_str(&cur_pos.to_string());
         code2.push_str(&format!("{:X}", cur_pos2));
