@@ -27,8 +27,14 @@ fn main() {
     }
     let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap());
 
-    let splitted_lines: Vec<(Vec<_>, Vec<_>)> = input.lines()
-        .map(|l| l.unwrap().split(|c| c == '[' || c == ']').map(String::from).collect::<Vec<_>>())
+    let splitted_lines: Vec<(Vec<_>, Vec<_>)> = input
+        .lines()
+        .map(|l| {
+            l.unwrap()
+                .split(|c| c == '[' || c == ']')
+                .map(String::from)
+                .collect::<Vec<_>>()
+        })
         .map(|v| {
             v.into_iter().enumerate().partition_map(|(i, s)| {
                 if i % 2 == 0 {
@@ -40,13 +46,15 @@ fn main() {
         })
         .collect();
 
-    let valid_tls = splitted_lines.iter()
+    let valid_tls = splitted_lines
+        .iter()
         .filter(|&&(ref sn, ref hn)| {
             sn.into_iter().any(|s| contains_abba_pair(&s)) &&
-            hn.into_iter().all(|s| !contains_abba_pair(&s))
+                hn.into_iter().all(|s| !contains_abba_pair(&s))
         })
         .count();
-    let valid_ssl = splitted_lines.iter()
+    let valid_ssl = splitted_lines
+        .iter()
         .filter(|&&(ref sn, ref hn)| {
             for aba in find_aba(sn).iter() {
                 let a = aba.chars().nth(0).unwrap();

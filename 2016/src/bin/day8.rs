@@ -43,8 +43,10 @@ fn main() {
 
             match dir {
                 'x' => {
-                    let orig: Vec<_> =
-                        grid.iter().cloned().map(|row| row.into_iter().nth(idx).unwrap()).collect();
+                    let orig: Vec<_> = grid.iter()
+                        .cloned()
+                        .map(|row| row.into_iter().nth(idx).unwrap())
+                        .collect();
                     for i in 0..grid.len() {
                         grid[(i + dist) % orig.len()][idx] = orig[i]
                     }
@@ -60,7 +62,9 @@ fn main() {
         }
     }
 
-    let count: usize = grid.iter().map(|row| row.iter().filter(|&&e| e == '#').count()).sum();
+    let count: usize = grid.iter()
+        .map(|row| row.iter().filter(|&&e| e == '#').count())
+        .sum();
     println!("Number of lights: {}", count);
     println!("Read the code yourself:");
     print_grid(&grid);

@@ -15,8 +15,12 @@ fn main() {
 
     let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap());
 
-    let triangles = input.lines()
-        .map(|l| l.unwrap().split_whitespace().map(|n| n.parse().unwrap()).collect::<Vec<i32>>());
+    let triangles = input.lines().map(|l| {
+        l.unwrap()
+            .split_whitespace()
+            .map(|n| n.parse().unwrap())
+            .collect::<Vec<i32>>()
+    });
 
     let mut count = 0;
     let mut count2 = 0;
@@ -30,12 +34,13 @@ fn main() {
         }
         if trans[0].len() == 3 {
             for j in 0..3 {
-                if trans[j][0] + trans[j][1] > trans[j][2]
-                    && trans[j][0] + trans[j][2] > trans[j][1]
-                    && trans[j][1] + trans[j][2] > trans[j][0] {
+                if trans[j][0] + trans[j][1] > trans[j][2] &&
+                    trans[j][0] + trans[j][2] > trans[j][1] &&
+                    trans[j][1] + trans[j][2] > trans[j][0]
+                {
                     count2 += 1;
                 }
-            trans[j].clear();
+                trans[j].clear();
             }
         }
     }

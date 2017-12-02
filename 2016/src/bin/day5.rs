@@ -39,7 +39,8 @@ fn main() {
             let seventh = output[3] >> 4;
             if sixth < 8 {
                 // Surprisingly difficult to replace a character in a string
-                password2 = password2.chars()
+                password2 = password2
+                    .chars()
                     .enumerate()
                     .map(|(i, c)| if i == sixth as usize && c == '.' {
                         char::from_digit(seventh as u32, 16).unwrap()

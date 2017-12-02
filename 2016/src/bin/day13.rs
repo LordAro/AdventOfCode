@@ -38,11 +38,13 @@ fn find_route(start: (usize, usize), magic: usize) -> (usize, usize) {
         depth += 1;
 
         // Find goal states
-        if depth == 50 { // p2
+        if depth == 50 {
+            // p2
             p2points = seen_points.len();
         }
         for q in &queue {
-            if q.0 == 31 && q.1 == 39 { // p1
+            if q.0 == 31 && q.1 == 39 {
+                // p1
                 p1depth = depth;
             }
         }

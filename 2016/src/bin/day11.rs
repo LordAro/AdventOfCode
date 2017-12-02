@@ -12,7 +12,8 @@ type Floor = Vec<(String, char)>;
 type State = (Vec<Floor>, usize); // Pair of a Vector of floors (4), and the current floor
 
 fn item_combo(item_indexes: &Floor) -> Vec<Floor> {
-    item_indexes.iter()
+    item_indexes
+        .iter()
         .cloned()
         .combinations(1)
         .chain(item_indexes.iter().cloned().combinations(2))
@@ -25,11 +26,10 @@ fn is_goal(state: &State) -> bool {
 
 fn is_valid(state: &State) -> bool {
     for floor in &state.0 {
-        let (gen, mc): (Floor, Floor) = floor.iter()
-            .cloned()
-            .partition(|&(_, ref t)| *t == 'g');
-        let mc_no_match = mc.iter()
-            .filter(|&&(ref m, _)| gen.iter().find(|&&(ref g, _)| m == g) == None);
+        let (gen, mc): (Floor, Floor) = floor.iter().cloned().partition(|&(_, ref t)| *t == 'g');
+        let mc_no_match = mc.iter().filter(|&&(ref m, _)| {
+            gen.iter().find(|&&(ref g, _)| m == g) == None
+        });
         if mc_no_match.count() != 0 && gen.len() != 0 {
             return false;
         }
@@ -38,15 +38,26 @@ fn is_valid(state: &State) -> bool {
 }
 
 fn hashed_form(state: &State) -> (Vec<(usize, usize)>, usize) {
-    let unique_elems = state.0.iter().flat_map(|f| f.iter().map(|&(ref e, _)| e.clone())).unique();
-    let mut hash_pairs: Vec<_> = unique_elems.map(|elem| {
-            let g_floor = state.0
+    let unique_elems = state
+        .0
+        .iter()
+        .flat_map(|f| f.iter().map(|&(ref e, _)| e.clone()))
+        .unique();
+    let mut hash_pairs: Vec<_> = unique_elems
+        .map(|elem| {
+            let g_floor = state
+                .0
                 .iter()
-                .position(|f| f.iter().find(|&&(ref g, ref t)| elem == *g && *t == 'g') != None)
+                .position(|f| {
+                    f.iter().find(|&&(ref g, ref t)| elem == *g && *t == 'g') != None
+                })
                 .unwrap();
-            let m_floor = state.0
+            let m_floor = state
+                .0
                 .iter()
-                .position(|f| f.iter().find(|&&(ref g, ref t)| elem == *g && *t == 'm') != None)
+                .position(|f| {
+                    f.iter().find(|&&(ref g, ref t)| elem == *g && *t == 'm') != None
+                })
                 .unwrap();
             (g_floor, m_floor)
         })
@@ -141,10 +152,12 @@ fn main() {
 
     // Part 2
     // Adds elerium & dilithium components to floor 0
-    floors.0[0].extend(vec![("el".to_string(), 'g'),
-                            ("el".to_string(), 'm'),
-                            ("di".to_string(), 'g'),
-                            ("di".to_string(), 'm')]);
+    floors.0[0].extend(vec![
+        ("el".to_string(), 'g'),
+        ("el".to_string(), 'm'),
+        ("di".to_string(), 'g'),
+        ("di".to_string(), 'm'),
+    ]);
     let depth2 = move_elevator(floors.clone());
     println!("Actual move count: {}", depth2);
 }
