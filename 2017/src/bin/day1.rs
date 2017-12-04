@@ -13,15 +13,17 @@ fn main() {
 
     let mut fstr = String::new();
     input.read_to_string(&mut fstr).unwrap();
+    let digits: Vec<_> = fstr.trim().chars().filter_map(|c| c.to_digit(10)).collect();
+
     let mut sum1 = 0;
     let mut sum2 = 0;
-    for i in 0..fstr.len() {
-        let j = (i + 1) % fstr.len();
-        let j2 = (i + (fstr.len() / 2)) % fstr.len();
+    for i in 0..digits.len() {
+        let j = (i + 1) % digits.len();
+        let j2 = (i + (digits.len() / 2)) % digits.len();
 
-        let ith = fstr.chars().nth(i).unwrap().to_digit(10).unwrap();
-        let jth = fstr.chars().nth(j).unwrap().to_digit(10).unwrap();
-        let j2th = fstr.chars().nth(j2).unwrap().to_digit(10).unwrap();
+        let ith = *digits.get(i).unwrap();
+        let jth = *digits.get(j).unwrap();
+        let j2th = *digits.get(j2).unwrap();
 
         if ith == jth {
             sum1 += ith;
