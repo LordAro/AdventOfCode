@@ -4,7 +4,7 @@ use std::io::{BufReader, BufRead};
 
 fn main() {
     if env::args().len() != 2 {
-        panic!("Incorrect number of arguments provided\n");
+        panic!("Incorrect number of arguments provided");
     }
     let input: usize = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
         .lines()
