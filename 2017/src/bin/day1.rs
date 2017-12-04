@@ -4,7 +4,7 @@ use std::io::Read;
 
 fn main() {
     if env::args().len() != 2 {
-        panic!("Incorrect number of arguments provided\n");
+        panic!("Incorrect number of arguments provided");
     }
     let mut input = match File::open(&env::args().nth(1).unwrap()) {
         Err(why) => panic!("Could not open input file: {}\n", why),
