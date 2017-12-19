@@ -67,7 +67,7 @@ impl<'a> Machine<'a> {
                 "mul" => *self.regs.entry(ins.1).or_insert(0) *= val,
                 "mod" => *self.regs.entry(ins.1).or_insert(0) %= val,
                 "rcv" => {
-                    let res = self.receiver.recv_timeout(Duration::from_millis(50));
+                    let res = self.receiver.recv_timeout(Duration::from_millis(1));
                     if res.is_ok() {
                         *self.regs.entry(ins.1).or_insert(0) = res.unwrap();
                     } else {
@@ -124,7 +124,7 @@ fn main() {
     }
     loop {
         let mut last_val = 0;
-        while let Ok(val) = receiver1.recv_timeout(Duration::from_millis(50)) {
+        while let Ok(val) = receiver1.recv_timeout(Duration::from_millis(1)) {
             last_val = val;
         }
         println!("Recovered sound: {}", last_val);
