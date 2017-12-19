@@ -25,11 +25,11 @@ fn main() {
             if input[pos.0][pos.1].is_alphabetic() {
                 foundstr.push(input[pos.0][pos.1]);
             }
-            steps += 1;
             pos = (
                 (pos.0 as i32 + dir.0) as usize,
                 (pos.1 as i32 + dir.1) as usize,
             );
+            steps += 1;
         }
         // Determine new direction
         let newdirs = if dir.0.abs() == 1 {
