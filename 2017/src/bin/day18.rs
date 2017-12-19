@@ -50,9 +50,9 @@ impl<'a> Machine<'a> {
     fn run(&mut self) -> usize {
         let mut send_count = 0;
         while self.pc >= 0 && (self.pc as usize) < self.program.len() {
-            LET ins = &self.program[self.pc as usize];
+            let ins = &self.program[self.pc as usize];
             let val = match ins.0.as_ref() {
-                "snd" | "rcv" => self.get_val_c(ins.1),
+                "snd" | "rcv" | "jgz" => self.get_val_c(ins.1),
                 _ => self.get_val(&ins.2),
             };
             match ins.0.as_ref() {
@@ -75,8 +75,8 @@ impl<'a> Machine<'a> {
                     }
                 }
                 "jgz" => {
-                    if *self.regs.entry(ins.1).or_insert(0) > 0 {
-                        self.pc += val - 1;
+                    if val > 0 {
+                        self.pc += self.get_val(&ins.2) - 1;
                     }
                 }
                 _ => unreachable!(),
