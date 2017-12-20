@@ -9,7 +9,7 @@ use std::io::{BufReader, BufRead};
 use regex::Regex;
 use itertools::Itertools;
 
-#[derive(Debug, Eq, Hash, Clone, Copy)]
+#[derive(Debug, Eq, Clone, Copy)]
 struct Point {
     x: isize,
     y: isize,
@@ -72,6 +72,7 @@ fn main() {
         num3_re,
         num3_re
     )).unwrap();
+
     let mut input: Vec<Particle> = BufReader::new(
         File::open(&env::args().nth(1).unwrap()).unwrap(),
     ).lines()
@@ -79,25 +80,22 @@ fn main() {
             let line = l.unwrap();
             let caps = particle_re.captures(&line).unwrap();
 
-            let pos = Point {
-                x: caps.get(1).unwrap().as_str().parse().unwrap(),
-                y: caps.get(2).unwrap().as_str().parse().unwrap(),
-                z: caps.get(3).unwrap().as_str().parse().unwrap(),
-            };
-            let vel = Point {
-                x: caps.get(4).unwrap().as_str().parse().unwrap(),
-                y: caps.get(5).unwrap().as_str().parse().unwrap(),
-                z: caps.get(6).unwrap().as_str().parse().unwrap(),
-            };
-            let acc = Point {
-                x: caps.get(7).unwrap().as_str().parse().unwrap(),
-                y: caps.get(8).unwrap().as_str().parse().unwrap(),
-                z: caps.get(9).unwrap().as_str().parse().unwrap(),
-            };
             Particle {
-                pos: pos,
-                vel: vel,
-                acc: acc,
+                pos: Point {
+                    x: caps.get(1).unwrap().as_str().parse().unwrap(),
+                    y: caps.get(2).unwrap().as_str().parse().unwrap(),
+                    z: caps.get(3).unwrap().as_str().parse().unwrap(),
+                },
+                vel: Point {
+                    x: caps.get(4).unwrap().as_str().parse().unwrap(),
+                    y: caps.get(5).unwrap().as_str().parse().unwrap(),
+                    z: caps.get(6).unwrap().as_str().parse().unwrap(),
+                },
+                acc: Point {
+                    x: caps.get(7).unwrap().as_str().parse().unwrap(),
+                    y: caps.get(8).unwrap().as_str().parse().unwrap(),
+                    z: caps.get(9).unwrap().as_str().parse().unwrap(),
+                },
             }
         })
         .collect();
@@ -111,9 +109,10 @@ fn main() {
 
     println!("Particle with minimum acceleration: {}", max_acc_pos);
 
-
-    // Run simulation for a bit to resolve collisions
+    // Could do something involving maths to resolve collisions,
+    // but instead just run simulation for a bit
     for _ in 0..100 {
+        // Find collision positions
         let collisions: Vec<Point> = input
             .iter()
             .sorted_by(|a, b| Ord::cmp(&a.pos, &b.pos))
@@ -122,11 +121,13 @@ fn main() {
             .map(|win| win[0].pos)
             .collect();
 
+        // Get rid of particles in collision points
         input = input
             .into_iter()
             .filter(|&part| !collisions.contains(&part.pos))
             .collect();
 
+        // Update particles
         input = input
             .iter()
             .map(|part| {
