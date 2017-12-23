@@ -91,29 +91,19 @@ fn main() {
     let mul_count = machine1.run();
     println!("Number of mul instructions: {}", mul_count);
 
-    // Program finds primes between B=b*100+100000 & B+17000,
-    // adding 17 to B each time
+    // Program finds primes of the form b*100+10000 + kP,
+    // with b=79, k=[0..1000] & P = 17
     let mut h = 0;
 
     let mut b = input[0].2.parse::<usize>().unwrap();
     b = (b * 100) + 100_000;
     let c = b + 17_000;
     while b <= c {
-        let mut f = true;
-        'outer: for d in 2..b {
-            for e in 2..b {
-                let g = d * e;
-                if g == b {
-                    f = false;
-                    break 'outer;
-                }
-                if g > b {
-                    break;
-                }
+        for d in 2..b {
+            if b % d == 0 {
+                h += 1;
+                break;
             }
-        }
-        if !f {
-            h += 1;
         }
         b += 17;
     }
