@@ -10,7 +10,12 @@ builds/day%: src/day%.d
 	dmd -of=$@ $(DFLAGS) $(FLAGS_DAY_$@) $<
 
 %: builds/day%
-	@echo -e '\x1b[1;32mRunning day $@ solution\x1b[0m'
-	@./builds/day$@ inputs/day$@.input
+	@echo -e '\x1b[1;32mRunning day $* solution\x1b[0m'
+	@./builds/day$* inputs/day$*.input
+
+SHELL:=/bin/bash
+time%: builds/day%
+	@echo -e '\x1b[1;32mRunning day $* solution (timed)\x1b[0m'
+	@time ./builds/day$* inputs/day$*.input
 
 .PHONY: all
