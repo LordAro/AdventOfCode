@@ -18,24 +18,34 @@ void main(string[] args)
 				chars[c] = 1;
 			}
 		}
+		bool hasTwo = false;
+		bool hasThree = false;
 		foreach (v; chars) {
-			if (v == 2) {
+			if (!hasTwo && v == 2) {
 				twos++;
-				break;
-			}
-		}
-		foreach (v; chars) {
-			if (v == 3) {
+				hasTwo = true;
+			} else if (!hasThree && v == 3) {
 				threes++;
-				break;
+				hasThree = true;
 			}
 		}
 
-		foreach (id2; takeExactly(lines, i)) {
-			auto p = levenshteinDistanceAndPath(id, id2);
-			if (p[0] == 1) {
-				auto idx = p[1].countUntil('s');
-				common_letters = id.dup.remove(idx);
+		// Part 2
+		foreach (id2; drop(lines, i)) {
+			int diff = 0;
+			size_t diff_idx = 0;
+			foreach (j, c; id) {
+				if (c != id2[j]) {
+					diff++;
+					diff_idx = j;
+				}
+				if (diff > 1) {
+					break;
+				}
+			}
+			if (diff == 1) {
+				common_letters = id.dup.remove(diff_idx);
+				break;
 			}
 		}
 	}
