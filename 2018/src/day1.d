@@ -1,6 +1,7 @@
 import std.algorithm;
 import std.container.rbtree;
 import std.file;
+import std.range;
 import std.stdio;
 
 void main(string[] args)
@@ -10,14 +11,12 @@ void main(string[] args)
 
 	auto seen = redBlackTree!int();
 	int cur_freq = 0;
-	outer: while (true) {
-		foreach (freq; lines) {
-			if (cur_freq in seen) {
-				break outer;
-			}
-			seen.insert(cur_freq);
-			cur_freq += freq;
+	foreach (freq; cycle(lines)) {
+		if (cur_freq in seen) {
+			break;
 		}
+		seen.insert(cur_freq);
+		cur_freq += freq;
 	}
 	writeln("First duplicate frequency: ", cur_freq);
 }
