@@ -44,7 +44,7 @@ void main(string[] args)
 				}
 			}
 			if (diff == 1) {
-				common_letters = id.dup.remove(diff_idx);
+				common_letters = cast(string)((cast(ubyte[])id.dup).remove(diff_idx));
 				break;
 			}
 		}
