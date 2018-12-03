@@ -1,6 +1,6 @@
 import std.conv;
 import std.file;
-import std.regex;
+import std.format;
 import std.stdio;
 
 struct claim {
@@ -10,19 +10,15 @@ struct claim {
 	size_t w;
 	size_t h;
 }
+
 void main(string[] args)
 {
 	auto lines = slurp!(string)(args[1], "%s");
-	int[1000][1000] cloth;
-	auto reg = regex(r"#(\d+) @ (\d+),(\d+): (\d+)x(\d+)");
+	auto cloth = new int[1000][1000];
 	claim[] claims;
 	foreach (claim_str; lines) {
-		auto c = matchFirst(claim_str, reg);
-		size_t id = to!size_t(c[1]);
-		size_t x = to!size_t(c[2]);
-		size_t y = to!size_t(c[3]);
-		size_t w = to!size_t(c[4]);
-		size_t h = to!size_t(c[5]);
+		size_t id, x, y, w, h;
+		claim_str.formattedRead!"#%d @ %d,%d: %dx%d"(id, x, y, w, h);
 		claims ~= claim(id, x, y, w, h);
 		for (size_t i = x; i < x+w; i++) {
 			for (size_t j = y; j < y+h; j++) {
