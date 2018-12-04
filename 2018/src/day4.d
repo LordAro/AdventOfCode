@@ -1,17 +1,7 @@
 import std.algorithm;
-import std.conv;
 import std.file;
 import std.format;
 import std.stdio;
-import std.string;
-
-struct claim {
-	size_t id;
-	size_t x;
-	size_t y;
-	size_t w;
-	size_t h;
-}
 
 void main(string[] args)
 {
