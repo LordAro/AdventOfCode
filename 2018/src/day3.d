@@ -18,7 +18,7 @@ void main(string[] args)
 	claim[] claims;
 	foreach (claim_str; lines) {
 		size_t id, x, y, w, h;
-		claim_str.formattedRead!"#%d @ %d,%d: %dx%d"(id, x, y, w, h);
+		formattedRead(claim_str, "#%d @ %d,%d: %dx%d", &id, &x, &y, &w, &h);
 		claims ~= claim(id, x, y, w, h);
 		for (size_t i = x; i < x+w; i++) {
 			for (size_t j = y; j < y+h; j++) {
