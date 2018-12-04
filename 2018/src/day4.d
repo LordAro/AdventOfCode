@@ -2,6 +2,7 @@ import std.algorithm;
 import std.file;
 import std.format;
 import std.stdio;
+import std.string;
 
 void main(string[] args)
 {
