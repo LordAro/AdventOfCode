@@ -1,33 +1,50 @@
-import std.ascii;
-import std.algorithm : min, remove;
-import std.file;
-import std.stdio;
-import std.string;
+import std.ascii : toUpper;
+import std.algorithm : min;
+import std.range : dropBackOne, retro;
+import std.container : DList;
+import std.file : read;
+import std.stdio : writeln;
+import std.string : count;
 
-// TODO: Use linked list
-ubyte[] collapse(ubyte[] polymer)
+DList!ubyte collapse(DList!ubyte polymer)
 {
-	for (size_t i = 1; i < polymer.length; i++) {
-		auto c1 = polymer[i - 1];
-		auto c2 = polymer[i];
-		if ((isUpper(c1) && isLower(c2) && std.ascii.toLower(c1) == c2)
-				|| (isLower(c1) && isUpper(c2) && std.ascii.toUpper(c1) == c2)) {
-			replaceInPlace(polymer, i-1, i+1, cast(ubyte[])[]);
-			i -= 2;
+	// Iterate backwards due to BidirectionalRange not actually being Bidirectional...
+	auto reduced = DList!ubyte(polymer.back);
+	foreach (c; polymer[].dropBackOne.retro) {
+		auto b = reduced.front;
+		if (b != c && toUpper(b) == toUpper(c)) {
+			reduced.removeFront;
+		} else {
+			reduced.insertFront(c);
 		}
 	}
-	return polymer;
+	return reduced;
+}
+
+DList!ubyte char_filter(DList!ubyte dll, ubyte r)
+{
+	DList!ubyte new_dll;
+	ubyte r_u = cast(ubyte)toUpper(r);
+	foreach (c; dll) {
+		if (c != r && c != r_u) {
+			new_dll.insertBack(c);
+		}
+	}
+	return new_dll;
 }
 
 void main(string[] args)
 {
-	auto input = readText(args[1]).strip();
+	DList!ubyte polymer = DList!ubyte(cast(const(ubyte)[])read(args[1]));
+	polymer.removeBack; // Newline
 
-	writeln("Final length: ", collapse(cast(ubyte[])input.dup).length);
+	DList!ubyte reduced = collapse(polymer);
+	writeln("Final length: ", reduced[].count);
+
 	size_t min_len = 50000;
 	for (byte c = 'a'; c <= 'z'; c++) {
-		auto reduced = remove!(a => a == c || a == std.ascii.toUpper(c))(cast(ubyte[])input.dup);
-		min_len = min(min_len, collapse(reduced).length);
+		DList!ubyte new_polymer = char_filter(reduced, c);
+		min_len = min(min_len, collapse(new_polymer)[].count);
 	}
 	writeln("Minimal length: ", min_len);
 }
