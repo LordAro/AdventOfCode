@@ -1,3 +1,4 @@
+DC?=ldmd2
 DFLAGS=-w -de -O -release
 #FLAGS_DAY_4=-lssl -lcrypto
 
@@ -9,7 +10,7 @@ timed: $(addprefix time,$(CUR_SLNS))
 .PRECIOUS: builds/day%
 builds/day%: src/day%.d
 	@echo -e '\x1b[1;34mCompiling day $* solution\x1b[0m'
-	ldmd -of=$@ $(DFLAGS) $(FLAGS_DAY_$@) $<
+	$(DC) -of=$@ $(DFLAGS) $(FLAGS_DAY_$@) $<
 
 %: builds/day%
 	@echo -e '\x1b[1;32mRunning day $* solution\x1b[0m'
