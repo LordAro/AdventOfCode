@@ -1,9 +1,10 @@
-DFLAGS=-Wall -Wdeprecated
+DFLAGS=-Wall -Wdeprecated -frelease -O2
 #FLAGS_DAY_4=-lssl -lcrypto
 
 CUR_SLNS=$(sort $(patsubst src/day%.d,%,$(wildcard src/day*.d)))
 
 all: $(CUR_SLNS)
+timed: $(addprefix time,$(CUR_SLNS))
 
 .PRECIOUS: builds/day%
 builds/day%: src/day%.d
