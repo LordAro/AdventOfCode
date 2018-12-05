@@ -1,4 +1,4 @@
-DFLAGS=-Wall -Wdeprecated -frelease -O2
+DFLAGS=-w -de -O -release
 #FLAGS_DAY_4=-lssl -lcrypto
 
 CUR_SLNS=$(sort $(patsubst src/day%.d,%,$(wildcard src/day*.d)))
@@ -9,7 +9,7 @@ timed: $(addprefix time,$(CUR_SLNS))
 .PRECIOUS: builds/day%
 builds/day%: src/day%.d
 	@echo -e '\x1b[1;34mCompiling day $* solution\x1b[0m'
-	gdc -o $@ $(DFLAGS) $(FLAGS_DAY_$@) $<
+	ldmd -of=$@ $(DFLAGS) $(FLAGS_DAY_$@) $<
 
 %: builds/day%
 	@echo -e '\x1b[1;32mRunning day $* solution\x1b[0m'
