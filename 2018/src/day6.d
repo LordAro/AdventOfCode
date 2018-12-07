@@ -4,6 +4,7 @@ import std.math : abs;
 import std.range : retro;
 import std.stdio : writeln;
 import std.typecons : tuple, Tuple;
+import std.container : RedBlackTree, make;
 
 int distance(Tuple!(int, int) a, Tuple!(int, int) b)
 {
@@ -25,16 +26,16 @@ void main(string[] args)
 	int min_y = points.map!(a => a[1]).minElement;
 
 	int[Tuple!(int, int)] closest_grid;
-	Tuple!(int, int)[] inf_points;
+	auto inf_points = make!(RedBlackTree!(Tuple!(int, int)));
 	int distance_region_size;
 	for (int i = min_x - 1; i <= max_x + 1; i++) {
 		for (int j = min_y - 1; j <= max_y + 1; j++) {
 			auto cur_pos = tuple(i, j);
 			auto closest = points.get_closest(cur_pos);
 			if (i == min_x - 1 || i == max_x + 1 || j == min_y - 1 || j == max_y + 1) {
-				inf_points ~= closest;
+				inf_points.insert(closest);
 				closest_grid.remove(closest);
-			} else if (!inf_points.canFind(closest) && closest == points.retro.get_closest(cur_pos)) {
+			} else if (closest !in inf_points && closest == points.retro.get_closest(cur_pos)) {
 				closest_grid[closest]++;
 			}
 			if (points.map!(a => distance(cur_pos, a)).sum < 10000) {
