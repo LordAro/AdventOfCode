@@ -1,6 +1,6 @@
 DC?=ldmd2
 DFLAGS=-w -de -O -release
-#FLAGS_DAY_4=-lssl -lcrypto
+#DFLAGS=-w -de -debug -g
 
 CUR_SLNS=$(sort $(patsubst src/day%.d,%,$(wildcard src/day*.d)))
 
