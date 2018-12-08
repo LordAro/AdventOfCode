@@ -1,6 +1,6 @@
 DC?=ldmd2
 DFLAGS=-w -de -O -release
-#DFLAGS=-w -de -debug -g
+#DFLAGS=-w -de -debug -g -unittest
 
 CUR_SLNS=$(sort $(patsubst src/day%.d,%,$(wildcard src/day*.d)))
 

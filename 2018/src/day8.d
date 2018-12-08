@@ -1,51 +1,70 @@
-import std.array;
 import std.algorithm;
 import std.conv;
 import std.file;
 import std.range;
 import std.stdio;
-import std.string;
 
-int count_metadata(ref int[] r)
+R sum_metadata(R)(R r, ref int count)
 {
-	auto header = r.take(2);
-	int num_child = header.front;
-	int num_metadata = header.back;
-	r = r.drop(2);
-	int count;
+	int num_child = r.front;
+	r.popFront;
+	int num_metadata = r.front;
+	r.popFront;
+
 	for (int i; i < num_child; i++) {
-		count += r.count_metadata;
+		r = r.sum_metadata(count);
 	}
+
 	count += r.take(num_metadata).sum;
-	r = r.drop(num_metadata);
-	return count;
+	return r.dropExactly(num_metadata);
 }
 
-int node_value(ref int[] r)
+R node_value(R)(R r, ref int count)
 {
-	auto header = r.take(2);
-	int num_child = header.front;
-	int num_metadata = header.back;
-	r = r.drop(2);
+	int num_child = r.front;
+	r.popFront;
+	int num_metadata = r.front;
+	r.popFront;
+
 	int[] child_values;
 	for (int i; i < num_child; i++) {
-		child_values ~= node_value(r);
+		int val;
+		r = r.node_value(val);
+		child_values ~= val;
 	}
-	int count;
+
 	if (num_child == 0) {
-		count = r.take(num_metadata).sum;
+		count += r.take(num_metadata).sum;
 	} else {
-		count = r.take(num_metadata).filter!(a => 0 < a && a <= child_values.length).map!(a => child_values[a - 1]).sum;
+		// Ignore out of range
+		count += r.take(num_metadata).filter!(a => 0 < a && a <= child_values.length).map!(a => child_values[a - 1]).sum;
 	}
-	r = r.drop(num_metadata);
-	return count;
+	return r.drop(num_metadata);
 }
 
 void main(string[] args)
 {
-	auto input = readText(args[1]).split.map!(a => to!int(a)).array;
-	//auto input = [2, 3, 0, 3, 10, 11, 12, 1, 1, 0, 1, 99, 2, 1, 1, 2];
-	auto p1 = input.dup;
-	writeln("Metadata total: ", count_metadata(p1));
-	writeln("Node value: ", node_value(input));
+	auto input = readText(args[1]).split.map!(a => to!int(a));
+	int sum;
+	input.sum_metadata(sum);
+	writeln("Metadata total: ", sum);
+	int val;
+	input.node_value(val);
+	writeln("Node value: ", val);
+}
+
+unittest
+{
+	auto input = [2, 3, 0, 3, 10, 11, 12, 1, 1, 0, 1, 99, 2, 1, 1, 2];
+	int sum;
+	input.sum_metadata(sum);
+	assert(sum == 138);
+}
+
+unittest
+{
+	auto input = [2, 3, 0, 3, 10, 11, 12, 1, 1, 0, 1, 99, 2, 1, 1, 2];
+	int val;
+	input.node_value(val);
+	assert(val == 66);
 }
