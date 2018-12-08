@@ -9,6 +9,7 @@ CUR_SLNS=$(sort $(patsubst src/day%.d,%,$(wildcard src/day*.d)))
 
 all: $(CUR_SLNS)
 timed: $(addprefix time,$(CUR_SLNS))
+perfd: $(addprefix perf,$(CUR_SLNS))
 
 .PRECIOUS: builds/day%
 builds/day%: src/day%.d
