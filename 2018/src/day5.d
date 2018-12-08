@@ -1,50 +1,41 @@
 import std.ascii : toUpper;
-import std.algorithm : min;
-import std.range : dropBackOne, retro;
-import std.container : DList;
-import std.file : read;
+import std.algorithm : min, count;
+import std.file : readText;
+import std.container : SList;
 import std.stdio : writeln;
-import std.string : count;
+import std.string : strip;
 
-DList!ubyte collapse(DList!ubyte polymer)
+SList!ubyte collapse(SList!ubyte polymer, ubyte ignore = 0xff)
 {
-	// Iterate backwards due to BidirectionalRange not actually being Bidirectional...
-	auto reduced = DList!ubyte(polymer.back);
-	foreach (c; polymer[].dropBackOne.retro) {
-		auto b = reduced.front;
-		if (b != c && toUpper(b) == toUpper(c)) {
-			reduced.removeFront;
-		} else {
+	SList!ubyte reduced;
+	foreach (c; polymer) {
+		if (!reduced.empty && reduced.front != c && toUpper(reduced.front) == toUpper(c)) {
+			reduced.removeFront();
+		} else if (ignore != c && toUpper(ignore) != c) {
 			reduced.insertFront(c);
 		}
 	}
 	return reduced;
 }
 
-DList!ubyte char_filter(DList!ubyte dll, ubyte r)
-{
-	DList!ubyte new_dll;
-	ubyte r_u = cast(ubyte)toUpper(r);
-	foreach (c; dll) {
-		if (c != r && c != r_u) {
-			new_dll.insertBack(c);
-		}
-	}
-	return new_dll;
-}
-
 void main(string[] args)
 {
-	DList!ubyte polymer = DList!ubyte(cast(const(ubyte)[])read(args[1]));
-	polymer.removeBack; // Newline
+	auto polymer = SList!ubyte(cast(ubyte[])readText(args[1]).strip);
 
-	DList!ubyte reduced = collapse(polymer);
+	auto reduced = collapse(polymer);
 	writeln("Final length: ", reduced[].count);
 
 	size_t min_len = 50000;
 	for (byte c = 'a'; c <= 'z'; c++) {
-		DList!ubyte new_polymer = char_filter(reduced, c);
-		min_len = min(min_len, collapse(new_polymer)[].count);
+		min_len = min(min_len, collapse(reduced, c)[].count);
 	}
 	writeln("Minimal length: ", min_len);
+}
+
+unittest
+{
+	assert(collapse("aA") == "");
+	assert(collapse("abBA") == "");
+	assert(collapse("abAB") == "abAB");
+	assert(collapse("aabAAB") == "aabAAB");
 }
