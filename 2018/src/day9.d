@@ -3,48 +3,36 @@ import std.container : DList;
 import std.file : slurp;
 import std.stdio : writeln;
 
-void iterate_forwards(ref DList!int head, ref DList!int tail)
+void rotate(ref DList!int dll, int count)
 {
-	if (tail.empty) {
-		tail = head;
-		head = DList!int();
+	if (count > 0) {
+		for (int i = 0; i < count; i++) {
+			dll.insertBack(dll.front);
+			dll.removeFront();
+		}
+	} else {
+		for (int i = 0; i < -count; i++) {
+			dll.insertFront(dll.back);
+			dll.removeBack();
+		}
 	}
-	head.insertBack(tail.front);
-	tail.removeFront();
-}
-
-void iterate_backwards(ref DList!int head, ref DList!int tail)
-{
-	if (head.empty) {
-		head = tail;
-		tail = DList!int();
-	}
-	tail.insertFront(head.back);
-	head.removeBack();
 }
 
 ulong marble_game(int players, int last_marble)
 {
 	ulong[int] player_scores;
-	DList!int marble_circle_head, marble_circle_tail;
-	marble_circle_head.insertBack(0);
+	DList!int marble_circle;
+	marble_circle.insertBack(0);
 	for (int marble = 1; marble <= last_marble; marble++) {
-		auto cur_player = marble % players;
-
 		if (marble % 23 == 0) {
 			// Also remove previous increment
-			for (int i = 0; i < 7 + 2; i++) {
-				iterate_backwards(marble_circle_head, marble_circle_tail);
-			}
-			player_scores[cur_player] += marble;
-			player_scores[cur_player] += marble_circle_tail.front;
-			marble_circle_tail.removeFront();
+			rotate(marble_circle, 7);
+			player_scores[marble % players] += marble_circle.front + marble;
+			marble_circle.removeFront();
+			rotate(marble_circle, -1);
 		} else {
-			marble_circle_tail.insertFront(marble);
-		}
-
-		for (int i = 0; i < 2; i++) {
-			iterate_forwards(marble_circle_head, marble_circle_tail);
+			rotate(marble_circle, -1);
+			marble_circle.insertFront(marble);
 		}
 	}
 	return player_scores.values.maxElement;
