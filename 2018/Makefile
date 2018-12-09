@@ -12,9 +12,9 @@ timed: $(addprefix time,$(CUR_SLNS))
 perfd: $(addprefix perf,$(CUR_SLNS))
 
 .PRECIOUS: builds/day%
-builds/day%: src/day%.d
+builds/day%: src/day%.d Makefile
 	@echo -e '\x1b[1;34mCompiling day $* solution\x1b[0m'
-	$(DC) -of=$@ $(DFLAGS) $(FLAGS_DAY_$@) $<
+	$(DC) -of$@ $(DFLAGS) $(FLAGS_DAY_$@) $<
 
 %: builds/day%
 	@echo -e '\x1b[1;32mRunning day $* solution\x1b[0m'
@@ -27,7 +27,7 @@ time%: builds/day%
 
 perf%: builds/day%
 	@echo -e '\x1b[1;32mRunning day $* solution (timed)\x1b[0m'
-	@perf stat -r1000 ./builds/day$* inputs/day$*.input 2>&1 > /dev/null | grep elapsed
+	@perf stat -r100 ./builds/day$* inputs/day$*.input 2>&1 > /dev/null | grep elapsed
 
 clean:
 	rm -f $(addprefix builds/day,$(CUR_SLNS))
