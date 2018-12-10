@@ -4,6 +4,7 @@ import std.conv : to;
 import std.file : slurp;
 import std.stdio : write, writeln;
 import std.math : abs;
+import std.range : iota;
 import std.typecons : Tuple, tuple;
 import std.string : strip;
 
@@ -36,6 +37,11 @@ ulong get_gridsize(G)(G grid)
 	return cast(ulong)abs(minmax.max_x - minmax.min_x) * cast(ulong)abs(minmax.max_y - minmax.min_y);
 }
 
+G get_grid(G)(G points, G velocities, int factor)
+{
+	return points.length.iota.map!(i => tuple(points[i][0] + (factor * velocities[i][0]), points[i][1] + (factor * velocities[i][1]))).array;
+}
+
 void main(string[] args)
 {
 	auto input = slurp!(string, string, string, string)(args[1], "position=<%s, %s> velocity=<%s, %s>")
@@ -44,27 +50,21 @@ void main(string[] args)
 	auto points = input.map!(t => t[0]).array; // Both need to be arrays so it doesn't try to recompute values each time
 	auto velos = input.map!(t => t[1]).array;
 
-	auto grid_size = get_gridsize(points);
-
-	ulong s = 1;
-	for (; s < 12000; s++) {
-		for (ulong i = 0; i < points.length; i++) {
-			points[i][0] += velos[i][0];
-			points[i][1] += velos[i][1];
+	int l = 0;
+	int u = 1;
+	while (l != u) {
+		int u2 = 1;
+		for (;; u2 *= 2) {
+			auto s1 = get_gridsize(get_grid(points, velos, l + u2));
+			auto s2 = get_gridsize(get_grid(points, velos, l + u2 + 1));
+			if (s1 < s2) break;
 		}
-		auto new_grid_size = get_gridsize(points);
-		if (new_grid_size > grid_size) {
-			// Rewind a timestep
-			for (ulong i = 0; i < points.length; i++) {
-				points[i][0] -= velos[i][0];
-				points[i][1] -= velos[i][1];
-			}
-			s--;
-			break;
-		}
-		grid_size = new_grid_size;
+		u = l + u2;
+		l = l + (u2 / 2);
+		if (u2 == 1) break; // solution in u
 	}
+	int s = 1;
 	writeln("Grid:");
-	print_grid(points);
-	writeln("At time ", s, "s");
+	print_grid(get_grid(points, velos, u));
+	writeln("At time ", u, "s");
 }
