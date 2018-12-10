@@ -27,7 +27,7 @@ time%: builds/day%
 
 perf%: builds/day%
 	@echo -e '\x1b[1;32mRunning day $* solution (timed)\x1b[0m'
-	@perf stat -r100 ./builds/day$* inputs/day$*.input 2>&1 > /dev/null | grep elapsed
+	@perf stat -r1000 ./builds/day$* inputs/day$*.input 2>&1 > /dev/null | grep elapsed
 
 clean:
 	rm -f $(addprefix builds/day,$(CUR_SLNS))
