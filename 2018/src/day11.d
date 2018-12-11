@@ -14,37 +14,36 @@ void main(string[] args)
 {
 	auto serial = readText(args[1]).strip.to!int;
 
-	int[300][300] grid;
+	int [300][300] sum_grid;
 	for (int x = 0; x < 300; x++) {
 		for (int y = 0; y < 300; y++) {
-			grid[x][y] = power_level(x+1, y+1, serial);
+			auto neg_x  = x == 0 ? 0 : sum_grid[x-1][y];
+			auto neg_y  = y == 0 ? 0 : sum_grid[x][y-1];
+			auto neg_xy = (x == 0 || y == 0) ? 0 : sum_grid[x-1][y-1];
+			// I(x, y) = i(x, y) + I(x, y-1) + I(x - 1, y) - I(x - 1, y - 1)
+			sum_grid[x][y] = power_level(x+1, y+1, serial) + neg_x + neg_y - neg_xy;
 		}
 	}
 	int max3_sum = int.min;
-	int max3_x;
-	int max3_y;
+	ulong max3_x;
+	ulong max3_y;
 	int max_sum = int.min;
-	int max_x;
-	int max_y;
-	int max_n;
-	for (int x = 0; x < 300; x++) {
-		for (int y = 0; y < 300; y++) {
-			for (int n = 0; n < 300 - max(x, y); n++) {
-				int sum = 0;
-				for (int i = 0; i < n; i++) {
-					for (int j = 0; j < n; j++) {
-						sum += grid[x+i][y+j];
-					}
-				}
+	ulong max_x;
+	ulong max_y;
+	ulong max_n;
+	for (ulong x = 0; x < 300; x++) {
+		for (ulong y = 0; y < 300; y++) {
+			for (ulong n = 0; n < 300 - max(x, y); n++) {
+				auto sum = sum_grid[x+n][y+n] - sum_grid[x][y+n] - sum_grid[x+n][y] + sum_grid[x][y];
 				if (n == 3 && sum > max3_sum) {
 					max3_sum = sum;
-					max3_x = x+1;
-					max3_y = y+1;
+					max3_x = x+2; // Should probably work out why a +2 is necessary here..
+					max3_y = y+2;
 				}
 				if (sum > max_sum) {
 					max_sum = sum;
-					max_x = x+1;
-					max_y = y+1;
+					max_x = x+2;
+					max_y = y+2;
 					max_n = n;
 				}
 			}
