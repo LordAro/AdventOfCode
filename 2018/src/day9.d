@@ -10,10 +10,12 @@ struct Ring {
 	}
 
 	private Node *current;
+	Node[] memory;
 
-	this(int init)
+	this(int init, size_t size)
 	{
 		this.current = new Node;
+		this.memory = new Node[size]; // Use block of memory to save allocating little pieces
 		this.current.prev = this.current;
 		this.current.next = this.current;
 		this.current.val = init;
@@ -30,7 +32,7 @@ struct Ring {
 
 	void insert(int val)
 	{
-		auto n = new Node;
+		auto n = &this.memory[val];
 		n.val = val;
 		n.next = this.current;
 		n.prev = this.current.prev;
@@ -56,7 +58,7 @@ struct Ring {
 ulong marble_game(int players, int last_marble)
 {
 	ulong[int] player_scores;
-	auto marble_circle = Ring(0);
+	auto marble_circle = Ring(0, last_marble+1);
 	for (int marble = 1; marble <= last_marble; marble++) {
 		if (marble % 23 == 0) {
 			marble_circle.rotate(7);
