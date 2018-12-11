@@ -5,7 +5,8 @@ else
 DFLAGS=-w -de -O -release -inline
 endif
 PERF_COUNT?=1000
-CUR_SLNS=$(sort $(patsubst src/day%.d,%,$(wildcard src/day*.d)))
+
+CUR_SLNS=$(shell echo $(patsubst src/day%.d,%,$(wildcard src/day*.d)) | tr ' ' '\n' | sort -n)
 
 all: $(CUR_SLNS)
 timed: $(addprefix time,$(CUR_SLNS))
