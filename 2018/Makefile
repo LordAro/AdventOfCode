@@ -2,9 +2,9 @@ DC?=ldmd2
 ifdef DEBUG
 DFLAGS=-w -de -debug -g -unittest
 else
-DFLAGS=-w -de -O -release
+DFLAGS=-w -de -O -release -inline
 endif
-
+PERF_COUNT?=1000
 CUR_SLNS=$(sort $(patsubst src/day%.d,%,$(wildcard src/day*.d)))
 
 all: $(CUR_SLNS)
@@ -27,7 +27,7 @@ time%: builds/day%
 
 perf%: builds/day%
 	@echo -e '\x1b[1;32mRunning day $* solution (timed)\x1b[0m'
-	@perf stat -r1000 ./builds/day$* inputs/day$*.input 2>&1 > /dev/null | grep elapsed
+	@perf stat -r$(PERF_COUNT) ./builds/day$* inputs/day$*.input 2>&1 > /dev/null | grep elapsed
 
 clean:
 	rm -f $(addprefix builds/day,$(CUR_SLNS))
