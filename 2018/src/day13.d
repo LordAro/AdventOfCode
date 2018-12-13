@@ -109,7 +109,9 @@ void main(string[] args)
 
 			// Crash?
 			if (carts.filter!(d => !d.crashed).count!(d => d.pos == c.pos) > 1) {
-				writeln("Crash at ", c.pos.x, ",", c.pos.y);
+				if (carts.filter!(d => d.crashed).count == 0) { // First crash
+					writeln("First crash at ", c.pos.x, ",", c.pos.y);
+				}
 				carts.filter!(d => d.pos == c.pos).each!((ref c) => c.crashed = true);
 			}
 
