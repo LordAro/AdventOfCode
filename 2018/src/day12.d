@@ -15,17 +15,18 @@ void main(string[] args)
 	bool[][] transforms = input
 		.drop(2)
 		.map!(s => s.split(" => "))
-		.filter!(t => t[1][0] == '#') // Only worth storing the patterns that result in a #
-		.map!(t => t[0].map!(c => c == '#').array)
+		.filter!(t => t[1][0] == '#')              // Only store the patterns that result in a #
+		.map!(t => t[0].map!(c => c == '#').array) // Convert pattern to bool array, where # is true
 		.array;
 
 	long start_idx = 0;
 	for (int s = 0; s < 300; s++) {
-		while (initial_state[0 .. 5].canFind(true)) {
+		// Make sure we've got a head/tail that's long enough to match all patterns
+		while (initial_state[0 .. 4].canFind(true)) {
 			initial_state = false ~ initial_state;
 			start_idx -= 1;
 		}
-		while (initial_state[$ - 5 .. $].canFind(true)) {
+		while (initial_state[$ - 4 .. $].canFind(true)) {
 			initial_state ~= false;
 		}
 
