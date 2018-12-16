@@ -1,4 +1,6 @@
-import std.algorithm : canFind, count, filter, joiner, map, minElement, minPos, remove, reverse, sort, sum;
+import std.array : popFront;
+import std.algorithm : canFind, count, filter, joiner, map, minElement, minPos, sort, sum;
+import std.container: DList;
 import std.file : readText;
 import std.math : abs;
 import std.range : array, back, empty, front;
@@ -69,51 +71,38 @@ ulong manhattan(Coord a, Coord b)
 	return abs(cast(int)a.x - cast(int)b.x) + abs(cast(int)a.y - cast(int)b.y);
 }
 
-Coord[] AStar(char[][] grid, Coord start, Coord end)
+// Modified Dijkstra/BFS. returns all targets with equal distance
+Tuple!(Coord[], ulong) find_closest(char[][] grid, Coord start, Coord[] targets)
 {
 	Coord[] searched;
-	Coord[] toSearch = [start];
 
-	Coord[Coord] cameFrom;
+	auto toSearch = DList!(Tuple!(Coord, ulong))(tuple(start, 0uL));
+	ulong found_dist = grid.length * grid.length;
+	Coord[] closest;
 
-	ulong[Coord] gScore;
-	gScore[start] = 0;
+	while (!toSearch.empty) {
+		Tuple!(Coord, ulong) current = toSearch.front;
+		toSearch.removeFront();
 
-	ulong[Coord] fScore;
-	fScore[start] = manhattan(start, end);
+		if (current[1] > found_dist) {
+			break;
+		}
+		if (searched.canFind(current[0]) || (current[0] != start && grid[current[0].y][current[0].x] != '.')) continue;
 
-	while(!toSearch.empty) {
-		Coord current = toSearch.minElement!(n => n in fScore ? fScore[n] : ulong.max);
-		if (current == end) {
-			// Reconstruct path
-			Coord[] total_path = [current];
-			while (current in cameFrom) {
-				current = cameFrom[current];
-				total_path ~= current;
-			}
-			return total_path.reverse;
+		searched ~= current[0];
+
+		if (targets.canFind(current[0])) {
+			found_dist = current[1];
+			closest ~= current[0];
 		}
 
-		toSearch = toSearch.remove!(a => a == current);
-		searched ~= current;
-
-		foreach (n; grid.blank_adjacents(current)) {
+		foreach (n; grid.blank_adjacents(current[0])) {
 			if (searched.canFind(n)) continue;
-
-			ulong tentative = gScore[current] + 1; // always manhattan of 1
-			if (!toSearch.canFind(n)) {
-				toSearch ~= n;
-			} else if (tentative >= (n in gScore ? gScore[n] : ulong.max)) {
-				continue;
-			}
-
-			cameFrom[n] = current;
-			gScore[n] = tentative;
-			fScore[n] = gScore[n] + manhattan(n, end);
+			toSearch ~= tuple(n, current[1] + 1);
 		}
 	}
 
-	return []; // No path :(
+	return tuple(closest, found_dist);
 }
 
 bool reading_order(Coord a, Coord b)
@@ -121,7 +110,7 @@ bool reading_order(Coord a, Coord b)
 	return a.y < b.y || (a.y == b.y && a.x < b.x);
 }
 
-Tuple!(int, int) playGame(char[][] grid)
+Tuple!(int, int, ulong) playGame(char[][] grid, int elfAttackDamage = 3)
 {
 	Person[] combatants;
 
@@ -146,40 +135,31 @@ Tuple!(int, int) playGame(char[][] grid)
 			if (combatants.alive.filter!(q => p.isElf != q.isElf).count == 0) break outer;
 
 			// If not next to any target, move towards one
-			auto adjacents = p.get_adjacent(combatants);
-			if (adjacents.count == 0) {
-				auto targets = combatants.alive.filter!(c => c.isElf != p.isElf).map!(c => c.pos);
-				auto target_adjacents = targets.map!(c => grid.blank_adjacents(c)).joiner;
-				auto source_adjacents = grid.blank_adjacents(p.pos);
+			if (p.get_adjacent(combatants).empty) {
+				// Choose shortest distance, or reading order, or reading order of first move
+				Coord[] targets = combatants.alive.filter!(c => c.isElf != p.isElf).map!(c => grid.blank_adjacents(c.pos)).joiner.array;
 
-				Coord[][] routes;
-				foreach (s; source_adjacents) {
-					foreach (t; target_adjacents) {
-						auto route = AStar(grid, s, t);
-						if (route.length != 0) {
-							routes ~= route;
+				auto closest_targets = find_closest(grid, p.pos, targets);
+
+				if (!closest_targets[0].empty) {
+					auto closest_target = closest_targets[0].minElement!(reading_order);
+					foreach (n; grid.blank_adjacents(p.pos)) { // adjacents already sorted in reading order
+						auto route = find_closest(grid, n, [closest_target]);
+						if (route[1] == closest_targets[1] - 1) {
+							move_combatant(grid, p, n);
+							break;
 						}
 					}
 				}
-
-				if (routes.count > 0) {
-					// Choose shortest distance, or reading order, or reading order of first move
-					alias nextMove = (m, n) => m.length < n.length
-						|| (m.length == n.length && reading_order(m.back, n.back)
-							|| (m.back == n.back && reading_order(m.front, n.front)));
-					auto closest_target_moves = routes.minElement!(nextMove);
-
-					auto next_position = closest_target_moves.front;
-					move_combatant(grid, p, next_position);
-				}
 			}
 
-			adjacents = p.get_adjacent(combatants);
-			if (adjacents.count > 0) {
+			// Attack
+			auto adjacents = p.get_adjacent(combatants);
+			if (!adjacents.empty) {
 				// Attack adjacent with lowest health, or reading order if equal
 				// Must use minPos to get reference
 				auto target = adjacents.minPos!((p, q) => p.health < q.health || (p.health == q.health && reading_order(p.pos, q.pos)));
-				target.front.health -= 3;
+				target.front.health -= p.isElf ? elfAttackDamage : 3;
 				if (target.front.health <= 0) {
 					grid[target.front.pos.y][target.front.pos.x] = '.';
 				}
@@ -191,45 +171,23 @@ Tuple!(int, int) playGame(char[][] grid)
 		//writeln();
 	}
 
-	// tuple(round, remaining health) - round always ends on the incomplete number
-	return tuple(round - 1, combatants.alive.map!(c => c.health).sum);
+	// tuple(round, remaining health, number of elf deaths) - round always ends on the incomplete number
+	return tuple(round - 1, combatants.alive.map!(c => c.health).sum, combatants.elves.count!(c => c.health <= 0));
 }
 
 void main(string[] args)
 {
-	char[][] grid = readText(args[1]).splitLines.map!(s => s.dup).array;
-	auto result = playGame(grid);
+	immutable char[][] grid = readText(args[1]).splitLines;
+	auto result = playGame(grid.map!(s => s.dup).array);
 	writeln("Final score after ", result[0], " full turns: ", result[0] * result[1], " (remaining health ", result[1], "hp)");
-}
 
-// A* test
-unittest
-{
-	char[][] grid = ["####",
-	                 "#..#",
-	                 "#.##",
-	                 "#..#",
-	                 "##.#",
-	                 "#..#",
-	                 "####"].map!(s => s.dup).array;
-
-	auto expected = [Coord(2, 1), Coord(1, 1), Coord(1, 2), Coord(1, 3), Coord(2, 3), Coord(2, 4), Coord(2, 5), Coord(1, 5)];
-	auto got = AStar(grid, Coord(2, 1), Coord(1, 5));
-	assert(got == expected, "\nExpected: %s\nGot:      %s".format(expected, got));
-}
-
-// A* unreachable
-unittest
-{
-	char[][] grid = ["####",
-	                 "#..#",
-	                 "####",
-	                 "#..#",
-	                 "####"].map!(s => s.dup).array;
-
-	auto expected = [];
-	auto got = AStar(grid, Coord(1, 1), Coord(1, 3));
-	assert(got == expected, "\nExpected: %s\nGot:      %s".format(expected, got));
+	for (int i = 4; ; i++) {
+		result = playGame(grid.map!(s => s.dup).array, i);
+		if (result[2] == 0) {
+			writeln("Final score with no elf deaths: ", result[0] * result[1], " (with ", i, " attack)");
+			break;
+		}
+	}
 }
 
 // Test cases
@@ -244,7 +202,7 @@ unittest
 		"#.....#",
 		"#######",
 	].map!(s => s.dup).array;
-	auto expected = tuple(47, 590);
+	auto expected = tuple(47, 590, 2);
 	auto got = playGame(grid);
 	assert(got == expected, "Expected: %s, Got: %s".format(expected, got));
 }
@@ -260,7 +218,7 @@ unittest
 		"#...E.#",
 		"#######",
 	].map!(s => s.dup).array;
-	auto expected = tuple(37, 982);
+	auto expected = tuple(37, 982, 1);
 	auto got = playGame(grid);
 	assert(got == expected, "Expected: %s, Got: %s".format(expected, got));
 }
@@ -276,7 +234,7 @@ unittest
 		"#..E#.#",
 		"#######",
 	].map!(s => s.dup).array;
-	auto expected = tuple(46, 859);
+	auto expected = tuple(46, 859, 1);
 	auto got = playGame(grid);
 	assert(got == expected, "Expected: %s, Got: %s".format(expected, got));
 }
@@ -292,7 +250,7 @@ unittest
 		"#...E.#",
 		"#######",
 	].map!(s => s.dup).array;
-	auto expected = tuple(35, 793);
+	auto expected = tuple(35, 793, 2);
 	auto got = playGame(grid);
 	assert(got == expected, "Expected: %s, Got: %s".format(expected, got));
 }
@@ -308,7 +266,7 @@ unittest
 		"#...#G#",
 		"#######",
 	].map!(s => s.dup).array;
-	auto expected = tuple(54, 536);
+	auto expected = tuple(54, 536, 2);
 	auto got = playGame(grid);
 	assert(got == expected, "Expected: %s, Got: %s".format(expected, got));
 }
@@ -326,7 +284,7 @@ unittest
 		"#.....G.#",
 		"#########",
 	].map!(s => s.dup).array;
-	auto expected = tuple(20, 937);
+	auto expected = tuple(20, 937, 1);
 	auto got = playGame(grid);
 	assert(got == expected, "Expected: %s, Got: %s".format(expected, got));
 }
@@ -340,7 +298,7 @@ unittest
 		"#GG#",
 		"####",
 	].map!(s => s.dup).array;
-	auto expected = tuple(67, 200); // TODO: Verify
+	auto expected = tuple(67, 200, 1);
 	auto got = playGame(grid);
 	assert(got == expected, "Expected: %s, Got: %s".format(expected, got));
 }
@@ -356,7 +314,7 @@ unittest
 		"#.E##",
 		"#####",
 	].map!(s => s.dup).array;
-	auto expected = tuple(71, 197); // TODO: Verify
+	auto expected = tuple(71, 197, 2);
 	auto got = playGame(grid);
 	assert(got == expected, "Expected: %s, Got: %s".format(expected, got));
 }
@@ -370,7 +328,7 @@ unittest
 		"#G#####",
 		"#######",
 	].map!(s => s.dup).array;
-	auto expected = tuple(34, 301); // TODO: Verify
+	auto expected = tuple(34, 301, 1);
 	auto got = playGame(grid);
 	assert(got == expected, "Expected: %s, Got: %s".format(expected, got));
 }
