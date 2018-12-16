@@ -110,7 +110,7 @@ bool reading_order(Coord a, Coord b)
 	return a.y < b.y || (a.y == b.y && a.x < b.x);
 }
 
-Tuple!(int, int, ulong) playGame(char[][] grid, int elfAttackDamage = 3)
+Tuple!(int, int, ulong) playGame(char[][] grid, int elfAttackDamage = 3, bool allowElfDeath = true)
 {
 	Person[] combatants;
 
@@ -162,6 +162,9 @@ Tuple!(int, int, ulong) playGame(char[][] grid, int elfAttackDamage = 3)
 				target.front.health -= p.isElf ? elfAttackDamage : 3;
 				if (target.front.health <= 0) {
 					grid[target.front.pos.y][target.front.pos.x] = '.';
+					if (target.front.isElf && !allowElfDeath) {
+						break outer;
+					}
 				}
 			}
 		}
@@ -182,7 +185,7 @@ void main(string[] args)
 	writeln("Final score after ", result[0], " full turns: ", result[0] * result[1], " (remaining health ", result[1], "hp)");
 
 	for (int i = 4; ; i++) {
-		result = playGame(grid.map!(s => s.dup).array, i);
+		result = playGame(grid.map!(s => s.dup).array, i, false);
 		if (result[2] == 0) {
 			writeln("Final score with no elf deaths: ", result[0] * result[1], " (with ", i, " attack)");
 			break;
