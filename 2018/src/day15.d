@@ -31,9 +31,16 @@ auto adjacents(Coord a)
 }
 
 // Debugging
-void print_grid(char[][] grid)
+void print_grid(char[][] grid, Person[] combatants)
 {
-	grid.each!writeln;
+	foreach (j, r; grid) {
+		write(r);
+
+		foreach (c; combatants.sort!((p, q) => p.pos.x < q.pos.x).alive.filter!(c => c.pos.y == j)) {
+			write(' ', c.isElf ? 'E' : 'G', '(', c.health, ')');
+		}
+		writeln();
+	}
 }
 
 alias alive = filter!(c => c.health > 0);
@@ -173,10 +180,9 @@ Tuple!(int, int) playGame(char[][] grid)
 			}
 		}
 
-		//writeln("After round ", round);
-		//print_grid(grid);
-		//writeln(combatants);
-		//writeln();
+		writeln("After round ", round);
+		print_grid(grid, combatants);
+		writeln();
 	}
 
 	// tuple(round, remaining health) - round always ends on the incomplete number
