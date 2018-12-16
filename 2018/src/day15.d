@@ -1,10 +1,10 @@
-import std.algorithm;
-import std.stdio;
-import std.string;
-import std.file;
-import std.range;
-import std.typecons;
-import std.math;
+import std.algorithm : canFind, count, filter, joiner, map, minElement, minPos, remove, reverse, sort, sum;
+import std.file : readText;
+import std.math : abs;
+import std.range : array, back, empty, front;
+import std.stdio : write, writeln;
+import std.string : format, splitLines, strip;
+import std.typecons : tuple, Tuple;
 
 alias Coord = Tuple!(ulong, "x", ulong, "y");
 
@@ -25,9 +25,10 @@ bool is_adjacent(Coord a, Coord b)
 			|| a == tuple(b.x, b.y + 1) || a == tuple(b.x, b.y - 1);
 }
 
-auto adjacents(Coord a)
+auto blank_adjacents(char[][] grid, Coord a)
 {
-	return [Coord(a.x, a.y - 1), Coord(a.x - 1, a.y), Coord(a.x + 1, a.y), Coord(a.x, a.y + 1)];
+	return [Coord(a.x, a.y - 1), Coord(a.x - 1, a.y), Coord(a.x + 1, a.y), Coord(a.x, a.y + 1)]
+		.filter!(c => c.x < grid[0].length && c.y < grid.length && grid[c.y][c.x] == '.');
 }
 
 // Debugging
@@ -96,9 +97,8 @@ Coord[] AStar(char[][] grid, Coord start, Coord end)
 		toSearch = toSearch.remove!(a => a == current);
 		searched ~= current;
 
-		foreach (n; adjacents(current)) {
+		foreach (n; grid.blank_adjacents(current)) {
 			if (searched.canFind(n)) continue;
-			if (grid[n.y][n.x] != '.') continue; // Skip non free cells
 
 			ulong tentative = gScore[current] + 1; // always manhattan of 1
 			if (!toSearch.canFind(n)) {
@@ -149,21 +149,27 @@ Tuple!(int, int) playGame(char[][] grid)
 			auto adjacents = p.get_adjacent(combatants);
 			if (adjacents.count == 0) {
 				auto targets = combatants.alive.filter!(c => c.isElf != p.isElf).map!(c => c.pos);
-				auto target_squares = targets
-					// Underflow might happen here, but it gets caught by the next filter
-					.map!(c => c.adjacents)
-					.joiner
-					.filter!(c => c.x < grid[0].length && c.y < grid.length)
-					.filter!(c => grid[c.y][c.x] == '.');
-				auto closest_targets = target_squares
-					.map!(c => AStar(grid, p.pos, c))
-					.filter!(m => m.length != 0); // Filter out points that can't be reached
+				auto target_adjacents = targets.map!(c => grid.blank_adjacents(c)).joiner;
+				auto source_adjacents = grid.blank_adjacents(p.pos);
 
-				if (closest_targets.count > 0) {
-					// Choose shortest distance, or reading order
-					auto closest_target_moves = closest_targets.minElement!((m, n) => m.length < n.length || (m.length == n.length && reading_order(m.back, n.back)));
+				Coord[][] routes;
+				foreach (s; source_adjacents) {
+					foreach (t; target_adjacents) {
+						auto route = AStar(grid, s, t);
+						if (route.length != 0) {
+							routes ~= route;
+						}
+					}
+				}
 
-					auto next_position = closest_target_moves.dropOne.front; // Results include starting position
+				if (routes.count > 0) {
+					// Choose shortest distance, or reading order, or reading order of first move
+					alias nextMove = (m, n) => m.length < n.length
+						|| (m.length == n.length && reading_order(m.back, n.back)
+							|| (m.back == n.back && reading_order(m.front, n.front)));
+					auto closest_target_moves = routes.minElement!(nextMove);
+
+					auto next_position = closest_target_moves.front;
 					move_combatant(grid, p, next_position);
 				}
 			}
@@ -180,9 +186,9 @@ Tuple!(int, int) playGame(char[][] grid)
 			}
 		}
 
-		writeln("After round ", round);
-		print_grid(grid, combatants);
-		writeln();
+		//writeln("After round ", round);
+		//print_grid(grid, combatants);
+		//writeln();
 	}
 
 	// tuple(round, remaining health) - round always ends on the incomplete number
