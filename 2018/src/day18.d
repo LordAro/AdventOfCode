@@ -24,8 +24,8 @@ void main(string[] args)
 	char[][][] grids = [grid];
 
 	ulong cycle_idx = 0;
-	int s = 0;
-	for (; s < 1_000_000_000; s++) {
+	int s = 1;
+	for (; s <= 1000; s++) {
 		char[][] new_grid = new char[][](grid.length, grid[0].length);
 		for (ulong j = 0; j < grid.length; j++) {
 			for (ulong i = 0; i < grid[j].length; i++) {
@@ -46,6 +46,11 @@ void main(string[] args)
 			}
 		}
 
+		if (s == 10) {
+			auto trees = new_grid.joiner.count!(e => e == '|');
+			auto lumber = new_grid.joiner.count!(e => e == '#');
+			writeln("Resource value after ", s, " minutes: ", trees * lumber);
+		}
 		auto cycle = grids.find(new_grid);
 		if (!cycle.empty) {
 			cycle_idx = grids.length - cycle.length;
@@ -53,16 +58,10 @@ void main(string[] args)
 		}
 		grids ~= new_grid;
 		grid = new_grid;
-		if (s == 9) {
-			auto trees = grid.joiner.count!(e => e == '|');
-			auto lumber = grid.joiner.count!(e => e == '#');
-			writeln("Resource value: ", trees * lumber);
-		}
 	}
-	for (ulong g = cycle_idx; g < s; g++) {
-		writeln(g);
-	auto trees = grids[g].joiner.count!(e => e == '|');
-	auto lumber = grids[g].joiner.count!(e => e == '#');
-	writeln("Resource value: ", trees * lumber);
-	}
+	ulong factor = (1_000_000_000 - cycle_idx) % (grids.length - cycle_idx);
+	auto trees = grids[cycle_idx + factor].joiner.count!(e => e == '|');
+	auto lumber = grids[cycle_idx + factor].joiner.count!(e => e == '#');
+
+	writeln("Resource value after 1 billion minutes: ", trees * lumber);
 }
