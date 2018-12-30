@@ -1,5 +1,6 @@
 import std.algorithm;
 import std.conv;
+import std.container;
 import std.file;
 import std.stdio;
 import std.typecons;
@@ -26,7 +27,7 @@ RockType get_type(ulong c)
 	return cast(RockType)(c % 3);
 }
 
-ulong[Coord] erosion_cache;
+ulong[Coord] erosion_cache; // Global cache to save recomputing
 ulong erosion_level(ulong depth, Coord c, Coord target)
 {
 	if (c in erosion_cache) return erosion_cache[c];
@@ -85,60 +86,40 @@ string toString(CoordItem ci)
 	return "%d,%d %s".format(ci.c.x, ci.c.y, ci.item);
 }
 
-CoordItem[] AStar(CoordItem start, CoordItem end, ulong depth)
+ulong find_route_time(CoordItem start, CoordItem end, ulong depth)
 {
-	CoordItem[] searched;
-	CoordItem[] toSearch = [start];
+	ulong[CoordItem] searched;
 
-	CoordItem[CoordItem] cameFrom;
+	// Order by distance from source
+	bool search_ordering(Tuple!(CoordItem, ulong) a, Tuple!(CoordItem, ulong) b)
+	{
+		return a[1] == b[1] ? a[0] < b[0] : a[1] < b[1];
+	}
+	auto toSearch = new RedBlackTree!(Tuple!(CoordItem, ulong), search_ordering)(tuple(start, 0uL));
 
-	ulong[CoordItem] gScore;
-	gScore[start] = 0;
+	while (end !in searched) {
+		Tuple!(CoordItem, ulong) current_t = toSearch.front;
+		CoordItem current = current_t[0];
+		ulong cur_score = current_t[1];
+		toSearch.removeFront();
 
-	ulong[CoordItem] fScore;
-	fScore[start] = manhattan(start.c, end.c);
-
-	while(!toSearch.empty) {
-		CoordItem current = toSearch.minElement!(n => n in fScore ? fScore[n] : ulong.max);
-		if (current == end) {
-			//gScore.byKeyValue.each!(t => writeln("%s: %d".format(toString(t.key), t.value)));
-			// Reconstruct path
-			CoordItem[] total_path = [current];
-			while (current in cameFrom) {
-				current = cameFrom[current];
-				total_path ~= current;
-			}
-			return total_path.reverse;
-		}
-
-		toSearch = toSearch.remove!(a => a == current);
-		searched ~= current;
+		if (current in searched) continue; // Duplicate, but we've already processed a shorter route
+		searched[current] = cur_score;
 
 		auto neighbours = chain(
 			adjacent_coords(current.c).map!(c => CoordItem(c, current.item)),
 			[CoordItem(current.c, compatible_items(current.c, end.c, depth)
 				.filter!(i => i != current.item).front)]
 		);
-		//writeln(current.c.x, ",", current.c.y, " ", current.item);
-		//neighbours.each!(a => writeln(a.c.x, ",", a.c.y, " ", a.item));
-		//writeln();
 		foreach (n; neighbours) {
-			if (searched.canFind(n)) continue;
 			if (!compatible_items(n.c, end.c, depth).canFind(n.item)) continue;
 
-			ulong tentative = gScore[current] + (n.item != current.item ? 7 : 1);
-			if (!toSearch.canFind(n)) {
-				toSearch ~= n;
-			} else if (tentative >= (n in gScore ? gScore[n] : ulong.max)) {
-				continue;
+			if (n !in searched) {
+				toSearch.insert(tuple(n, cur_score + (n.item != current.item ? 7 : 1)));
 			}
-
-			cameFrom[n] = current;
-			gScore[n] = tentative;
-			fScore[n] = gScore[n] + manhattan(n.c, end.c) + 7;
 		}
 	}
-	assert(false); // Should always be a path
+	return searched[end];
 }
 
 void main(string[] args)
@@ -147,24 +128,11 @@ void main(string[] args)
 	ulong depth = input.front.split.back.to!ulong;
 	auto target_r = input.dropOne.front.split.back.split(",").map!(n => n.to!ulong);
 	Coord target = Coord(target_r[0], target_r[1]);
-	//ulong depth = 510;
-	//Coord target = Coord(10, 10);
 
-	erosion_cache.clear();
+	erosion_cache.clear(); // Unit tests retain state...
 	writeln("Risk level: ", risk_level(depth, Coord(0, 0), target));
 
-	auto route = AStar(CoordItem(Coord(0, 0), Item.Torch), CoordItem(target, Item.Torch), depth);
-	route.each!(a => writeln(a.c.x, ",", a.c.y, " ", a.item));
-	ulong route_time = 0;
-	Item cur_item = route.front.item;
-	foreach (c; route.dropOne) {
-		if (c.item != cur_item) {
-			route_time += 7;
-			cur_item = c.item;
-		} else {
-			route_time += 1;
-		}
-	}
+	auto route_time = find_route_time(CoordItem(Coord(0, 0), Item.Torch), CoordItem(target, Item.Torch), depth);
 	writeln("Route time: ", route_time);
 }
 
@@ -190,4 +158,9 @@ unittest
 unittest
 {
 	assert(risk_level(510, Coord(0, 0), Coord(10, 10)) == 114);
+}
+
+unittest
+{
+	assert(find_route_time(CoordItem(Coord(0, 0), Item.Torch, CoordItem(Coord(10, 10), Item.Torch), 510)) == 45);
 }
