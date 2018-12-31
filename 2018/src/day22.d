@@ -74,11 +74,6 @@ auto compatible_items(Coord a, Coord target, ulong depth)
 	}
 }
 
-ulong manhattan(Coord a, Coord b)
-{
-	return abs(cast(int)a.x - cast(int)b.x) + abs(cast(int)a.y - cast(int)b.y);
-}
-
 alias CoordItem = Tuple!(Coord, "c", Item, "item");
 
 string toString(CoordItem ci)
