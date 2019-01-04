@@ -1,10 +1,12 @@
-import std.algorithm : count, maxElement, min, max, each;
+import std.algorithm : count, maxElement, min, max, each, filter, map;
+import std.container : RedBlackTree;
 import std.math : abs;
 import std.stdio : writeln, readln;
 import std.file : readText;
 import std.string : splitLines;
-import std.typecons : Tuple;
+import std.typecons : Tuple, tuple;
 import std.format : formattedRead;
+import std.range : front, empty, dropOne;
 
 alias Coord = Tuple!(long, "x", long, "y", long, "z");
 alias Cube = Tuple!(Coord, Coord);
@@ -64,71 +66,96 @@ void main(string[] args)
 		cmax.z = max(b.z, cmax.z);
 	}
 
-	while (cmin != cmax) {
-		auto cpar = Coord(cmin.x + (cmax.x - cmin.x) / 2,
-		                  cmin.y + (cmax.y - cmin.y) / 2,
-		                  cmin.z + (cmax.z - cmin.z) / 2);
-		int[Cube] buckets;
-		if (cmin.x != cmax.x && cmin.y != cmax.y && cmin.z != cmax.z) {
-			buckets[Cube(Coord(cmin.x,     cmin.y,     cmin.z), Coord(cpar.x, cpar.y, cpar.z))] = 0;
-			buckets[Cube(Coord(cpar.x + 1, cmin.y,     cmin.z), Coord(cmax.x, cpar.y, cpar.z))] = 0;
-			buckets[Cube(Coord(cmin.x,     cpar.y + 1, cmin.z), Coord(cpar.x, cmax.y, cpar.z))] = 0;
-			buckets[Cube(Coord(cpar.x + 1, cpar.y + 1, cmin.z), Coord(cmax.x, cmax.y, cpar.z))] = 0;
+	long max_bots;
+	Coord max_position;
+	auto search_cubes = new RedBlackTree!(Tuple!(Cube, ulong), (a, b) => a[1] > b[1])(tuple(Cube(cmin, cmax), bots.length));
+	while (!search_cubes.empty) {
+		//foreach (s; search_cubes) {
+		//	writeln(s[0][0].x, ',', s[0][0].y, ',', s[0][0].z, " -> ", s[0][1].x, ',', s[0][1].y, ',', s[0][1].z, ": ", s[1]);
+		//}
+		auto cube = search_cubes.front;
+		search_cubes.removeFront();
+		cmin = cube[0][0];
+		cmax = cube[0][1];
+		ulong num_bots;
 
-			buckets[Cube(Coord(cmin.x,     cmin.y,     cpar.z + 1), Coord(cpar.x, cpar.y, cmax.z))] = 0;
-			buckets[Cube(Coord(cpar.x + 1, cmin.y,     cpar.z + 1), Coord(cmax.x, cpar.y, cmax.z))] = 0;
-			buckets[Cube(Coord(cmin.x,     cpar.y + 1, cpar.z + 1), Coord(cpar.x, cmax.y, cmax.z))] = 0;
-			buckets[Cube(Coord(cpar.x + 1, cpar.y + 1, cpar.z + 1), Coord(cmax.x, cmax.y, cmax.z))] = 0;
-		} else if (cmin.x != cmax.x && cmin.y != cmax.y) {
-			buckets[Cube(Coord(cmin.x,     cmin.y,     cmin.z), Coord(cpar.x, cpar.y, cmax.z))] = 0;
-			buckets[Cube(Coord(cpar.x + 1, cmin.y,     cmin.z), Coord(cmax.x, cpar.y, cmax.z))] = 0;
-			buckets[Cube(Coord(cmin.x,     cpar.y + 1, cmin.z), Coord(cpar.x, cmax.y, cmax.z))] = 0;
-			buckets[Cube(Coord(cpar.x + 1, cpar.y + 1, cmin.z), Coord(cmax.x, cmax.y, cmax.z))] = 0;
-		} else if (cmin.x != cmax.x && cmin.z != cmax.z) {
-			buckets[Cube(Coord(cmin.x,     cmin.y, cmin.z    ), Coord(cpar.x, cmax.y, cpar.z))] = 0;
-			buckets[Cube(Coord(cpar.x + 1, cmin.y, cmin.z    ), Coord(cmax.x, cmax.y, cpar.z))] = 0;
-			buckets[Cube(Coord(cmin.x,     cmin.y, cpar.z + 1), Coord(cpar.x, cmax.y, cmax.z))] = 0;
-			buckets[Cube(Coord(cpar.x + 1, cmin.y, cpar.z + 1), Coord(cmax.x, cmax.y, cmax.z))] = 0;
-		} else if (cmin.y != cmax.y && cmin.z != cmax.z) {
-			buckets[Cube(Coord(cmin.x, cmin.y,     cmin.z    ), Coord(cmax.x, cpar.y, cpar.z))] = 0;
-			buckets[Cube(Coord(cmin.x, cpar.y + 1, cmin.z    ), Coord(cmax.x, cmax.y, cpar.z))] = 0;
-			buckets[Cube(Coord(cmin.x, cmin.y,     cpar.z + 1), Coord(cmax.x, cpar.y, cmax.z))] = 0;
-			buckets[Cube(Coord(cmin.x, cpar.y + 1, cpar.z + 1), Coord(cmax.x, cmax.y, cmax.z))] = 0;
-		} else if (cmin.x != cmax.x) {
-			buckets[Cube(Coord(cmin.x,     cmin.y, cmin.z), Coord(cpar.x, cmax.y, cmax.z))] = 0;
-			buckets[Cube(Coord(cpar.x + 1, cmin.y, cmin.z), Coord(cmax.x, cmax.y, cmax.z))] = 0;
-		} else if (cmin.y != cmax.y) {
-			buckets[Cube(Coord(cmin.x, cmin.y,     cmin.z), Coord(cmax.x, cpar.y, cmax.z))] = 0;
-			buckets[Cube(Coord(cmin.x, cpar.y + 1, cmin.z), Coord(cmax.x, cmax.y, cmax.z))] = 0;
-		} else if (cmin.z != cmax.z) {
-			buckets[Cube(Coord(cmin.x, cmin.y, cmin.z    ), Coord(cmax.x, cmax.y, cpar.z))] = 0;
-			buckets[Cube(Coord(cmin.x, cmin.y, cpar.z + 1), Coord(cmax.x, cmax.y, cmax.z))] = 0;
-		}
+		while (cmin != cmax) {
+			auto cpar = Coord(cmin.x + (cmax.x - cmin.x) / 2,
+							  cmin.y + (cmax.y - cmin.y) / 2,
+							  cmin.z + (cmax.z - cmin.z) / 2);
+			ulong[Cube] buckets;
+			if (cmin.x != cmax.x && cmin.y != cmax.y && cmin.z != cmax.z) {
+				buckets[Cube(Coord(cmin.x,     cmin.y,     cmin.z), Coord(cpar.x, cpar.y, cpar.z))] = 0;
+				buckets[Cube(Coord(cpar.x + 1, cmin.y,     cmin.z), Coord(cmax.x, cpar.y, cpar.z))] = 0;
+				buckets[Cube(Coord(cmin.x,     cpar.y + 1, cmin.z), Coord(cpar.x, cmax.y, cpar.z))] = 0;
+				buckets[Cube(Coord(cpar.x + 1, cpar.y + 1, cmin.z), Coord(cmax.x, cmax.y, cpar.z))] = 0;
 
-		//int[Cube] buckets = [
-		//	Cube(Coord(cmin.x, cmin.y, cmin.z), Coord(cpar.x, cpar.y, cpar.z)): 0,
-		//	Cube(Coord(cpar.x, cmin.y, cmin.z), Coord(cmax.x, cpar.y, cpar.z)): 0,
-		//	Cube(Coord(cmin.x, cpar.y, cmin.z), Coord(cpar.x, cmax.y, cpar.z)): 0,
-		//	Cube(Coord(cpar.x, cpar.y, cmin.z), Coord(cmax.x, cmax.y, cpar.z)): 0,
-
-		//	Cube(Coord(cmin.x, cmin.y, cpar.z), Coord(cpar.x, cpar.y, cmax.z)): 0,
-		//	Cube(Coord(cpar.x, cmin.y, cpar.z), Coord(cmax.x, cpar.y, cmax.z)): 0,
-		//	Cube(Coord(cmin.x, cpar.y, cpar.z), Coord(cpar.x, cmax.y, cmax.z)): 0,
-		//	Cube(Coord(cpar.x, cpar.y, cpar.z), Coord(cmax.x, cmax.y, cmax.z)): 0,
-		//];
-
-		foreach (b; bots) {
-			foreach (s; buckets.byKey) {
-				if (cube_intersects_sphere(s[0], s[1], b)) buckets[s]++;
+				buckets[Cube(Coord(cmin.x,     cmin.y,     cpar.z + 1), Coord(cpar.x, cpar.y, cmax.z))] = 0;
+				buckets[Cube(Coord(cpar.x + 1, cmin.y,     cpar.z + 1), Coord(cmax.x, cpar.y, cmax.z))] = 0;
+				buckets[Cube(Coord(cmin.x,     cpar.y + 1, cpar.z + 1), Coord(cpar.x, cmax.y, cmax.z))] = 0;
+				buckets[Cube(Coord(cpar.x + 1, cpar.y + 1, cpar.z + 1), Coord(cmax.x, cmax.y, cmax.z))] = 0;
+			} else if (cmin.x != cmax.x && cmin.y != cmax.y) {
+				buckets[Cube(Coord(cmin.x,     cmin.y,     cmin.z), Coord(cpar.x, cpar.y, cmax.z))] = 0;
+				buckets[Cube(Coord(cpar.x + 1, cmin.y,     cmin.z), Coord(cmax.x, cpar.y, cmax.z))] = 0;
+				buckets[Cube(Coord(cmin.x,     cpar.y + 1, cmin.z), Coord(cpar.x, cmax.y, cmax.z))] = 0;
+				buckets[Cube(Coord(cpar.x + 1, cpar.y + 1, cmin.z), Coord(cmax.x, cmax.y, cmax.z))] = 0;
+			} else if (cmin.x != cmax.x && cmin.z != cmax.z) {
+				buckets[Cube(Coord(cmin.x,     cmin.y, cmin.z    ), Coord(cpar.x, cmax.y, cpar.z))] = 0;
+				buckets[Cube(Coord(cpar.x + 1, cmin.y, cmin.z    ), Coord(cmax.x, cmax.y, cpar.z))] = 0;
+				buckets[Cube(Coord(cmin.x,     cmin.y, cpar.z + 1), Coord(cpar.x, cmax.y, cmax.z))] = 0;
+				buckets[Cube(Coord(cpar.x + 1, cmin.y, cpar.z + 1), Coord(cmax.x, cmax.y, cmax.z))] = 0;
+			} else if (cmin.y != cmax.y && cmin.z != cmax.z) {
+				buckets[Cube(Coord(cmin.x, cmin.y,     cmin.z    ), Coord(cmax.x, cpar.y, cpar.z))] = 0;
+				buckets[Cube(Coord(cmin.x, cpar.y + 1, cmin.z    ), Coord(cmax.x, cmax.y, cpar.z))] = 0;
+				buckets[Cube(Coord(cmin.x, cmin.y,     cpar.z + 1), Coord(cmax.x, cpar.y, cmax.z))] = 0;
+				buckets[Cube(Coord(cmin.x, cpar.y + 1, cpar.z + 1), Coord(cmax.x, cmax.y, cmax.z))] = 0;
+			} else if (cmin.x != cmax.x) {
+				buckets[Cube(Coord(cmin.x,     cmin.y, cmin.z), Coord(cpar.x, cmax.y, cmax.z))] = 0;
+				buckets[Cube(Coord(cpar.x + 1, cmin.y, cmin.z), Coord(cmax.x, cmax.y, cmax.z))] = 0;
+			} else if (cmin.y != cmax.y) {
+				buckets[Cube(Coord(cmin.x, cmin.y,     cmin.z), Coord(cmax.x, cpar.y, cmax.z))] = 0;
+				buckets[Cube(Coord(cmin.x, cpar.y + 1, cmin.z), Coord(cmax.x, cmax.y, cmax.z))] = 0;
+			} else if (cmin.z != cmax.z) {
+				buckets[Cube(Coord(cmin.x, cmin.y, cmin.z    ), Coord(cmax.x, cmax.y, cpar.z))] = 0;
+				buckets[Cube(Coord(cmin.x, cmin.y, cpar.z + 1), Coord(cmax.x, cmax.y, cmax.z))] = 0;
 			}
+
+			//int[Cube] buckets = [
+			//	Cube(Coord(cmin.x, cmin.y, cmin.z), Coord(cpar.x, cpar.y, cpar.z)): 0,
+			//	Cube(Coord(cpar.x, cmin.y, cmin.z), Coord(cmax.x, cpar.y, cpar.z)): 0,
+			//	Cube(Coord(cmin.x, cpar.y, cmin.z), Coord(cpar.x, cmax.y, cpar.z)): 0,
+			//	Cube(Coord(cpar.x, cpar.y, cmin.z), Coord(cmax.x, cmax.y, cpar.z)): 0,
+
+			//	Cube(Coord(cmin.x, cmin.y, cpar.z), Coord(cpar.x, cpar.y, cmax.z)): 0,
+			//	Cube(Coord(cpar.x, cmin.y, cpar.z), Coord(cmax.x, cpar.y, cmax.z)): 0,
+			//	Cube(Coord(cmin.x, cpar.y, cpar.z), Coord(cpar.x, cmax.y, cmax.z)): 0,
+			//	Cube(Coord(cpar.x, cpar.y, cpar.z), Coord(cmax.x, cmax.y, cmax.z)): 0,
+			//];
+
+			foreach (b; bots) {
+				foreach (s; buckets.byKey) {
+					if (cube_intersects_sphere(s[0], s[1], b)) buckets[s]++;
+				}
+			}
+			//foreach (s; buckets.byKey) {
+			//	writeln(s[0].x, ',', s[0].y, ',', s[0].z, " -> ", s[1].x, ',', s[1].y, ',', s[1].z, ": ", buckets[s]);
+			//}
+			auto max_val = buckets.byKeyValue.maxElement!(b => b.value).value;
+			if (max_val < max_bots) break; // Fewer bots in this region than our current best point, abort
+			auto next_key = buckets.byKeyValue
+				.filter!(b => b.value == max_val)
+				.map!(b => b.key).front;
+			buckets.byKeyValue.filter!(b => b.key != next_key).each!(b => search_cubes.insert(tuple(b.key, max_val)));
+			cmin = next_key[0];
+			cmax = next_key[1];
+			num_bots = max_val;
 		}
-		foreach (s; buckets.byKey) {
-			writeln(s[0].x, ',', s[0].y, ',', s[0].z, " -> ", s[1].x, ',', s[1].y, ',', s[1].z, ": ", buckets[s]);
+	//	writeln(cmin.x, ',', cmin.y, ',', cmin.z, ": ", num_bots);
+		if (num_bots > max_bots) {
+			max_bots = num_bots;
+			max_position = cmin;
+			auto manhattan_dist = manhattan(Coord(0, 0, 0), max_position);
+			writeln(cmin.x, ',', cmin.y, ',', cmin.z, ": ", max_bots, ',', manhattan_dist);
 		}
-		auto max_key = buckets.byKeyValue.maxElement!(b => b.value).key;
-		cmin = max_key[0];
-		cmax = max_key[1];
-		writeln(manhattan(Coord(0, 0, 0), cmin));
-		in_range = bots.count!(a => manhattan(a, most_powerful) <= most_powerful.r);
 	}
 }
