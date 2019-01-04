@@ -19,26 +19,23 @@ long manhattan(T, S)(T a, S b)
 
 bool cube_intersects_sphere(Coord c1, Coord c2, Nanobot b)
 {
-	if (c1.x <= b.x && b.x <= c2.x && c1.y <= b.y && b.y <= c2.y && c1.z <= b.z && b.z <= c2.z) {
-		return true;
-	} else if (c1.x <= b.x && b.x <= c2.x && c1.y <= b.y && b.y <= c2.y) {
-		return (c1.z - b.r) <= b.z && b.z <= (c2.z + b.r);
-	} else if (c1.x <= b.x && b.x <= c2.x && c1.z <= b.z && b.z <= c2.z) {
-		return (c1.y - b.r) <= b.y && b.y <= (c2.y + b.r);
-	} else if (c1.y <= b.y && b.y <= c2.y && c1.z <= b.z && b.z <= c2.z) {
-		return (c1.x - b.r) <= b.x && b.x <= (c2.x + b.r);
-	} else {
-		foreach (xp; [c1.x, c2.x]) {
-			foreach (yp; [c1.y, c2.y]) {
-				foreach (zp; [c1.z, c2.z]) {
-					if (manhattan(Coord(xp, yp, zp), b) <= b.r) {
-						return true;
-					}
-				}
-			}
-		}
+	long cost = 0;
+	if (b.x > c2.x) {
+		cost += b.x - c2.x;
+	} else if (b.x < c1.x) {
+		cost += c1.x - b.x;
 	}
-	return false;
+	if (b.y > c2.y) {
+		cost += b.y - c2.y;
+	} else if (b.y < c1.y) {
+		cost += c1.y - b.y;
+	}
+	if (b.z > c2.z) {
+		cost += b.z - c2.z;
+	} else if (b.z < c1.z) {
+		cost += c1.z - b.z;
+	}
+	return cost <= b.r;
 }
 
 void main(string[] args)
