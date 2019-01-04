@@ -28,9 +28,9 @@ bool cube_intersects_sphere(Coord c1, Coord c2, Nanobot b)
 	} else if (c1.y <= b.y && b.y <= c2.y && c1.z <= b.z && b.z <= c2.z) {
 		return (c1.x - b.r) <= b.x && b.x <= (c2.x + b.r);
 	} else {
-		foreach (xp; [c1.x, c2.x-1]) {
-			foreach (yp; [c1.y, c2.y-1]) {
-				foreach (zp; [c1.z, c2.z-1]) {
+		foreach (xp; [c1.x, c2.x]) {
+			foreach (yp; [c1.y, c2.y]) {
+				foreach (zp; [c1.z, c2.z]) {
 					if (manhattan(Coord(xp, yp, zp), b) <= b.r) {
 						return true;
 					}
@@ -70,16 +70,12 @@ void main(string[] args)
 	Coord max_position;
 	auto search_cubes = new RedBlackTree!(Tuple!(Cube, ulong), (a, b) => a[1] > b[1])(tuple(Cube(cmin, cmax), bots.length));
 	while (!search_cubes.empty) {
-		//foreach (s; search_cubes) {
-		//	writeln(s[0][0].x, ',', s[0][0].y, ',', s[0][0].z, " -> ", s[0][1].x, ',', s[0][1].y, ',', s[0][1].z, ": ", s[1]);
-		//}
 		auto cube = search_cubes.front;
 		search_cubes.removeFront();
 		cmin = cube[0][0];
 		cmax = cube[0][1];
-		ulong num_bots;
 
-		while (cmin != cmax) {
+		if (cmin != cmax) {
 			auto cpar = Coord(cmin.x + (cmax.x - cmin.x) / 2,
 							  cmin.y + (cmax.y - cmin.y) / 2,
 							  cmin.z + (cmax.z - cmin.z) / 2);
@@ -120,18 +116,6 @@ void main(string[] args)
 				buckets[Cube(Coord(cmin.x, cmin.y, cpar.z + 1), Coord(cmax.x, cmax.y, cmax.z))] = 0;
 			}
 
-			//int[Cube] buckets = [
-			//	Cube(Coord(cmin.x, cmin.y, cmin.z), Coord(cpar.x, cpar.y, cpar.z)): 0,
-			//	Cube(Coord(cpar.x, cmin.y, cmin.z), Coord(cmax.x, cpar.y, cpar.z)): 0,
-			//	Cube(Coord(cmin.x, cpar.y, cmin.z), Coord(cpar.x, cmax.y, cpar.z)): 0,
-			//	Cube(Coord(cpar.x, cpar.y, cmin.z), Coord(cmax.x, cmax.y, cpar.z)): 0,
-
-			//	Cube(Coord(cmin.x, cmin.y, cpar.z), Coord(cpar.x, cpar.y, cmax.z)): 0,
-			//	Cube(Coord(cpar.x, cmin.y, cpar.z), Coord(cmax.x, cpar.y, cmax.z)): 0,
-			//	Cube(Coord(cmin.x, cpar.y, cpar.z), Coord(cpar.x, cmax.y, cmax.z)): 0,
-			//	Cube(Coord(cpar.x, cpar.y, cpar.z), Coord(cmax.x, cmax.y, cmax.z)): 0,
-			//];
-
 			foreach (b; bots) {
 				foreach (s; buckets.byKey) {
 					if (cube_intersects_sphere(s[0], s[1], b)) buckets[s]++;
@@ -140,22 +124,16 @@ void main(string[] args)
 			//foreach (s; buckets.byKey) {
 			//	writeln(s[0].x, ',', s[0].y, ',', s[0].z, " -> ", s[1].x, ',', s[1].y, ',', s[1].z, ": ", buckets[s]);
 			//}
-			auto max_val = buckets.byKeyValue.maxElement!(b => b.value).value;
-			if (max_val < max_bots) break; // Fewer bots in this region than our current best point, abort
-			auto next_key = buckets.byKeyValue
-				.filter!(b => b.value == max_val)
-				.map!(b => b.key).front;
-			buckets.byKeyValue.filter!(b => b.key != next_key).each!(b => search_cubes.insert(tuple(b.key, max_val)));
-			cmin = next_key[0];
-			cmax = next_key[1];
-			num_bots = max_val;
-		}
-	//	writeln(cmin.x, ',', cmin.y, ',', cmin.z, ": ", num_bots);
-		if (num_bots > max_bots) {
-			max_bots = num_bots;
-			max_position = cmin;
-			auto manhattan_dist = manhattan(Coord(0, 0, 0), max_position);
-			writeln(cmin.x, ',', cmin.y, ',', cmin.z, ": ", max_bots, ',', manhattan_dist);
+			buckets.byKeyValue.each!(b => search_cubes.insert(tuple(b.key, b.value)));
+		} else {
+			ulong num_bots = cube[1];
+			writeln(cmin.x, ',', cmin.y, ',', cmin.z, ": ", num_bots);
+			if (num_bots > max_bots) {
+				max_bots = num_bots;
+				max_position = cmin;
+				auto manhattan_dist = manhattan(Coord(0, 0, 0), max_position);
+				writeln(cmin.x, ',', cmin.y, ',', cmin.z, ": ", max_bots, ',', manhattan_dist);
+			}
 		}
 	}
 }
