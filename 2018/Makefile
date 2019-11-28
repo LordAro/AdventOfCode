@@ -1,8 +1,11 @@
-DC?=ldmd2
+#DC?=ldmd2
+DC=gdc
 ifdef DEBUG
-DFLAGS=-w -de -debug -g -unittest
+#DFLAGS=-w -de -debug -g -unittest
+DFLAGS=-Wall -Wdeprecated -funittest
 else
-DFLAGS=-w -de -O -release -inline
+DFLAGS=-Wall -Wdeprecated -O3 -frelease -fno-debug
+#DFLAGS=-w -de -O -frelease -Winline
 endif
 PERF_COUNT?=1000
 
@@ -15,7 +18,7 @@ perfd: $(addprefix perf,$(CUR_SLNS))
 .PRECIOUS: builds/day%
 builds/day%: src/day%.d Makefile
 	@echo -e '\x1b[1;34mCompiling day $* solution\x1b[0m'
-	$(DC) -of$@ $(DFLAGS) $(FLAGS_DAY_$@) $<
+	$(DC) -o$@ $(DFLAGS) $(FLAGS_DAY_$@) $<
 
 %: builds/day%
 	@echo -e '\x1b[1;32mRunning day $* solution\x1b[0m'
