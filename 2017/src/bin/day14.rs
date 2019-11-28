@@ -1,6 +1,6 @@
-use std::fs::File;
 use std::env;
-use std::io::{BufReader, BufRead};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 fn knot_hash(input: &[u8]) -> Vec<u8> {
     let mut rope: Vec<usize> = (0..256).collect();
@@ -11,7 +11,8 @@ fn knot_hash(input: &[u8]) -> Vec<u8> {
 
     for r in 0..64 {
         for (skip, &ins) in input2.iter().enumerate() {
-            let subrope: Vec<_> = rope.iter()
+            let subrope: Vec<_> = rope
+                .iter()
                 .cycle()
                 .skip(pos)
                 .take(ins as usize)
@@ -25,7 +26,8 @@ fn knot_hash(input: &[u8]) -> Vec<u8> {
             pos = (pos + ins as usize + skip + (r * input2.len())) % 256;
         }
     }
-    return rope.chunks(16)
+    return rope
+        .chunks(16)
         .map(|c| c.iter().fold(0, |a, b| a ^ b))
         .map(|c| c as u8)
         .collect();
@@ -81,7 +83,8 @@ fn main() {
         })
         .collect();
 
-    let used_squares: usize = grid.iter()
+    let used_squares: usize = grid
+        .iter()
         .map(|s| s.iter().filter(|&&c| c == 1).count())
         .sum();
     println!("Used squares: {:?}", used_squares);

@@ -1,9 +1,9 @@
 extern crate itertools;
 
-use std::fs::File;
-use std::env;
-use std::io::{BufReader, BufRead};
 use itertools::iterate;
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 fn main() {
     if env::args().len() != 2 {

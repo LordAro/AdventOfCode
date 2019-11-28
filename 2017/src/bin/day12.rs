@@ -1,7 +1,7 @@
-use std::fs::File;
+use std::collections::{HashMap, HashSet};
 use std::env;
-use std::io::{BufReader, BufRead};
-use std::collections::{HashSet, HashMap};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 fn get_linked(data: &Vec<Vec<usize>>, idx: usize, linked: &mut HashSet<usize>) {
     if !linked.insert(idx) {

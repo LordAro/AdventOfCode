@@ -1,10 +1,10 @@
 extern crate regex;
 
-use std::fs::File;
-use std::env;
-use std::io::prelude::*;
-use std::collections::HashMap;
 use regex::Regex;
+use std::collections::HashMap;
+use std::env;
+use std::fs::File;
+use std::io::prelude::*;
 
 fn main() {
     if env::args().len() != 2 {
@@ -28,7 +28,8 @@ fn main() {
     - Write the value ([01]).
     - Move one slot to the (\w+).
     - Continue with state ([A-Z]).",
-    ).unwrap();
+    )
+    .unwrap();
 
     let mut state = start_re
         .captures(&input)

@@ -1,10 +1,10 @@
 #[macro_use]
 extern crate itertools;
 
-use std::fs::File;
-use std::env;
-use std::io::{BufReader, BufRead};
 use itertools::Itertools;
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 type Pattern = Vec<Vec<char>>;
 
@@ -60,13 +60,12 @@ fn variants(input: &Pattern) -> Vec<Pattern> {
         rot3_ccw(&input)
     };
     let rots = [base, rot90, rot180, rot270];
-    rots.into_iter()
-        .map(|&ref r| {
-            vec![r.clone(), flip_h(r), flip_v(&r), flip_v(&flip_h(&r))]
-        })
-        .flatten()
-        .unique()
-        .collect()
+    itertools::Itertools::flatten(
+        rots.into_iter()
+            .map(|&ref r| vec![r.clone(), flip_h(r), flip_v(&r), flip_v(&flip_h(&r))]),
+    )
+    .unique()
+    .collect()
 }
 
 fn main() {
@@ -102,12 +101,11 @@ fn main() {
         };
         for i in 0..len {
             for j in 0..len {
-                let subgrid: Pattern = grid.iter()
+                let subgrid: Pattern = grid
+                    .iter()
                     .skip(i * g_size)
                     .take(g_size)
-                    .map(|v| {
-                        v.iter().skip(j * g_size).take(g_size).cloned().collect()
-                    })
+                    .map(|v| v.iter().skip(j * g_size).take(g_size).cloned().collect())
                     .collect();
 
                 // find matching pattern

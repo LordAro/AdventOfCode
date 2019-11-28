@@ -1,7 +1,7 @@
-use std::fs::File;
 use std::cmp;
 use std::env;
-use std::io::{BufReader, BufRead};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 #[derive(Debug)]
 struct Point {

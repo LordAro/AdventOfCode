@@ -1,9 +1,9 @@
 extern crate itertools;
 
-use std::fs::File;
-use std::env;
-use std::io::{BufReader, BufRead};
 use itertools::Itertools;
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 fn main() {
     if env::args().len() != 2 {
@@ -11,9 +11,7 @@ fn main() {
     }
     let input: Vec<Vec<_>> = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
         .lines()
-        .map(|l| {
-            l.unwrap().split_whitespace().map(String::from).collect()
-        })
+        .map(|l| l.unwrap().split_whitespace().map(String::from).collect())
         .collect();
 
     let valid1: usize = input
