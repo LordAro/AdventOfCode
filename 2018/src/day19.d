@@ -130,7 +130,8 @@ void main(string[] args)
 	auto input = File(args[1]).byLine;
 	Instruction[] program;
 	int ins_reg;
-	input.takeOne.front.formattedRead("#ip %d", &ins_reg);
+	string first_line = input.takeOne.front.dup;
+	first_line.formattedRead("#ip %d", &ins_reg);
 	foreach (line; input.dropOne) {
 		Instruction i;
 		line.formattedRead("%s %d %d %d", &i.opcode, &i.a, &i.b, &i.c);

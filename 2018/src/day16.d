@@ -153,9 +153,11 @@ void main(string[] args)
 		int a, b, c, d;
 		line.formattedRead("Before: [%d, %d, %d, %d]", &a, &b, &c, &d);
 		int[4] before = [a, b, c, d];
-		input.readln().strip().formattedRead("%d %d %d %d", &a, &b, &c, &d);
+		string ins_str = input.readln().strip();
+		ins_str.formattedRead("%d %d %d %d", &a, &b, &c, &d);
 		int[4] ins = [a, b, c, d];
-		input.readln().strip().formattedRead("After:  [%d, %d, %d, %d]", &a, &b, &c, &d);
+		string after_str = input.readln().strip();
+		after_str.formattedRead("After:  [%d, %d, %d, %d]", &a, &b, &c, &d);
 		int[4] after = [a, b, c, d];
 		mappings ~= tuple(ins, before, after);
 		input.readln();
@@ -193,7 +195,7 @@ void main(string[] args)
 
 	Ins[int] actual_ins;
 	possible_ins = possible_ins.byKeyValue.map!(kv => tuple(kv.key, kv.value.sort.uniq.array)).assocArray;
-	while (!possible_ins.empty) {
+	while (possible_ins.length != 0) {
 		auto next = possible_ins.byKeyValue.find!(l => l.value.length == 1);
 		if (next.empty) {
 			writeln("Error, no remaining options");

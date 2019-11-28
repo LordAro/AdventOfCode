@@ -81,16 +81,17 @@ string toString(CoordItem ci)
 	return "%d,%d %s".format(ci.c.x, ci.c.y, ci.item);
 }
 
+// Order by distance from source
+bool search_ordering(Tuple!(CoordItem, ulong) a, Tuple!(CoordItem, ulong) b)
+{
+	return a[1] == b[1] ? a[0] < b[0] : a[1] < b[1];
+}
+
 ulong find_route_time(CoordItem start, CoordItem end, ulong depth)
 {
 	ulong[CoordItem] searched;
 
-	// Order by distance from source
-	bool search_ordering(Tuple!(CoordItem, ulong) a, Tuple!(CoordItem, ulong) b)
-	{
-		return a[1] == b[1] ? a[0] < b[0] : a[1] < b[1];
-	}
-	auto toSearch = new RedBlackTree!(Tuple!(CoordItem, ulong), search_ordering)(tuple(start, 0uL));
+	auto toSearch = redBlackTree!search_ordering(tuple(start, 0uL));
 
 	while (end !in searched) {
 		Tuple!(CoordItem, ulong) current_t = toSearch.front;
