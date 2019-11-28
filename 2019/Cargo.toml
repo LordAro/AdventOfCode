@@ -1,0 +1,9 @@
+[package]
+name = "AdventofCode"
+version = "2019.0.0"
+authors = ["Charles Pigott <charlespigott@googlemail.com>"]
+
+[dependencies]
+itertools = "^0.7"
+regex = "^0.2"
+time = "^0.1"
