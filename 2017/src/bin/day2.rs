@@ -1,9 +1,9 @@
 extern crate itertools;
 
-use std::fs::File;
-use std::env;
-use std::io::{BufReader, BufRead};
 use itertools::Itertools;
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 fn main() {
     if env::args().len() != 2 {
@@ -21,9 +21,7 @@ fn main() {
 
     let sum1: i32 = input
         .iter()
-        .map(|l| {
-            l.iter().minmax().into_option().map(|t| t.1 - t.0).unwrap()
-        })
+        .map(|l| l.iter().minmax().into_option().map(|t| t.1 - t.0).unwrap())
         .sum();
     println!("Checksum: {}", sum1);
 

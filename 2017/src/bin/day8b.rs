@@ -3,7 +3,7 @@ extern crate time;
 use std::cmp;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufReader, BufRead};
+use std::io::{BufRead, BufReader};
 use time::Duration;
 
 fn read_input(input_file: &str) -> Vec<Vec<String>> {
@@ -32,11 +32,12 @@ fn process(input: Vec<Vec<String>>) -> (i32, i32) {
         let cond_r: i32 = v.get(6).unwrap().parse().unwrap();
 
         let cond_val = *map.entry(cond_reg).or_insert(0);
-        let cond = cond_op == "==" && cond_val == cond_r || cond_op == "!=" && cond_val != cond_r ||
-            cond_op == ">" && cond_val > cond_r ||
-            cond_op == "<" && cond_val < cond_r ||
-            cond_op == ">=" && cond_val >= cond_r ||
-            cond_op == "<=" && cond_val <= cond_r;
+        let cond = cond_op == "==" && cond_val == cond_r
+            || cond_op == "!=" && cond_val != cond_r
+            || cond_op == ">" && cond_val > cond_r
+            || cond_op == "<" && cond_val < cond_r
+            || cond_op == ">=" && cond_val >= cond_r
+            || cond_op == "<=" && cond_val <= cond_r;
         if cond {
             *map.entry(reg).or_insert(0) += chg_amt * change_dir;
             abs_largest = cmp::max(*map.get(reg).unwrap(), abs_largest);

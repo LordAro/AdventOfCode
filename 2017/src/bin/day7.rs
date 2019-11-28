@@ -1,16 +1,16 @@
 extern crate itertools;
 
-use std::fs::File;
-use std::env;
-use std::io::{BufReader, BufRead};
-use std::collections::HashMap;
 use itertools::Itertools;
+use std::collections::HashMap;
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 fn get_total_weight(map: &HashMap<String, (i32, Vec<String>)>, item: &str) -> i32 {
     match map.get(item) {
         Some(&(weight, ref children)) => {
-            return weight +
-                children
+            return weight
+                + children
                     .iter()
                     .map(|i| get_total_weight(map, i))
                     .sum::<i32>()
@@ -42,7 +42,8 @@ fn main() {
     for v in splitted.iter() {
         let mut it = v[0].split_whitespace();
         let key = it.next().unwrap();
-        let weight: i32 = it.next()
+        let weight: i32 = it
+            .next()
             .unwrap()
             .chars()
             .skip(1)
@@ -51,14 +52,17 @@ fn main() {
             .parse()
             .unwrap();
         // Ew
-        map.insert(key.to_string(), (
-            weight,
-            if v.len() == 2 {
-                v[1].split(", ").map(|s| s.to_string()).collect()
-            } else {
-                Vec::new()
-            },
-        ));
+        map.insert(
+            key.to_string(),
+            (
+                weight,
+                if v.len() == 2 {
+                    v[1].split(", ").map(|s| s.to_string()).collect()
+                } else {
+                    Vec::new()
+                },
+            ),
+        );
     }
 
     let mut root = "";
@@ -103,7 +107,8 @@ fn main() {
     let base_node_weight = &map.get(&node).unwrap().0;
     let node_weight = get_total_weight(&map, &node);
     // find parent
-    let p_node = map.iter()
+    let p_node = map
+        .iter()
         .filter(|&(_, v)| v.1.iter().find(|s| s.as_str() == node) != None)
         .next()
         .unwrap()

@@ -1,6 +1,6 @@
-use std::fs::File;
 use std::env;
-use std::io::{BufReader, BufRead};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 fn main() {
     if env::args().len() != 2 {

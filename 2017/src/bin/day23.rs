@@ -1,7 +1,7 @@
-use std::fs::File;
-use std::env;
-use std::io::{BufReader, BufRead};
 use std::collections::HashMap;
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 struct Machine<'a> {
     pc: i64,
@@ -19,9 +19,8 @@ impl<'a> Machine<'a> {
     }
 
     fn get_val(&mut self, val: &str) -> i64 {
-        val.parse().unwrap_or(*self.regs
-            .entry(val.chars().next().unwrap())
-            .or_insert(0))
+        val.parse()
+            .unwrap_or(*self.regs.entry(val.chars().next().unwrap()).or_insert(0))
     }
 
     fn get_val_c(&mut self, val: char) -> i64 {
@@ -67,25 +66,26 @@ fn main() {
         panic!("Incorrect number of arguments provided\n");
     }
 
-    let input: Vec<(String, char, String)> = BufReader::new(
-        File::open(&env::args().nth(1).unwrap()).unwrap(),
-    ).lines()
-        .map(|l| {
-            let v: Vec<_> = l.unwrap()
-                .split_whitespace()
-                .map(|s| s.to_string())
-                .collect();
-            (
-                v[0].clone(),
-                v[1].chars().next().unwrap(),
-                if v.len() == 3 {
-                    v[2].clone()
-                } else {
-                    "".to_string()
-                },
-            )
-        })
-        .collect();
+    let input: Vec<(String, char, String)> =
+        BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+            .lines()
+            .map(|l| {
+                let v: Vec<_> = l
+                    .unwrap()
+                    .split_whitespace()
+                    .map(|s| s.to_string())
+                    .collect();
+                (
+                    v[0].clone(),
+                    v[1].chars().next().unwrap(),
+                    if v.len() == 3 {
+                        v[2].clone()
+                    } else {
+                        "".to_string()
+                    },
+                )
+            })
+            .collect();
 
     let mut machine1 = Machine::new(&input);
     let mul_count = machine1.run();

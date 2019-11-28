@@ -1,7 +1,7 @@
-use std::fs::File;
-use std::env;
-use std::io::{BufReader, BufRead};
 use std::collections::HashMap;
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 // rotate right
 fn spin_transform<T: Clone>(input: &Vec<T>, idx: usize) -> Vec<T> {
@@ -21,40 +21,40 @@ fn main() {
 
     let mut programs: Vec<_> = "abcdefghijklmnop".chars().collect();
 
-    let input: Vec<(char, u8, u8)> = BufReader::new(
-        File::open(&env::args().nth(1).unwrap()).unwrap(),
-    ).lines()
-        .next()
-        .unwrap()
-        .unwrap()
-        .split(',')
-        .map(|ins| {
-            // initial parse
-            let mut ins_it = ins.chars();
-            let cmd = ins_it.next().unwrap();
-            let op1;
-            let op2;
-            match cmd {
-                's' => {
-                    op1 = ins_it.collect::<String>().parse().unwrap();
-                    op2 = 0;
+    let input: Vec<(char, u8, u8)> =
+        BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+            .lines()
+            .next()
+            .unwrap()
+            .unwrap()
+            .split(',')
+            .map(|ins| {
+                // initial parse
+                let mut ins_it = ins.chars();
+                let cmd = ins_it.next().unwrap();
+                let op1;
+                let op2;
+                match cmd {
+                    's' => {
+                        op1 = ins_it.collect::<String>().parse().unwrap();
+                        op2 = 0;
+                    }
+                    'x' => {
+                        let idxs = ins_it.collect::<String>();
+                        let mut idxs_it = idxs.split('/');
+                        op1 = idxs_it.next().unwrap().parse().unwrap();
+                        op2 = idxs_it.next().unwrap().parse().unwrap();
+                    }
+                    'p' => {
+                        let ps: Vec<_> = ins_it.collect();
+                        op1 = *ps.get(0).unwrap() as u8;
+                        op2 = *ps.get(2).unwrap() as u8;
+                    }
+                    _ => panic!("Unrecognised instruction"),
                 }
-                'x' => {
-                    let idxs = ins_it.collect::<String>();
-                    let mut idxs_it = idxs.split('/');
-                    op1 = idxs_it.next().unwrap().parse().unwrap();
-                    op2 = idxs_it.next().unwrap().parse().unwrap();
-                }
-                'p' => {
-                    let ps: Vec<_> = ins_it.collect();
-                    op1 = *ps.get(0).unwrap() as u8;
-                    op2 = *ps.get(2).unwrap() as u8;
-                }
-                _ => panic!("Unrecognised instruction"),
-            }
-            (cmd, op1, op2)
-        })
-        .collect();
+                (cmd, op1, op2)
+            })
+            .collect();
 
     // Merge program swaps together
     let mut prog_swaps = HashMap::new();
@@ -80,14 +80,13 @@ fn main() {
         .iter()
         .cloned()
         .filter(|&(cmd, _, _)| cmd != 'p')
-        .fold(
-            (0..programs.len() as u8).collect(),
-            |ordering, x| match x.0 {
+        .fold((0..programs.len() as u8).collect(), |ordering, x| {
+            match x.0 {
                 's' => spin_transform(&ordering, x.1 as usize),
                 'x' => swap_transform(&ordering, x.1 as usize, x.2 as usize),
                 _ => unreachable!(),
-            },
-        );
+            }
+        });
 
     for d in 0..1_000_000_000 {
         let mut new_programs = programs.clone();

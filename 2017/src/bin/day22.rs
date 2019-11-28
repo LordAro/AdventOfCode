@@ -1,7 +1,7 @@
-use std::fs::File;
-use std::env;
-use std::io::{BufReader, BufRead};
 use std::collections::HashMap;
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 enum Dir {
     North,

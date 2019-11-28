@@ -1,6 +1,6 @@
-use std::fs::File;
 use std::env;
-use std::io::{BufReader, BufRead};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 fn main() {
     if env::args().len() != 2 {
@@ -36,7 +36,8 @@ fn main() {
 
     for r in 0..num_rounds {
         for (skip, &ins) in input2.iter().enumerate() {
-            let subrope: Vec<_> = rope.iter()
+            let subrope: Vec<_> = rope
+                .iter()
                 .cycle()
                 .skip(pos)
                 .take(ins as usize)
@@ -50,7 +51,8 @@ fn main() {
             pos = (pos + ins as usize + skip + (r * input2.len())) % 256;
         }
     }
-    let hash: String = rope.chunks(16)
+    let hash: String = rope
+        .chunks(16)
         .map(|c| c.iter().fold(0, |a, b| a ^ b))
         .map(|e| format!("{:02x}", e))
         .collect();

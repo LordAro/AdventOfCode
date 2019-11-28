@@ -1,6 +1,6 @@
-use std::fs::File;
 use std::env;
-use std::io::{BufReader, BufRead};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 fn score(input: &Vec<(usize, usize)>) -> usize {
     input.iter().fold(0, |acc, &(a, b)| acc + a + b)
@@ -45,14 +45,14 @@ fn main() {
         panic!("Incorrect number of arguments provided\n");
     }
 
-    let input: Vec<(usize, usize)> = BufReader::new(
-        File::open(&env::args().nth(1).unwrap()).unwrap(),
-    ).lines()
-        .map(|l| {
-            let v: Vec<_> = l.unwrap().split('/').map(|n| n.parse().unwrap()).collect();
-            (v[0], v[1])
-        })
-        .collect();
+    let input: Vec<(usize, usize)> =
+        BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+            .lines()
+            .map(|l| {
+                let v: Vec<_> = l.unwrap().split('/').map(|n| n.parse().unwrap()).collect();
+                (v[0], v[1])
+            })
+            .collect();
 
     println!("Strongest bridge: {}", score(&find_strongest(&input, 0)));
     println!("Longest bridge: {}", score(&find_longest(&input, 0)));

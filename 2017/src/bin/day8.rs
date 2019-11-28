@@ -1,8 +1,8 @@
-use std::fs::File;
 use std::cmp;
-use std::env;
-use std::io::{BufReader, BufRead};
 use std::collections::HashMap;
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 fn main() {
     if env::args().len() != 2 {
@@ -31,11 +31,12 @@ fn main() {
         let cond_r: i32 = v.get(6).unwrap().parse().unwrap();
 
         let cond_val = *map.entry(cond_reg).or_insert(0);
-        let cond = cond_op == "==" && cond_val == cond_r || cond_op == "!=" && cond_val != cond_r ||
-            cond_op == ">" && cond_val > cond_r ||
-            cond_op == "<" && cond_val < cond_r ||
-            cond_op == ">=" && cond_val >= cond_r ||
-            cond_op == "<=" && cond_val <= cond_r;
+        let cond = cond_op == "==" && cond_val == cond_r
+            || cond_op == "!=" && cond_val != cond_r
+            || cond_op == ">" && cond_val > cond_r
+            || cond_op == "<" && cond_val < cond_r
+            || cond_op == ">=" && cond_val >= cond_r
+            || cond_op == "<=" && cond_val <= cond_r;
         if cond {
             *map.entry(reg).or_insert(0) += chg_amt * change_dir;
             abs_largest = cmp::max(*map.get(reg).unwrap(), abs_largest);

@@ -1,13 +1,13 @@
-extern crate regex;
 extern crate itertools;
+extern crate regex;
 
-use std::ops::Add;
-use std::cmp::Ordering;
-use std::fs::File;
-use std::env;
-use std::io::{BufReader, BufRead};
-use regex::Regex;
 use itertools::Itertools;
+use regex::Regex;
+use std::cmp::Ordering;
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+use std::ops::Add;
 
 #[derive(Debug, Eq, Clone, Copy)]
 struct Point {
@@ -40,7 +40,6 @@ impl PartialEq for Point {
     }
 }
 
-
 impl Add for Point {
     type Output = Point;
     fn add(self, other: Point) -> Point {
@@ -68,37 +67,36 @@ fn main() {
     let num3_re = format!(r"{},{},{}", num_re, num_re, num_re);
     let particle_re = Regex::new(&format!(
         r"p=<{}>, v=<{}>, a=<{}>",
-        num3_re,
-        num3_re,
-        num3_re
-    )).unwrap();
+        num3_re, num3_re, num3_re
+    ))
+    .unwrap();
 
-    let mut input: Vec<Particle> = BufReader::new(
-        File::open(&env::args().nth(1).unwrap()).unwrap(),
-    ).lines()
-        .map(|l| {
-            let line = l.unwrap();
-            let caps = particle_re.captures(&line).unwrap();
+    let mut input: Vec<Particle> =
+        BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+            .lines()
+            .map(|l| {
+                let line = l.unwrap();
+                let caps = particle_re.captures(&line).unwrap();
 
-            Particle {
-                pos: Point {
-                    x: caps.get(1).unwrap().as_str().parse().unwrap(),
-                    y: caps.get(2).unwrap().as_str().parse().unwrap(),
-                    z: caps.get(3).unwrap().as_str().parse().unwrap(),
-                },
-                vel: Point {
-                    x: caps.get(4).unwrap().as_str().parse().unwrap(),
-                    y: caps.get(5).unwrap().as_str().parse().unwrap(),
-                    z: caps.get(6).unwrap().as_str().parse().unwrap(),
-                },
-                acc: Point {
-                    x: caps.get(7).unwrap().as_str().parse().unwrap(),
-                    y: caps.get(8).unwrap().as_str().parse().unwrap(),
-                    z: caps.get(9).unwrap().as_str().parse().unwrap(),
-                },
-            }
-        })
-        .collect();
+                Particle {
+                    pos: Point {
+                        x: caps.get(1).unwrap().as_str().parse().unwrap(),
+                        y: caps.get(2).unwrap().as_str().parse().unwrap(),
+                        z: caps.get(3).unwrap().as_str().parse().unwrap(),
+                    },
+                    vel: Point {
+                        x: caps.get(4).unwrap().as_str().parse().unwrap(),
+                        y: caps.get(5).unwrap().as_str().parse().unwrap(),
+                        z: caps.get(6).unwrap().as_str().parse().unwrap(),
+                    },
+                    acc: Point {
+                        x: caps.get(7).unwrap().as_str().parse().unwrap(),
+                        y: caps.get(8).unwrap().as_str().parse().unwrap(),
+                        z: caps.get(9).unwrap().as_str().parse().unwrap(),
+                    },
+                }
+            })
+            .collect();
 
     let max_acc_pos = input
         .iter()
@@ -130,12 +128,10 @@ fn main() {
         // Update particles
         input = input
             .iter()
-            .map(|part| {
-                Particle {
-                    acc: part.acc,
-                    vel: part.vel + part.acc,
-                    pos: part.pos + part.vel + part.acc,
-                }
+            .map(|part| Particle {
+                acc: part.acc,
+                vel: part.vel + part.acc,
+                pos: part.pos + part.vel + part.acc,
             })
             .collect();
     }
