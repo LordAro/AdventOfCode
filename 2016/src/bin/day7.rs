@@ -1,16 +1,17 @@
 extern crate itertools;
 
-use std::fs::File;
+use itertools::{Either, Itertools};
 use std::env;
-use std::io::{BufReader, BufRead};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::iter::FromIterator;
-use itertools::{Itertools, Either};
 
 fn contains_abba_pair(s: &str) -> bool {
     s.chars()
         .tuple_windows()
         .filter(|&(a, b, c, d)| a == d && b == c && a != b)
-        .count() != 0
+        .count()
+        != 0
 }
 
 fn find_aba(v: &[String]) -> Vec<String> {
@@ -49,8 +50,8 @@ fn main() {
     let valid_tls = splitted_lines
         .iter()
         .filter(|&&(ref sn, ref hn)| {
-            sn.into_iter().any(|s| contains_abba_pair(&s)) &&
-                hn.into_iter().all(|s| !contains_abba_pair(&s))
+            sn.into_iter().any(|s| contains_abba_pair(&s))
+                && hn.into_iter().all(|s| !contains_abba_pair(&s))
         })
         .count();
     let valid_ssl = splitted_lines

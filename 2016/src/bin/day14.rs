@@ -1,25 +1,21 @@
 extern crate crypto;
 
-use std::char;
-use std::fs::File;
-use std::env;
-use std::io::{BufReader, BufRead};
-use crypto::md5::Md5;
 use crypto::digest::Digest;
+use crypto::md5::Md5;
+use std::char;
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 fn get_triple(arr: &[u8; 32]) -> Option<char> {
-    arr.windows(3).find(|t| t[0] == t[1] && t[1] == t[2]).map(
-        |t| {
-            char::from_digit(t[0] as u32, 16).unwrap()
-        },
-    )
+    arr.windows(3)
+        .find(|t| t[0] == t[1] && t[1] == t[2])
+        .map(|t| char::from_digit(t[0] as u32, 16).unwrap())
 }
 
 fn get_quintuple(arr: &[u8; 32]) -> Option<char> {
     arr.windows(5)
-        .find(|t| {
-            t[0] == t[1] && t[1] == t[2] && t[2] == t[3] && t[3] == t[4]
-        })
+        .find(|t| t[0] == t[1] && t[1] == t[2] && t[2] == t[3] && t[3] == t[4])
         .map(|t| char::from_digit(t[0] as u32, 16).unwrap())
 }
 

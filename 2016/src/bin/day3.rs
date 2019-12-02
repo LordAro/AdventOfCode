@@ -1,6 +1,6 @@
-use std::fs::File;
 use std::env;
-use std::io::{BufReader, BufRead};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 fn main() {
     if env::args().len() != 2 {
@@ -34,9 +34,9 @@ fn main() {
         }
         if trans[0].len() == 3 {
             for j in 0..3 {
-                if trans[j][0] + trans[j][1] > trans[j][2] &&
-                    trans[j][0] + trans[j][2] > trans[j][1] &&
-                    trans[j][1] + trans[j][2] > trans[j][0]
+                if trans[j][0] + trans[j][1] > trans[j][2]
+                    && trans[j][0] + trans[j][2] > trans[j][1]
+                    && trans[j][1] + trans[j][2] > trans[j][0]
                 {
                     count2 += 1;
                 }

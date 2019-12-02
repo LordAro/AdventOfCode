@@ -1,9 +1,9 @@
 extern crate regex;
 
-use std::fs::File;
-use std::env;
-use std::io::{BufReader, BufRead};
 use regex::Regex;
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 fn print_grid(grid: &Vec<Vec<char>>) {
     for row in grid {
@@ -43,7 +43,8 @@ fn main() {
 
             match dir {
                 'x' => {
-                    let orig: Vec<_> = grid.iter()
+                    let orig: Vec<_> = grid
+                        .iter()
                         .cloned()
                         .map(|row| row.into_iter().nth(idx).unwrap())
                         .collect();
@@ -62,7 +63,8 @@ fn main() {
         }
     }
 
-    let count: usize = grid.iter()
+    let count: usize = grid
+        .iter()
         .map(|row| row.iter().filter(|&&e| e == '#').count())
         .sum();
     println!("Number of lights: {}", count);

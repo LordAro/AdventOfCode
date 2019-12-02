@@ -1,7 +1,7 @@
 use std::collections::btree_map::BTreeMap;
-use std::fs::File;
 use std::env;
-use std::io::{BufReader, BufRead};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 fn most_least_common(btm: BTreeMap<char, i32>) -> (char, char) {
     let mut count_vec: Vec<_> = btm.into_iter().collect();

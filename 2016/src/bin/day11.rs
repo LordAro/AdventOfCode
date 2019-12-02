@@ -1,10 +1,10 @@
-extern crate regex;
 extern crate itertools;
+extern crate regex;
 
 use itertools::Itertools;
 use regex::Regex;
-use std::env;
 use std::collections::HashSet;
+use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -27,9 +27,9 @@ fn is_goal(state: &State) -> bool {
 fn is_valid(state: &State) -> bool {
     for floor in &state.0 {
         let (gen, mc): (Floor, Floor) = floor.iter().cloned().partition(|&(_, ref t)| *t == 'g');
-        let mc_no_match = mc.iter().filter(|&&(ref m, _)| {
-            gen.iter().find(|&&(ref g, _)| m == g) == None
-        });
+        let mc_no_match = mc
+            .iter()
+            .filter(|&&(ref m, _)| gen.iter().find(|&&(ref g, _)| m == g) == None);
         if mc_no_match.count() != 0 && gen.len() != 0 {
             return false;
         }
@@ -48,16 +48,12 @@ fn hashed_form(state: &State) -> (Vec<(usize, usize)>, usize) {
             let g_floor = state
                 .0
                 .iter()
-                .position(|f| {
-                    f.iter().find(|&&(ref g, ref t)| elem == *g && *t == 'g') != None
-                })
+                .position(|f| f.iter().find(|&&(ref g, ref t)| elem == *g && *t == 'g') != None)
                 .unwrap();
             let m_floor = state
                 .0
                 .iter()
-                .position(|f| {
-                    f.iter().find(|&&(ref g, ref t)| elem == *g && *t == 'm') != None
-                })
+                .position(|f| f.iter().find(|&&(ref g, ref t)| elem == *g && *t == 'm') != None)
                 .unwrap();
             (g_floor, m_floor)
         })
