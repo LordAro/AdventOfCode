@@ -51,7 +51,7 @@ fn main() {
                 .collect::<Vec<_>>()
         })
         .map(|l| {
-            let cc: Vec<_> = l[0].trim_right_matches(']').split('[').collect();
+            let cc: Vec<_> = l[0].trim_end_matches(']').split('[').collect();
             Room {
                 name: l[1].replace("-", ""),
                 sector: cc[0].parse().unwrap(),
