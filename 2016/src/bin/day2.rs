@@ -1,5 +1,5 @@
-use std::fs::File;
 use std::env;
+use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 // P1:
@@ -47,7 +47,6 @@ fn right(p: i32) -> Option<i32> {
         _ => None,
     }
 }
-
 
 fn up2(p: i32) -> Option<i32> {
     match p {
@@ -104,14 +103,16 @@ fn main() {
                 'R' => right2(cur_pos2),
                 'D' => down2(cur_pos2),
                 _ => panic!("Unrecognised character"),
-            }.unwrap();
+            }
+            .unwrap();
             cur_pos = match c {
                 'U' => up(cur_pos),
                 'L' => left(cur_pos),
                 'R' => right(cur_pos),
                 'D' => down(cur_pos),
                 _ => panic!("Unrecognised character"),
-            }.unwrap();
+            }
+            .unwrap();
         }
         code.push_str(&cur_pos.to_string());
         code2.push_str(&format!("{:X}", cur_pos2));

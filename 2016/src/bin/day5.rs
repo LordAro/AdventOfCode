@@ -1,11 +1,11 @@
 extern crate crypto;
 
-use std::fs::File;
-use std::env;
-use std::io::{BufReader, BufRead};
-use crypto::md5::Md5;
 use crypto::digest::Digest;
+use crypto::md5::Md5;
 use std::char;
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 fn main() {
     if env::args().len() != 2 {
@@ -42,10 +42,12 @@ fn main() {
                 password2 = password2
                     .chars()
                     .enumerate()
-                    .map(|(i, c)| if i == sixth as usize && c == '.' {
-                        char::from_digit(seventh as u32, 16).unwrap()
-                    } else {
-                        c
+                    .map(|(i, c)| {
+                        if i == sixth as usize && c == '.' {
+                            char::from_digit(seventh as u32, 16).unwrap()
+                        } else {
+                            c
+                        }
                     })
                     .collect();
             }

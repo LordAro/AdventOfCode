@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::env;
 use std::fs::File;
-use std::io::{BufReader, BufRead};
+use std::io::{BufRead, BufReader};
 
 fn is_wall(x: usize, y: usize, magic: usize) -> bool {
     // Odd number of set bits == wall

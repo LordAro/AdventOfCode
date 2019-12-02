@@ -1,5 +1,5 @@
-use std::fs::File;
 use std::env;
+use std::fs::File;
 use std::io::{BufReader, Read};
 
 fn decompress_len(input: &String, recurse: bool) -> usize {
@@ -7,12 +7,14 @@ fn decompress_len(input: &String, recurse: bool) -> usize {
     let mut it = input.chars();
     while let Some(c) = it.next() {
         if c == '(' {
-            let ss_length: usize = it.by_ref()
+            let ss_length: usize = it
+                .by_ref()
                 .take_while(|&c| c != 'x')
                 .collect::<String>()
                 .parse()
                 .unwrap();
-            let repeat_count: usize = it.by_ref()
+            let repeat_count: usize = it
+                .by_ref()
                 .take_while(|&c| c != ')')
                 .collect::<String>()
                 .parse()

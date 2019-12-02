@@ -21,7 +21,8 @@ fn main() {
     let initial_re = Regex::new(r"value ([0-9]+) goes to bot ([0-9]+)").unwrap();
     let give_re = Regex::new(
         r"bot ([0-9]+) gives low to (bot|output) ([0-9]+) and high to (bot|output) ([0-9]+)",
-    ).unwrap();
+    )
+    .unwrap();
 
     // Uses a Vec to store only 2 items, for simplicity
     let mut bots: HashMap<i32, Vec<i32>> = HashMap::new();
@@ -69,13 +70,15 @@ fn main() {
         if *h_item == 61 && *l_item == 17 {
             println!("Bot responsible: {}", botnum);
         }
-        match bot_move.0 { // low
+        match bot_move.0 {
+            // low
             BotOutput::Bot(b) => bots.entry(b).or_insert(vec![]).push(*l_item),
             BotOutput::Output(o) => {
                 let _ = outputs.insert(o, *l_item);
             }
         }
-        match bot_move.1 { // high
+        match bot_move.1 {
+            // high
             BotOutput::Bot(b) => bots.entry(b).or_insert(vec![]).push(*h_item),
             BotOutput::Output(o) => {
                 let _ = outputs.insert(o, *h_item);

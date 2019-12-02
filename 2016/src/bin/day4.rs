@@ -1,7 +1,7 @@
 use std::collections::btree_map::BTreeMap;
-use std::fs::File;
 use std::env;
-use std::io::{BufReader, BufRead};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 struct Room {
     name: String,
@@ -42,8 +42,14 @@ fn main() {
 
     let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap());
 
-    let rooms: Vec<_> = input.lines()
-        .map(|l| l.unwrap().rsplitn(2, '-').map(String::from).collect::<Vec<_>>())
+    let rooms: Vec<_> = input
+        .lines()
+        .map(|l| {
+            l.unwrap()
+                .rsplitn(2, '-')
+                .map(String::from)
+                .collect::<Vec<_>>()
+        })
         .map(|l| {
             let cc: Vec<_> = l[0].trim_right_matches(']').split('[').collect();
             Room {
