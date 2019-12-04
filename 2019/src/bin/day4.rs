@@ -5,9 +5,9 @@ use std::io::{BufRead, BufReader};
 
 fn split(n: u32) -> (u32, u32, u32, u32, u32, u32) {
     (
-        n / 100000,
-        (n / 10000) % 10,
-        (n / 1000) % 10,
+        n / 100_000,
+        (n / 10_000) % 10,
+        (n / 1_000) % 10,
         (n / 100) % 10,
         (n / 10) % 10,
         n % 10,
@@ -29,6 +29,7 @@ fn has_max_two_adjacent(ds: &(u32, u32, u32, u32, u32, u32)) -> bool {
         || ds.2 != ds.3 && ds.3 == ds.4 && ds.4 != ds.5
         || ds.3 != ds.4 && ds.4 == ds.5
 }
+
 fn main() -> io::Result<()> {
     let input_str: Vec<u32> = BufReader::new(
         File::open(
@@ -49,15 +50,12 @@ fn main() -> io::Result<()> {
     let end = input_str[1];
 
     let pw_matches: Vec<_> = (start..=end)
-        .map(|pw| split(pw))
-        .filter(|ds| digits_ordered(ds))
-        .filter(|x| has_adjacent_digits(x))
+        .map(split)
+        .filter(digits_ordered)
+        .filter(has_adjacent_digits)
         .collect();
     let p1_count = pw_matches.len();
-    let p2_count = pw_matches
-        .iter()
-        .filter(|x| has_max_two_adjacent(x))
-        .count();
+    let p2_count = pw_matches.into_iter().filter(has_max_two_adjacent).count();
     println!("Number of possible passwords: {}", p1_count);
     println!("Number of possible passwords (part 2): {}", p2_count);
     Ok(())
