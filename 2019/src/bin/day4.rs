@@ -59,9 +59,11 @@ fn main() -> io::Result<()> {
 
     let start = input_str[0];
     let end = input_str[1];
-    let count_valid = (start..=end).filter(|x| is_valid_pw(x)).count();
-    println!("Number of possible passwords: {}", count_valid);
-    let count_valid_p2 = (start..=end).filter(|x| is_valid_pw_p2(x)).count();
-    println!("Number of possible passwords (part 2): {}", count_valid_p2);
+    // Do both parts at once
+    let count_both = (start..=end)
+        .map(|x| (is_valid_pw(&x), is_valid_pw_p2(&x)))
+        .fold((0, 0), |acc, x| (acc.0 + x.0 as u32, acc.1 + x.1 as u32));
+    println!("Number of possible passwords: {}", count_both.0);
+    println!("Number of possible passwords (part 2): {}", count_both.1);
     Ok(())
 }
