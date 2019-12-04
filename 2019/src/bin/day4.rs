@@ -3,42 +3,31 @@ use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
 
-fn is_valid_pw(pw: &u32) -> bool {
-    let ds = (
-        pw / 100000,
-        (pw / 10000) % 10,
-        (pw / 1000) % 10,
-        (pw / 100) % 10,
-        (pw / 10) % 10,
-        pw % 10,
-    );
-    // Shortcircuiting
-    if !(ds.0 == ds.1 || ds.1 == ds.2 || ds.2 == ds.3 || ds.3 == ds.4 || ds.4 == ds.5) {
-        return false;
-    }
-    if ds.0 > ds.1 || ds.1 > ds.2 || ds.2 > ds.3 || ds.3 > ds.4 || ds.4 > ds.5 {
-        return false;
-    }
-    return true;
+fn split(n: u32) -> (u32, u32, u32, u32, u32, u32) {
+    (
+        n / 100000,
+        (n / 10000) % 10,
+        (n / 1000) % 10,
+        (n / 100) % 10,
+        (n / 10) % 10,
+        n % 10,
+    )
 }
 
-fn is_valid_pw_p2(pw: &u32) -> bool {
-    let ds = (
-        pw / 100000,
-        (pw / 10000) % 10,
-        (pw / 1000) % 10,
-        (pw / 100) % 10,
-        (pw / 10) % 10,
-        pw % 10,
-    );
-    if ds.0 > ds.1 || ds.1 > ds.2 || ds.2 > ds.3 || ds.3 > ds.4 || ds.4 > ds.5 {
-        return false;
-    }
-    return (ds.0 == ds.1 && ds.1 != ds.2)
-        || (ds.0 != ds.1 && ds.1 == ds.2 && ds.2 != ds.3)
-        || (ds.1 != ds.2 && ds.2 == ds.3 && ds.3 != ds.4)
-        || (ds.2 != ds.3 && ds.3 == ds.4 && ds.4 != ds.5)
-        || (ds.3 != ds.4 && ds.4 == ds.5);
+fn digits_ordered(ds: &(u32, u32, u32, u32, u32, u32)) -> bool {
+    ds.0 <= ds.1 && ds.1 <= ds.2 && ds.2 <= ds.3 && ds.3 <= ds.4 && ds.4 <= ds.5
+}
+
+fn has_adjacent_digits(ds: &(u32, u32, u32, u32, u32, u32)) -> bool {
+    ds.0 == ds.1 || ds.1 == ds.2 || ds.2 == ds.3 || ds.3 == ds.4 || ds.4 == ds.5
+}
+
+fn has_max_two_adjacent(ds: &(u32, u32, u32, u32, u32, u32)) -> bool {
+    ds.0 == ds.1 && ds.1 != ds.2
+        || ds.0 != ds.1 && ds.1 == ds.2 && ds.2 != ds.3
+        || ds.1 != ds.2 && ds.2 == ds.3 && ds.3 != ds.4
+        || ds.2 != ds.3 && ds.3 == ds.4 && ds.4 != ds.5
+        || ds.3 != ds.4 && ds.4 == ds.5
 }
 fn main() -> io::Result<()> {
     let input_str: Vec<u32> = BufReader::new(
@@ -56,14 +45,20 @@ fn main() -> io::Result<()> {
     .split('-')
     .map(|l| l.parse().unwrap())
     .collect();
-
     let start = input_str[0];
     let end = input_str[1];
-    // Do both parts at once
-    let count_both = (start..=end)
-        .map(|x| (is_valid_pw(&x), is_valid_pw_p2(&x)))
-        .fold((0, 0), |acc, x| (acc.0 + x.0 as u32, acc.1 + x.1 as u32));
-    println!("Number of possible passwords: {}", count_both.0);
-    println!("Number of possible passwords (part 2): {}", count_both.1);
+
+    let pw_matches: Vec<_> = (start..=end)
+        .map(|pw| split(pw))
+        .filter(|ds| digits_ordered(ds))
+        .filter(|x| has_adjacent_digits(x))
+        .collect();
+    let p1_count = pw_matches.len();
+    let p2_count = pw_matches
+        .iter()
+        .filter(|x| has_max_two_adjacent(x))
+        .count();
+    println!("Number of possible passwords: {}", p1_count);
+    println!("Number of possible passwords (part 2): {}", p2_count);
     Ok(())
 }
