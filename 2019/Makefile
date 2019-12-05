@@ -11,6 +11,9 @@ CUR_SLNS=$(shell echo $(patsubst src/bin/day%.rs,%,$(wildcard src/bin/day*.rs)) 
 
 all: ${CUR_SLNS}
 
+builds/${DIR}/day2: src/intcode.rs
+builds/${DIR}/day5: src/intcode.rs
+
 .PRECIOUS: builds/${DIR}/day%
 builds/${DIR}/day%: src/bin/day%.rs
 	@echo -e '\x1b[1;34mCompiling day $* solution\x1b[0m'
