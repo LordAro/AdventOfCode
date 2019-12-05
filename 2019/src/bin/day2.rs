@@ -3,49 +3,39 @@ use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
 
-fn run_program(input_program: &[usize], noun: usize, verb: usize) -> usize {
-    let mut program = input_program.to_vec();
-    program[1] = noun;
-    program[2] = verb;
-    let mut idx = 0;
-    loop {
-        //println!("idx: {}, {:?}", idx, program);
-        let op = program[idx];
-        let op1 = program[idx + 1];
-        let op2 = program[idx + 2];
-        let op3 = program[idx + 3];
-        match op {
-            1 => program[op3] = program[op1] + program[op2],
-            2 => program[op3] = program[op1] * program[op2],
-            99 => break,
-            _ => panic!("Unexpected number"),
-        }
-        idx += 4;
-    }
-    return program[0];
-}
+extern crate advent_of_code;
+use advent_of_code::intcode;
 
 fn main() -> io::Result<()> {
-    if env::args().len() != 2 {
-        panic!("Incorrect number of arguments provided");
-    }
-    let program: Vec<_> = BufReader::new(
-        File::open(&env::args().nth(1).unwrap()).expect("Could not open input file"),
+    let program_str = BufReader::new(
+        File::open(
+            &env::args()
+                .nth(1)
+                .expect("Incorrect number of arguments provided"),
+        )
+        .expect("Could not open input file"),
     )
     .lines()
     .next()
     .unwrap()
-    .unwrap()
-    .split(',')
-    .map(|n| usize::from_str_radix(n, 10).unwrap())
-    .collect();
+    .unwrap();
 
-    // Initial state
-    println!("Output(12, 2): {}", run_program(&program, 12, 2));
+    let mut program = intcode::read_input(&program_str);
+    program[1] = 12;
+    program[2] = 2;
+
+    let mut mach = intcode::Machine::new(&program, &[]);
+    mach.run();
+    println!("Output(12, 2): {}", mach.get_memory(0));
 
     'outer: for n in 0..100 {
         for v in 0..100 {
-            let result = run_program(&program, n, v);
+            let mut new_prog = program.clone();
+            new_prog[1] = n;
+            new_prog[2] = v;
+            let mut mach = intcode::Machine::new(&new_prog, &[]);
+            mach.run();
+            let result = mach.get_memory(0);
             if result == 19690720 {
                 println!("Output({}, {}): 19690720, or: {}", n, v, 100 * n + v);
                 break 'outer;
