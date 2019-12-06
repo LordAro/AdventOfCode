@@ -22,4 +22,10 @@ builds/${DIR}/day%: src/bin/day%.rs
 %: builds/${DIR}/day%
 	@echo -e '\x1b[1;32mRunning day $* solution\x1b[0m'
 	@./builds/${DIR}/day$* inputs/day$*.input
-.PHONY: all
+
+time%: builds/${DIR}/day%
+	bash -c 'time for i in {1..1000}; do ./builds/release/day$* inputs/day$*.input; done' > /dev/null
+
+time: $(addprefix time,${CUR_SLNS})
+
+.PHONY: all time
