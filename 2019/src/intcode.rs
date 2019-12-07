@@ -147,6 +147,10 @@ impl Machine {
     pub fn get_memory(&self, idx: usize) -> Word {
         self.program[idx]
     }
+
+    pub fn push_input(&mut self, value: Word) {
+        self.inputs.push_back(value);
+    }
 }
 
 pub fn read_input(in_str: &str) -> Vec<Word> {
