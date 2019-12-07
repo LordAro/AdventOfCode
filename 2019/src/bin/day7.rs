@@ -34,7 +34,7 @@ fn main() -> io::Result<()> {
         for phase in permutation {
             let mut mach = intcode::Machine::new(&program, &[phase, input_val]);
             let output = mach.run();
-            input_val = *output.last().unwrap();
+            input_val = output.unwrap();
         }
         max_output = max(max_output, input_val);
     }
@@ -43,7 +43,7 @@ fn main() -> io::Result<()> {
     let mut phases = vec![5, 6, 7, 8, 9];
     let phase_heap = Heap::new(&mut phases);
     for permutation in phase_heap {
-        println!("{:?}", permutation);
+        //println!("{:?}", permutation);
     }
 
     Ok(())

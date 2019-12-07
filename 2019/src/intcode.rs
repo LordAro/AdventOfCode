@@ -3,6 +3,7 @@ use std::convert::{TryFrom, TryInto};
 
 type Word = isize;
 
+#[derive(PartialEq)]
 enum Op {
     Add = 1,
     Mul,
@@ -58,7 +59,6 @@ pub struct Machine {
     program: Vec<Word>,
     ptr: usize,
     inputs: VecDeque<Word>,
-    outputs: Vec<Word>,
 }
 
 impl Machine {
@@ -66,22 +66,26 @@ impl Machine {
         Machine {
             program: program.to_vec(),
             inputs: VecDeque::from(inputs.to_vec()),
-            outputs: vec![],
             ptr: 0,
         }
     }
 
-    pub fn run(&mut self) -> Vec<Word> {
-        while self.step() {}
-        return self.outputs.clone();
+    pub fn run(&mut self) -> Option<Word> {
+        loop {
+            let (res, halted) = self.step();
+            if halted || res.is_some() {
+                return res;
+            }
+        }
     }
 
-    fn step(&mut self) -> bool {
+    fn step(&mut self) -> (Option<Word>, bool) {
         let cur_op = self.program[self.ptr];
         let opcode: Op = (cur_op % 100)
             .try_into()
             .expect(&format!("Invalid opcode {}@{}", cur_op, self.ptr));
         let mut jumped = false;
+        let mut output = None;
         match opcode {
             Op::Add => {
                 let val = self.get_value(cur_op, 1) + self.get_value(cur_op, 2);
@@ -96,7 +100,7 @@ impl Machine {
                 self.set_value(1, input);
             }
             Op::Output => {
-                self.outputs.push(self.get_value(cur_op, 1));
+                output = Some(self.get_value(cur_op, 1));
             }
             Op::JNZ => {
                 if self.get_value(cur_op, 1) != 0 {
@@ -118,12 +122,12 @@ impl Machine {
                 let eq = self.get_value(cur_op, 1) == self.get_value(cur_op, 2);
                 self.set_value(3, if eq { 1 } else { 0 });
             }
-            Op::Halt => return false,
+            Op::Halt => {}
         };
         if !jumped {
             self.ptr += opcode.size();
         }
-        return true;
+        return (output, opcode == Op::Halt);
     }
 
     fn set_value(&mut self, offset: usize, value: Word) {
