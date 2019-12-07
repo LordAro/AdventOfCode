@@ -23,12 +23,17 @@ fn main() -> io::Result<()> {
     let program = intcode::read_input(&program_str);
 
     let mut mach = intcode::Machine::new(&program, &[1]);
-    let outputs = mach.run();
-    println!("TEST diagnostic code: {}", outputs.last().unwrap());
+    let output = loop {
+        let res = mach.run();
+        if res != Some(0) {
+            break res;
+        }
+    };
+    println!("TEST diagnostic code: {}", output.unwrap());
 
     let mut mach = intcode::Machine::new(&program, &[5]);
-    let outputs = mach.run();
-    println!("Radiator diagnostic code: {}", outputs.last().unwrap());
+    let output = mach.run();
+    println!("Radiator diagnostic code: {}", output.unwrap());
 
     Ok(())
 }
