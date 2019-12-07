@@ -13,6 +13,7 @@ all: ${CUR_SLNS}
 
 builds/${DIR}/day2: src/intcode.rs
 builds/${DIR}/day5: src/intcode.rs
+builds/${DIR}/day7: src/intcode.rs
 
 .PRECIOUS: builds/${DIR}/day%
 builds/${DIR}/day%: src/bin/day%.rs
