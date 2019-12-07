@@ -40,11 +40,32 @@ fn main() -> io::Result<()> {
     }
     println!("Maximum output {}", max_output);
 
-    let mut phases = vec![5, 6, 7, 8, 9];
+    let mut phases: Vec<isize> = vec![5, 6, 7, 8, 9];
     let phase_heap = Heap::new(&mut phases);
+    let mut max_output = isize::min_value();
     for permutation in phase_heap {
-        //println!("{:?}", permutation);
+        // Initialise machines
+        let mut machines = Vec::with_capacity(5);
+        for phase in permutation {
+            machines.push(intcode::Machine::new(&program, &[phase]));
+        }
+        machines[0].push_input(0);
+        let mut last_output = machines[0].run();
+
+        // Run machines in a loop until one halts
+        let mut i = 1;
+        while last_output.is_some() {
+            machines[i].push_input(last_output.unwrap());
+            let output = machines[i].run();
+            if output.is_none() {
+                break;
+            }
+            last_output = output;
+            i = (i + 1) % machines.len();
+        }
+        max_output = max(max_output, last_output.unwrap());
     }
+    println!("Maximum output (feedback mode): {}", max_output);
 
     Ok(())
 }
