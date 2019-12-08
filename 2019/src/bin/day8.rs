@@ -4,6 +4,12 @@ use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
 
+const BLACK: u32 = 0;
+const WHITE: u32 = 1;
+const TRANSPARENT: u32 = 2;
+const HEIGHT: usize = 6;
+const WIDTH: usize = 25;
+
 fn main() -> io::Result<()> {
     let image_data: Vec<_> = BufReader::new(
         File::open(
@@ -21,32 +27,37 @@ fn main() -> io::Result<()> {
     .map(|c| c.to_digit(10).unwrap())
     .collect();
 
-    let image_layers: Vec<_> = image_data.chunks(25 * 6).collect();
+    let image_layers: Vec<_> = image_data.chunks(WIDTH * HEIGHT).collect();
 
     let min_zero_layer = image_layers
         .iter()
-        .min_by_key(|l| l.iter().filter(|&&c| c == 0).count())
+        .min_by_key(|l| l.iter().filter(|&&c| c == BLACK).count())
         .unwrap();
 
-    let checksum = min_zero_layer.into_iter().filter(|&&c| c == 1).count()
-        * min_zero_layer.into_iter().filter(|&&c| c == 2).count();
+    let checksum = min_zero_layer.into_iter().filter(|&&c| c == WHITE).count()
+        * min_zero_layer
+            .into_iter()
+            .filter(|&&c| c == TRANSPARENT)
+            .count();
     println!("Image checksum: {}", checksum);
 
-    let output_image = image_layers.iter().fold([2; 25 * 6], |mut img, l| {
-        for i in 0..25 * 6 {
-            if img[i] == 2 {
-                img[i] = l[i];
+    let output_image = image_layers
+        .iter()
+        .fold([TRANSPARENT; WIDTH * HEIGHT], |mut img, l| {
+            for i in 0..WIDTH * HEIGHT {
+                if img[i] == TRANSPARENT {
+                    img[i] = l[i];
+                }
             }
-        }
-        img
-    });
+            img
+        });
     println!("Output image:");
-    for line in output_image.chunks(25) {
-        for c in line {
+    for line in output_image.chunks(WIDTH) {
+        for &c in line {
             print!(
                 "{}",
-                if *c == 1 {
-                    char::from_digit(*c, 10).unwrap()
+                if c == WHITE {
+                    char::from_digit(c, 10).unwrap()
                 } else {
                     ' '
                 }
