@@ -41,13 +41,11 @@ fn main() -> io::Result<()> {
 
     let output_image = image_layers
         .iter()
-        .fold([TRANSPARENT; WIDTH * HEIGHT], |mut img, l| {
-            for i in 0..WIDTH * HEIGHT {
-                if img[i] == TRANSPARENT {
-                    img[i] = l[i];
-                }
-            }
-            img
+        .fold(vec![TRANSPARENT; WIDTH * HEIGHT], |img, l| {
+            img.iter()
+                .zip(l.iter())
+                .map(|(&a, &b)| if a == TRANSPARENT { b } else { a })
+                .collect()
         });
     println!("Output image:");
     for line in output_image.chunks(WIDTH) {
