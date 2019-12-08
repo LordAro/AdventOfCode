@@ -53,17 +53,16 @@ fn main() -> io::Result<()> {
         });
     println!("Output image:");
     for line in output_image.chunks(WIDTH) {
-        for &c in line {
-            print!(
-                "{}",
-                if c == WHITE {
+        println!(
+            "{}",
+            line.iter()
+                .map(|&c| if c == WHITE {
                     char::from_digit(c, 10).unwrap()
                 } else {
                     ' '
-                }
-            );
-        }
-        println!("");
+                })
+                .collect::<String>()
+        );
     }
     Ok(())
 }
