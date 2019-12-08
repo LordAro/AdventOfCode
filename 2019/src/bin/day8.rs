@@ -1,6 +1,5 @@
 use std::env;
 use std::fs::File;
-use std::io;
 use std::io::{BufRead, BufReader};
 
 const BLACK: char = '0';
@@ -9,7 +8,7 @@ const TRANSPARENT: char = '2';
 const HEIGHT: usize = 6;
 const WIDTH: usize = 25;
 
-fn main() -> io::Result<()> {
+fn main() {
     let image_data: Vec<_> = BufReader::new(
         File::open(
             &env::args()
@@ -56,5 +55,4 @@ fn main() -> io::Result<()> {
                 .collect::<String>()
         );
     }
-    Ok(())
 }
