@@ -1,12 +1,11 @@
-use std::char;
 use std::env;
 use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
 
-const BLACK: u32 = 0;
-const WHITE: u32 = 1;
-const TRANSPARENT: u32 = 2;
+const BLACK: char = '0';
+const WHITE: char = '1';
+const TRANSPARENT: char = '2';
 const HEIGHT: usize = 6;
 const WIDTH: usize = 25;
 
@@ -24,7 +23,6 @@ fn main() -> io::Result<()> {
     .unwrap()
     .unwrap()
     .chars()
-    .map(|c| c.to_digit(10).unwrap())
     .collect();
 
     let image_layers: Vec<_> = image_data.chunks(WIDTH * HEIGHT).collect();
@@ -56,11 +54,7 @@ fn main() -> io::Result<()> {
         println!(
             "{}",
             line.iter()
-                .map(|&c| if c == WHITE {
-                    char::from_digit(c, 10).unwrap()
-                } else {
-                    ' '
-                })
+                .map(|&c| if c == WHITE { c } else { ' ' })
                 .collect::<String>()
         );
     }
