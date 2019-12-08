@@ -1,8 +1,6 @@
-use std::cmp::min;
 use std::collections::HashMap;
 use std::env;
 use std::fs::File;
-use std::io;
 use std::io::{BufRead, BufReader};
 
 fn count_orbits(map: &HashMap<String, String>, key: &str) -> usize {
@@ -13,20 +11,16 @@ fn count_orbits(map: &HashMap<String, String>, key: &str) -> usize {
     }
 }
 
-fn get_orbits(map: &HashMap<String, String>, key: &str) -> Vec<String> {
+fn get_orbits<'a>(map: &'a HashMap<String, String>, key: &'a str) -> Vec<&'a str> {
     if key == "COM" {
-        vec!["COM".to_string()]
+        vec!["COM"]
     } else {
-        [
-            get_orbits(map, &map[key]).as_slice(),
-            vec![key.to_string()].as_slice(),
-        ]
-        .concat()
+        [get_orbits(map, &map[key]).as_slice(), vec![key].as_slice()].concat()
     }
 }
 
-fn main() -> io::Result<()> {
-    let orbits: Vec<_> = BufReader::new(
+fn main() {
+    let orbits: Vec<(String, String)> = BufReader::new(
         File::open(
             &env::args()
                 .nth(1)
@@ -36,7 +30,7 @@ fn main() -> io::Result<()> {
     )
     .lines()
     .map(|s| {
-        let v: Vec<_> = s.unwrap().split(')').map(|s| String::from(s)).collect();
+        let v: Vec<_> = s.unwrap().split(')').map(|s| s.to_string()).collect();
         (v[1].clone(), v[0].clone())
     })
     .collect();
@@ -47,7 +41,7 @@ fn main() -> io::Result<()> {
 
     let san_orbits = get_orbits(&orbit_map, "SAN");
     let you_orbits = get_orbits(&orbit_map, "YOU");
-    for i in 0..min(san_orbits.len(), you_orbits.len()) {
+    for i in 0..usize::min(san_orbits.len(), you_orbits.len()) {
         if san_orbits[i] != you_orbits[i] {
             // -2 to exclude YOU & SAN
             println!(
@@ -57,5 +51,4 @@ fn main() -> io::Result<()> {
             break;
         }
     }
-    Ok(())
 }
