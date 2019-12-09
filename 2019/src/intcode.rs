@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
 
@@ -86,7 +85,6 @@ pub struct Machine {
     ptr: usize,
     inputs: VecDeque<Word>,
     relative_base: Word,
-    extra_memory: HashMap<usize, Word>,
 }
 
 impl Machine {
@@ -96,7 +94,6 @@ impl Machine {
             inputs: VecDeque::from(inputs.to_vec()),
             ptr: 0,
             relative_base: 0,
-            extra_memory: HashMap::new(),
         }
     }
 
@@ -187,18 +184,17 @@ impl Machine {
     }
 
     fn set_memory(&mut self, idx: usize, val: Word) {
-        if idx < self.program.len() {
-            self.program[idx] = val;
-        } else {
-            *self.extra_memory.entry(idx).or_insert(0) = val;
+        if idx >= self.program.len() {
+            self.program.resize(idx + 1, 0);
         }
+        self.program[idx] = val;
     }
 
     pub fn get_memory(&self, idx: usize) -> Word {
         if idx < self.program.len() {
             self.program[idx]
         } else {
-            *self.extra_memory.get(&idx).unwrap_or(&0)
+            0
         }
     }
 
