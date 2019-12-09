@@ -1,9 +1,10 @@
+use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
 
 type Word = isize;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 enum Op {
     Add = 1,
     Mul,
@@ -13,6 +14,7 @@ enum Op {
     JZ,
     LessThan,
     Equal,
+    SetRel,
     Halt = 99,
 }
 
@@ -29,6 +31,7 @@ impl TryFrom<Word> for Op {
             x if x == Op::JZ as Word => Ok(Op::JZ),
             x if x == Op::LessThan as Word => Ok(Op::LessThan),
             x if x == Op::Equal as Word => Ok(Op::Equal),
+            x if x == Op::SetRel as Word => Ok(Op::SetRel),
             x if x == Op::Halt as Word => Ok(Op::Halt),
             _ => Err(()),
         }
@@ -46,19 +49,44 @@ impl Op {
             Op::JZ => 3,
             Op::LessThan => 4,
             Op::Equal => 4,
+            Op::SetRel => 2,
             Op::Halt => 1,
         }
     }
 }
 
-fn is_immediate(op: Word, offset: usize) -> bool {
-    (op / (10_isize.pow(offset as u32 + 1))) % 10 != 0
+#[derive(PartialEq)]
+enum Mode {
+    Position,
+    Immediate,
+    Relative,
+}
+
+impl TryFrom<Word> for Mode {
+    type Error = ();
+
+    fn try_from(v: Word) -> Result<Self, Self::Error> {
+        match v {
+            x if x == Mode::Position as Word => Ok(Mode::Position),
+            x if x == Mode::Immediate as Word => Ok(Mode::Immediate),
+            x if x == Mode::Relative as Word => Ok(Mode::Relative),
+            _ => Err(()),
+        }
+    }
+}
+
+fn get_op_mode(op: Word, offset: usize) -> Mode {
+    ((op / (10_isize.pow(offset as u32 + 1))) % 10)
+        .try_into()
+        .expect(&format!("Invalid op mode: {}", op))
 }
 
 pub struct Machine {
     program: Vec<Word>,
     ptr: usize,
     inputs: VecDeque<Word>,
+    relative_base: Word,
+    extra_memory: HashMap<usize, Word>,
 }
 
 impl Machine {
@@ -67,6 +95,8 @@ impl Machine {
             program: program.to_vec(),
             inputs: VecDeque::from(inputs.to_vec()),
             ptr: 0,
+            relative_base: 0,
+            extra_memory: HashMap::new(),
         }
     }
 
@@ -86,18 +116,23 @@ impl Machine {
             .expect(&format!("Invalid opcode {}@{}", cur_op, self.ptr));
         let mut jumped = false;
         let mut output = None;
+        //println!(
+        //    "{:?}: {:?}",
+        //    opcode,
+        //    &self.program[self.ptr..self.ptr + opcode.size()]
+        //);
         match opcode {
             Op::Add => {
                 let val = self.get_value(cur_op, 1) + self.get_value(cur_op, 2);
-                self.set_value(3, val);
+                self.set_value(cur_op, 3, val);
             }
             Op::Mul => {
                 let val = self.get_value(cur_op, 1) * self.get_value(cur_op, 2);
-                self.set_value(3, val);
+                self.set_value(cur_op, 3, val);
             }
             Op::Input => {
                 let input = self.inputs.pop_front().unwrap();
-                self.set_value(1, input);
+                self.set_value(cur_op, 1, input);
             }
             Op::Output => {
                 output = Some(self.get_value(cur_op, 1));
@@ -116,11 +151,14 @@ impl Machine {
             }
             Op::LessThan => {
                 let lt = self.get_value(cur_op, 1) < self.get_value(cur_op, 2);
-                self.set_value(3, if lt { 1 } else { 0 });
+                self.set_value(cur_op, 3, if lt { 1 } else { 0 });
             }
             Op::Equal => {
                 let eq = self.get_value(cur_op, 1) == self.get_value(cur_op, 2);
-                self.set_value(3, if eq { 1 } else { 0 });
+                self.set_value(cur_op, 3, if eq { 1 } else { 0 });
+            }
+            Op::SetRel => {
+                self.relative_base += self.get_value(cur_op, 1);
             }
             Op::Halt => {}
         };
@@ -130,22 +168,38 @@ impl Machine {
         return (output, opcode == Op::Halt);
     }
 
-    fn set_value(&mut self, offset: usize, value: Word) {
+    fn set_value(&mut self, cur_op: Word, offset: usize, value: Word) {
         let param = self.program[self.ptr + offset];
-        self.program[param as usize] = value;
+        match get_op_mode(cur_op, offset) {
+            Mode::Position => self.set_memory(param as usize, value),
+            Mode::Immediate => panic!("Attempted to set in immediate mode"),
+            Mode::Relative => self.set_memory((self.relative_base + param) as usize, value),
+        }
     }
 
     fn get_value(&self, cur_op: Word, offset: usize) -> Word {
         let param = self.program[self.ptr + offset];
-        if is_immediate(cur_op, offset) {
-            param
+        match get_op_mode(cur_op, offset) {
+            Mode::Position => self.get_memory(param as usize),
+            Mode::Immediate => param,
+            Mode::Relative => self.get_memory((self.relative_base + param) as usize),
+        }
+    }
+
+    fn set_memory(&mut self, idx: usize, val: Word) {
+        if idx < self.program.len() {
+            self.program[idx] = val;
         } else {
-            self.program[param as usize]
+            *self.extra_memory.entry(idx).or_insert(0) = val;
         }
     }
 
     pub fn get_memory(&self, idx: usize) -> Word {
-        self.program[idx]
+        if idx < self.program.len() {
+            self.program[idx]
+        } else {
+            *self.extra_memory.get(&idx).unwrap_or(&0)
+        }
     }
 
     pub fn push_input(&mut self, value: Word) {
