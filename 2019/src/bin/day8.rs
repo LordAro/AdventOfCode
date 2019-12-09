@@ -51,7 +51,7 @@ fn main() {
         println!(
             "{}",
             line.iter()
-                .map(|&c| if c == WHITE { c } else { ' ' })
+                .map(|&c| if c == WHITE { '#' } else { ' ' })
                 .collect::<String>()
         );
     }
