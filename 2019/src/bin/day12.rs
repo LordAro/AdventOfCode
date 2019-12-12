@@ -124,38 +124,8 @@ fn main() {
         }
     })
     .collect();
-    //let moons = vec![
-    //    Moon {
-    //        pos: Coord { x: -1, y: 0, z: 2 },
-    //        velo: Coord { x: 0, y: 0, z: 0 },
-    //    },
-    //    Moon {
-    //        pos: Coord {
-    //            x: 2,
-    //            y: -10,
-    //            z: -7,
-    //        },
-    //        velo: Coord { x: 0, y: 0, z: 0 },
-    //    },
-    //    Moon {
-    //        pos: Coord { x: 4, y: -8, z: 8 },
-    //        velo: Coord { x: 0, y: 0, z: 0 },
-    //    },
-    //    Moon {
-    //        pos: Coord { x: 3, y: 5, z: -1 },
-    //        velo: Coord { x: 0, y: 0, z: 0 },
-    //    },
-    //];
 
-    let mut moons = initial_state.clone();
-    for _ in 0..1000 {
-        moons = get_next_state(&moons);
-    }
-    let total_energy: isize = moons
-        .iter()
-        .map(|m| m.potential_energy() * m.kinetic_energy())
-        .sum();
-    println!("Total energy of system: {}", total_energy);
+    let mut total_energy: isize = 0;
 
     let mut states_x: HashSet<Vec<_>> = HashSet::new();
     let mut states_y: HashSet<Vec<_>> = HashSet::new();
@@ -194,10 +164,17 @@ fn main() {
         if repeat_x != 0 && repeat_y != 0 && repeat_z != 0 {
             break;
         }
+        if i == 1000 {
+            total_energy = moons
+                .iter()
+                .map(|m| m.potential_energy() * m.kinetic_energy())
+                .sum();
+        }
 
         moons = get_next_state(&moons);
         i += 1;
     }
+    println!("Total energy of system: {}", total_energy);
     let repeat = lcm(lcm(repeat_x, repeat_y), repeat_z);
     println!("Universe repeats after {} steps", repeat);
 }
