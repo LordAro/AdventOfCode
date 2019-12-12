@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -127,39 +126,40 @@ fn main() {
 
     let mut total_energy: isize = 0;
 
-    let mut states_x: HashSet<Vec<_>> = HashSet::new();
-    let mut states_y: HashSet<Vec<_>> = HashSet::new();
-    let mut states_z: HashSet<Vec<_>> = HashSet::new();
     let mut repeat_x = 0;
     let mut repeat_y = 0;
     let mut repeat_z = 0;
 
+    // Solution from barrucadu & User_4574 - dimensions are independent
+    let initial_xs: Vec<_> = initial_state
+        .iter()
+        .flat_map(|m| vec![m.pos.x, m.velo.x])
+        .collect();
+    let initial_ys: Vec<_> = initial_state
+        .iter()
+        .flat_map(|m| vec![m.pos.y, m.velo.y])
+        .collect();
+    let initial_zs: Vec<_> = initial_state
+        .iter()
+        .flat_map(|m| vec![m.pos.z, m.velo.z])
+        .collect();
+
     let mut moons = initial_state.clone();
     let mut i = 0;
     loop {
-        let xs = moons.iter().flat_map(|m| vec![m.pos.x, m.velo.x]).collect();
-        let ys = moons.iter().flat_map(|m| vec![m.pos.y, m.velo.y]).collect();
-        let zs = moons.iter().flat_map(|m| vec![m.pos.z, m.velo.z]).collect();
-        if repeat_x == 0 {
-            if !states_x.contains(&xs) {
-                states_x.insert(xs);
-            } else {
-                repeat_x = i;
-            }
+        let xs: Vec<_> = moons.iter().flat_map(|m| vec![m.pos.x, m.velo.x]).collect();
+        let ys: Vec<_> = moons.iter().flat_map(|m| vec![m.pos.y, m.velo.y]).collect();
+        let zs: Vec<_> = moons.iter().flat_map(|m| vec![m.pos.z, m.velo.z]).collect();
+
+        // Optimisation from Greg - repeat must match the initial state
+        if repeat_x == 0 && initial_xs == xs {
+            repeat_x = i;
         }
-        if repeat_y == 0 {
-            if !states_y.contains(&ys) {
-                states_y.insert(ys);
-            } else {
-                repeat_y = i;
-            }
+        if repeat_y == 0 && initial_ys == ys {
+            repeat_y = i;
         }
-        if repeat_z == 0 {
-            if !states_z.contains(&zs) {
-                states_z.insert(zs);
-            } else {
-                repeat_z = i;
-            }
+        if repeat_z == 0 && initial_zs == zs {
+            repeat_z = i;
         }
         if repeat_x != 0 && repeat_y != 0 && repeat_z != 0 {
             break;
