@@ -7,3 +7,4 @@ authors = ["Charles Pigott <charlespigott@googlemail.com>"]
 rayon = "^1.2"
 itertools = "^0.8"
 permutohedron = "^0.2"
+regex = "^1.3"
