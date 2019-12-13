@@ -24,7 +24,7 @@ fn main() -> io::Result<()> {
 
     let mut mach = intcode::Machine::new(&program, &[1]);
     let output = loop {
-        let res = mach.run();
+        let res = mach.run_until_output();
         if res != Some(0) {
             break res;
         }
@@ -32,7 +32,7 @@ fn main() -> io::Result<()> {
     println!("TEST diagnostic code: {}", output.unwrap());
 
     let mut mach = intcode::Machine::new(&program, &[5]);
-    let output = mach.run();
+    let output = mach.run_until_output();
     println!("Radiator diagnostic code: {}", output.unwrap());
 
     Ok(())

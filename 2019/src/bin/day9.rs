@@ -22,11 +22,11 @@ fn main() {
     let program = intcode::read_input(&program_str);
 
     let mut mach = intcode::Machine::new(&program, &[1]); // test mode
-    while let Some(output) = mach.run() {
+    while let Some(output) = mach.run_until_output() {
         println!("BOOST keycode: {}", output);
     }
     let mut mach = intcode::Machine::new(&program, &[2]); // sensor boost mode
-    while let Some(output) = mach.run() {
+    while let Some(output) = mach.run_until_output() {
         println!("Distress signal coordinates: {}", output);
     }
 }

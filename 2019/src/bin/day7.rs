@@ -33,7 +33,7 @@ fn main() -> io::Result<()> {
         let mut input_val = 0;
         for phase in permutation {
             let mut mach = intcode::Machine::new(&program, &[phase, input_val]);
-            let output = mach.run();
+            let output = mach.run_until_output();
             input_val = output.unwrap();
         }
         max_output = max(max_output, input_val);
@@ -50,13 +50,13 @@ fn main() -> io::Result<()> {
             machines.push(intcode::Machine::new(&program, &[phase]));
         }
         machines[0].push_input(0);
-        let mut last_output = machines[0].run();
+        let mut last_output = machines[0].run_until_output();
 
         // Run machines in a loop until one halts
         let mut i = 1;
         while last_output.is_some() {
             machines[i].push_input(last_output.unwrap());
-            let output = machines[i].run();
+            let output = machines[i].run_until_output();
             if output.is_none() {
                 break;
             }
