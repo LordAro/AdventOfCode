@@ -11,9 +11,9 @@ fn paint(program: &[isize], start_tile: isize) -> HashMap<(isize, isize), isize>
     let mut cur_pos = (0, 0);
     let mut cur_dir = 0;
     let mut mach = intcode::Machine::new(program, &[start_tile]);
-    while let Some(colour) = mach.run() {
+    while let Some(colour) = mach.run_until_output() {
         *painted_tiles.entry(cur_pos).or_insert(0) = colour;
-        let turn_dir = mach.run().unwrap();
+        let turn_dir = mach.run_until_output().unwrap();
         cur_dir = ((cur_dir + if turn_dir == 1 { 1 } else { -1 }) + 4) % 4;
         cur_pos = match cur_dir {
             0 => (cur_pos.0, cur_pos.1 - 1), // up (negative y)
