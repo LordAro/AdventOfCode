@@ -87,6 +87,12 @@ pub struct Machine {
     relative_base: Word,
 }
 
+pub enum RunRetVal {
+    Halted,
+    NeedsInput,
+    Output(Word),
+}
+
 impl Machine {
     pub fn new(program: &[Word], inputs: &[Word]) -> Machine {
         Machine {
@@ -97,16 +103,25 @@ impl Machine {
         }
     }
 
-    pub fn run(&mut self) -> Option<Word> {
+    pub fn run(&mut self) -> RunRetVal {
         loop {
-            let (res, halted) = self.step();
-            if halted || res.is_some() {
-                return res;
+            let res = self.step();
+            if res.is_some() {
+                return res.unwrap();
             }
         }
     }
 
-    fn step(&mut self) -> (Option<Word>, bool) {
+    pub fn run_until_output(&mut self) -> Option<Word> {
+        let ret = self.run();
+        match ret {
+            RunRetVal::Halted => None,
+            RunRetVal::NeedsInput => panic!("Program requires input!"),
+            RunRetVal::Output(w) => Some(w),
+        }
+    }
+
+    fn step(&mut self) -> Option<RunRetVal> {
         let cur_op = self.program[self.ptr];
         let opcode: Op = (cur_op % 100)
             .try_into()
@@ -128,6 +143,9 @@ impl Machine {
                 self.set_value(cur_op, 3, val);
             }
             Op::Input => {
+                if self.inputs.is_empty() {
+                    return Some(RunRetVal::NeedsInput);
+                }
                 let input = self.inputs.pop_front().unwrap();
                 self.set_value(cur_op, 1, input);
             }
@@ -157,12 +175,18 @@ impl Machine {
             Op::SetRel => {
                 self.relative_base += self.get_value(cur_op, 1);
             }
-            Op::Halt => {}
+            Op::Halt => {
+                return Some(RunRetVal::Halted);
+            }
         };
         if !jumped {
             self.ptr += opcode.size();
         }
-        return (output, opcode == Op::Halt);
+        if output.is_some() {
+            return Some(RunRetVal::Output(output.unwrap()));
+        } else {
+            return None;
+        }
     }
 
     fn set_value(&mut self, cur_op: Word, offset: usize, value: Word) {
@@ -183,7 +207,7 @@ impl Machine {
         }
     }
 
-    fn set_memory(&mut self, idx: usize, val: Word) {
+    pub fn set_memory(&mut self, idx: usize, val: Word) {
         if idx >= self.program.len() {
             self.program.resize(idx + 1, 0);
         }
