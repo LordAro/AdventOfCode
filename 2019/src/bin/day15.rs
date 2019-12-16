@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::env;
 use std::fs::File;
@@ -175,5 +176,26 @@ fn main() {
         "Minimum distance to oxygen: {}",
         get_route((0, 0), *oxygen_pos, &known_positions).len() - 1
     );
-    print_positions(&known_positions);
+
+    let mut minutes = 0;
+    let mut searched = HashSet::new();
+    let mut to_process = HashSet::new();
+    to_process.insert(*oxygen_pos);
+    while !to_process.is_empty() {
+        let mut next_positions = HashSet::new();
+        for c in to_process {
+            searched.insert(c);
+            for adj in get_adjacents(c).iter() {
+                if searched.contains(adj)
+                    || known_positions.get(adj).unwrap_or(&State::Wall) == &State::Wall
+                {
+                    continue;
+                }
+                next_positions.insert(*adj);
+            }
+        }
+        to_process = next_positions;
+        minutes += 1;
+    }
+    println!("Minutes to refill oxygen: {}", minutes - 1);
 }
