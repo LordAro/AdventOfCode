@@ -87,6 +87,7 @@ pub struct Machine {
     relative_base: Word,
 }
 
+#[derive(PartialEq)]
 pub enum RunRetVal {
     Halted,
     NeedsInput,
