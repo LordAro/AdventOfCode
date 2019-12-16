@@ -25,58 +25,6 @@ fn get_adjacents(pos: Coord) -> [Coord; 4] {
     ]
 }
 
-// Horrendously inefficient BFS, needs replacing
-fn get_route(source: Coord, target: Coord, known_positions: &HashMap<Coord, State>) -> Vec<Coord> {
-    let mut to_search = VecDeque::new();
-    to_search.push_back(vec![source]);
-
-    while !to_search.is_empty() {
-        let search_path = to_search.pop_front().unwrap();
-        let search_node = search_path.last().unwrap();
-
-        if *search_node == target {
-            //println!("{:?}", search_path);
-            return search_path;
-        }
-
-        if *known_positions.get(&search_node).unwrap_or(&State::Wall) == State::Wall {
-            continue;
-        }
-
-        for adj in get_adjacents(*search_node).into_iter() {
-            if !search_path.contains(adj) {
-                let mut v = search_path.clone();
-                v.push(*adj);
-                to_search.push_back(v);
-            }
-        }
-    }
-    print_positions(&known_positions);
-    panic!("Unable to find route between {:?} and {:?}", source, target);
-}
-
-fn insert_unknown_positions(
-    unknowns: &mut VecDeque<Coord>,
-    knowns: &HashMap<Coord, State>,
-    pos: Coord,
-) {
-    for adj in get_adjacents(pos).into_iter() {
-        if !knowns.contains_key(adj) {
-            unknowns.push_back(*adj);
-        }
-    }
-}
-
-fn get_dir(a: Coord, b: Coord) -> usize {
-    get_adjacents(a)
-        .iter()
-        .enumerate()
-        .filter(|&(_, adj)| adj == &b)
-        .map(|(i, _)| i + 1) // 1 based
-        .next()
-        .unwrap()
-}
-
 fn print_positions(positions: &HashMap<Coord, State>) {
     let min_x_coord = positions.keys().min_by_key(|c| c.0).unwrap().0;
     let min_y_coord = positions.keys().min_by_key(|c| c.1).unwrap().1;
@@ -101,6 +49,61 @@ fn print_positions(positions: &HashMap<Coord, State>) {
     }
 }
 
+fn get_route(source: Coord, target: Coord, known_positions: &HashMap<Coord, State>) -> Vec<Coord> {
+    let mut came_from: HashMap<Coord, Coord> = HashMap::new();
+    let mut open_set = VecDeque::new();
+    open_set.push_back(source);
+
+    let mut g_score = HashMap::new();
+    g_score.insert(source, 0);
+
+    while !open_set.is_empty() {
+        let current = open_set.pop_front().unwrap();
+        if current == target {
+            let mut total_path = vec![current];
+            let mut current = current;
+            while came_from.contains_key(&current) {
+                current = came_from[&current];
+                total_path.push(current);
+            }
+            total_path.reverse();
+            return total_path;
+        }
+        if known_positions.get(&current).unwrap_or(&State::Wall) == &State::Wall {
+            continue;
+        }
+
+        for adj in get_adjacents(current).into_iter() {
+            let dist = g_score[&current] + 1;
+            if &dist < g_score.get(&adj).unwrap_or(&isize::max_value()) {
+                came_from.insert(*adj, current);
+                g_score.insert(*adj, dist);
+                open_set.push_back(*adj);
+            }
+        }
+    }
+    print_positions(&known_positions);
+    panic!("Unable to find route between {:?} and {:?}", source, target);
+}
+
+fn insert_unknown_positions(unknowns: &mut Vec<Coord>, knowns: &HashMap<Coord, State>, pos: Coord) {
+    for adj in get_adjacents(pos).into_iter() {
+        if !knowns.contains_key(adj) {
+            unknowns.push(*adj);
+        }
+    }
+}
+
+fn get_dir(a: Coord, b: Coord) -> usize {
+    get_adjacents(a)
+        .iter()
+        .enumerate()
+        .filter(|&(_, adj)| adj == &b)
+        .map(|(i, _)| i + 1) // 1 based
+        .next()
+        .unwrap()
+}
+
 fn main() {
     let program_str = BufReader::new(
         File::open(
@@ -120,20 +123,16 @@ fn main() {
     let mut droid_pos = (0, 0);
 
     let mut known_positions: HashMap<Coord, State> = HashMap::new();
-    let mut unknown_positions: VecDeque<Coord> = VecDeque::new();
+    let mut unknown_positions = Vec::new();
     known_positions.insert(droid_pos, State::Clear);
     insert_unknown_positions(&mut unknown_positions, &known_positions, droid_pos);
 
     let mut mach = intcode::Machine::new(&program, &[]);
-    'outer: while !unknown_positions.is_empty() {
+    while !unknown_positions.is_empty() {
         let res = mach.run();
         assert!(res == intcode::RunRetVal::NeedsInput);
         let mut last_pos = droid_pos;
-        let target_pos = unknown_positions.pop_front().unwrap();
-        //println!(
-        //    "Trying to find route from {:?} to {:?}",
-        //    droid_pos, target_pos
-        //);
+        let target_pos = unknown_positions.pop().unwrap();
         for p in get_route(droid_pos, target_pos, &known_positions).drain(1..) {
             let movement_dir = get_dir(last_pos, p) as isize;
             mach.push_input(movement_dir);
@@ -147,26 +146,19 @@ fn main() {
                             // wall
                             known_positions.insert(next_pos, State::Wall);
                         }
-                        1 => {
+                        1 | 2 => {
                             // moved successfully
                             droid_pos = next_pos;
-                            known_positions.insert(droid_pos, State::Clear);
+                            known_positions.insert(
+                                droid_pos,
+                                if x == 1 { State::Clear } else { State::Oxygen },
+                            );
                             insert_unknown_positions(
                                 &mut unknown_positions,
                                 &known_positions,
                                 droid_pos,
                             );
                         }
-                        2 => {
-                            droid_pos = next_pos;
-                            known_positions.insert(droid_pos, State::Oxygen);
-                            insert_unknown_positions(
-                                &mut unknown_positions,
-                                &known_positions,
-                                droid_pos,
-                            );
-                            //break 'outer; // Done, now find shortest route
-                        } // moved and found destination
                         _ => unreachable!(),
                     }
                 }
