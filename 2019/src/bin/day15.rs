@@ -10,7 +10,7 @@ use advent_of_code::intcode;
 
 type Coord = (i32, i32);
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq)]
 enum State {
     Clear,
     Wall,
@@ -197,5 +197,5 @@ fn main() {
         to_process = next_positions;
         minutes += 1;
     }
-    println!("Minutes to refill oxygen: {}", minutes - 1);
+    println!("Minutes to refill oxygen: {}", minutes - 1); // oxygen is already filled at minute 0
 }
