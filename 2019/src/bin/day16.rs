@@ -4,6 +4,61 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::iter;
 
+fn get_sequence(idx: usize) -> impl Iterator<Item = i32> {
+    let base_pattern = [0, 1, 0, -1];
+
+    iter::repeat(base_pattern[0])
+        .take(idx + 1)
+        .chain(iter::repeat(base_pattern[1]).take(idx + 1))
+        .chain(iter::repeat(base_pattern[2]).take(idx + 1))
+        .chain(iter::repeat(base_pattern[3]).take(idx + 1))
+        .cycle()
+        .skip(1)
+}
+
+fn next_phase(signal: &Vec<i32>) -> Vec<i32> {
+    (0..signal.len())
+        .map(|i| {
+            signal
+                .iter()
+                .zip(get_sequence(i))
+                .map(|(e, c)| e * c)
+                .sum::<i32>()
+                .abs()
+                % 10
+        })
+        .collect()
+}
+
+// Everything after n/2 is just a sum of the subsequent digits. Abuse the fact that the message
+// offset is always > n/2 to work out the next (relevant bit of the) phase is
+fn next_phase_n2(signal: &Vec<i32>) -> Vec<i32> {
+    let message_offset = signal.iter().take(7).fold(0, |acc, x| acc * 10 + x) as usize;
+    let mut new_signal = Vec::with_capacity(signal.len());
+    new_signal.extend_from_slice(
+        &signal
+            .iter()
+            .cloned()
+            .take(message_offset)
+            .collect::<Vec<_>>(),
+    );
+    new_signal.resize(signal.len(), 0);
+    let mut sum = 0;
+    for i in (message_offset..signal.len()).rev() {
+        sum += signal[i];
+        let new_digit = sum % 10;
+        new_signal[i] = new_digit;
+    }
+    new_signal
+}
+
+fn repeat_10000(signal: Vec<i32>) -> Vec<i32> {
+    iter::repeat(signal)
+        .take(10000)
+        .flat_map(|v| v.into_iter())
+        .collect()
+}
+
 fn main() {
     let input_signal: Vec<_> = BufReader::new(
         File::open(
@@ -43,61 +98,6 @@ fn main() {
         .collect();
 
     println!("Message of repeated signal: {}", phase_100_message);
-}
-
-fn repeat_10000(signal: Vec<i32>) -> Vec<i32> {
-    iter::repeat(signal)
-        .take(10000)
-        .flat_map(|v| v.into_iter())
-        .collect()
-}
-
-fn next_phase(signal: &Vec<i32>) -> Vec<i32> {
-    (0..signal.len())
-        .map(|i| {
-            signal
-                .iter()
-                .zip(get_sequence(i))
-                .map(|(e, c)| e * c)
-                .sum::<i32>()
-                .abs()
-                % 10
-        })
-        .collect()
-}
-
-// Everything after n/2 is just a sum of the subsequent digits. Abuse the fact that the message
-// offset is always > n/2 to work out the next (relevant bit of the) phase is
-fn next_phase_n2(signal: &Vec<i32>) -> Vec<i32> {
-    let message_offset = signal.iter().take(7).fold(0, |acc, x| acc * 10 + x) as usize;
-    let mut new_signal = Vec::with_capacity(signal.len());
-    new_signal.extend_from_slice(
-        &signal
-            .iter()
-            .cloned()
-            .take(message_offset)
-            .collect::<Vec<_>>(),
-    );
-    new_signal.resize(signal.len(), 0);
-    let mut sum = 0;
-    for i in (message_offset..signal.len()).rev() {
-        sum += signal[i];
-        let new_digit = sum % 10;
-        new_signal[i] = new_digit;
-    }
-    new_signal
-}
-
-fn get_sequence(idx: usize) -> impl Iterator<Item = i32> {
-    let base_pattern = [0, 1, 0, -1];
-
-    iter::repeat(base_pattern[0])
-        .take(idx + 1)
-        .chain(iter::repeat(base_pattern[1]).take(idx + 1))
-        .chain(iter::repeat(base_pattern[2]).take(idx + 1))
-        .chain(iter::repeat(base_pattern[3]).take(idx + 1))
-        .cycle()
-        .skip(1)
 }
 
 #[cfg(test)]
