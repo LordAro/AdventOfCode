@@ -165,16 +165,18 @@ fn main() {
     println!("Generated movement sequence: {:?}", seq);
 
     // XXX Hand rolled!
-    let movement_sequence = "A,A,B,B,C,A,B\n\
-                             L,8,R,12,R,12,R,10,R,10,R,12,R,10\n\
-                             L,10,R,10,L,6\n\
+    let movement_sequence = "A,B,A,B,C,C,B,A,B,C\n\
+                             L,8,R,12,R,12,R,10\n\
                              R,10,R,12,R,10\n\
+                             L,10,R,10,L,6\n\
                              n\n";
     movement_sequence
         .chars()
         .for_each(|c| mach.push_input(c as isize));
 
     while let Some(c) = mach.run_until_output() {
-        print!("{}", (c as u8) as char);
+        if c > 256 {
+            println!("Amount of space dust: {}", c);
+        }
     }
 }
