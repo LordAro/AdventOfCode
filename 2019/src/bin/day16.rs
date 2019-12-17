@@ -32,20 +32,24 @@ fn main() {
         phase_100_first8
     );
 
-    let message_offset = input_signal.iter().take(7).fold(0, |acc, x| acc * 10 + x);
-    let repeated_signal: Vec<i32> = iter::repeat(input_signal)
-        .take(10000)
-        .flat_map(|v| v.into_iter())
-        .collect();
-    let phase_100 = (0..100).fold(repeated_signal.clone(), |signal, _| next_phase(&signal));
-    let phase_100_first8: String = phase_100
+    let message_offset = input_signal.iter().take(7).fold(0, |acc, x| acc * 10 + x) as usize;
+    let repeated_signal: Vec<i32> = repeat_10000(input_signal);
+    let phase_100 = (0..100).fold(repeated_signal.clone(), |signal, _| next_phase_n2(&signal));
+    let phase_100_message: String = phase_100
         .iter()
         .skip(message_offset as usize)
         .take(8)
         .map(|d| char::from_digit(*d as u32, 10).unwrap())
         .collect();
 
-    println!("Message of repeated signal: {}", phase_100_first8);
+    println!("Message of repeated signal: {}", phase_100_message);
+}
+
+fn repeat_10000(signal: Vec<i32>) -> Vec<i32> {
+    iter::repeat(signal)
+        .take(10000)
+        .flat_map(|v| v.into_iter())
+        .collect()
 }
 
 fn next_phase(signal: &Vec<i32>) -> Vec<i32> {
@@ -60,6 +64,28 @@ fn next_phase(signal: &Vec<i32>) -> Vec<i32> {
                 % 10
         })
         .collect()
+}
+
+// Everything after n/2 is just a sum of the subsequent digits. Abuse the fact that the message
+// offset is always > n/2 to work out the next (relevant bit of the) phase is
+fn next_phase_n2(signal: &Vec<i32>) -> Vec<i32> {
+    let message_offset = signal.iter().take(7).fold(0, |acc, x| acc * 10 + x) as usize;
+    let mut new_signal = Vec::with_capacity(signal.len());
+    new_signal.extend_from_slice(
+        &signal
+            .iter()
+            .cloned()
+            .take(message_offset)
+            .collect::<Vec<_>>(),
+    );
+    new_signal.resize(signal.len(), 0);
+    let mut sum = 0;
+    for i in (message_offset..signal.len()).rev() {
+        sum += signal[i];
+        let new_digit = sum % 10;
+        new_signal[i] = new_digit;
+    }
+    new_signal
 }
 
 fn get_sequence(idx: usize) -> impl Iterator<Item = i32> {
@@ -94,5 +120,22 @@ mod tests {
     fn next_phase_base() {
         let input = vec![1, 2, 3, 4, 5, 6, 7, 8];
         assert_eq!(next_phase(&input), &[4, 8, 2, 2, 6, 1, 5, 8]);
+    }
+
+    #[test]
+    fn next_phase_p2() {
+        let input_signal = vec![
+            0, 3, 0, 3, 6, 7, 3, 2, 5, 7, 7, 2, 1, 2, 9, 4, 4, 0, 6, 3, 4, 9, 1, 5, 6, 5, 4, 7, 4,
+            6, 6, 4,
+        ];
+        let message_offset = input_signal.iter().take(7).fold(0, |acc, x| acc * 10 + x) as usize;
+        let repeated_signal = repeat_10000(input_signal);
+        let phase_100 = (0..100).fold(repeated_signal.clone(), |signal, _| next_phase_n2(&signal));
+        let phase_100_first8: Vec<i32> = phase_100
+            .into_iter()
+            .skip(message_offset as usize)
+            .take(8)
+            .collect();
+        assert_eq!(phase_100_first8, &[8, 4, 4, 6, 2, 0, 2, 6]);
     }
 }
