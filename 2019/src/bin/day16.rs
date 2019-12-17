@@ -31,6 +31,21 @@ fn main() {
         "After 100 iterations of FFT, first 8 digits: {}",
         phase_100_first8
     );
+
+    let message_offset = input_signal.iter().take(7).fold(0, |acc, x| acc * 10 + x);
+    let repeated_signal: Vec<i32> = iter::repeat(input_signal)
+        .take(10000)
+        .flat_map(|v| v.into_iter())
+        .collect();
+    let phase_100 = (0..100).fold(repeated_signal.clone(), |signal, _| next_phase(&signal));
+    let phase_100_first8: String = phase_100
+        .iter()
+        .skip(message_offset as usize)
+        .take(8)
+        .map(|d| char::from_digit(*d as u32, 10).unwrap())
+        .collect();
+
+    println!("Message of repeated signal: {}", phase_100_first8);
 }
 
 fn next_phase(signal: &Vec<i32>) -> Vec<i32> {
