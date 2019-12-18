@@ -32,16 +32,10 @@ fn next_phase(signal: &Vec<i32>) -> Vec<i32> {
 
 // Everything after n/2 is just a sum of the subsequent digits. Abuse the fact that the message
 // offset is always > n/2 to work out the next (relevant bit of the) phase is
-fn next_phase_n2(signal: &Vec<i32>) -> Vec<i32> {
-    let message_offset = signal.iter().take(7).fold(0, |acc, x| acc * 10 + x) as usize;
+// Thanks Alan
+fn next_phase_n2(signal: &Vec<i32>, message_offset: usize) -> Vec<i32> {
+    assert!(message_offset >= signal.len() / 2);
     let mut new_signal = Vec::with_capacity(signal.len());
-    new_signal.extend_from_slice(
-        &signal
-            .iter()
-            .cloned()
-            .take(message_offset)
-            .collect::<Vec<_>>(),
-    );
     new_signal.resize(signal.len(), 0);
     let mut sum = 0;
     for i in (message_offset..signal.len()).rev() {
@@ -53,10 +47,7 @@ fn next_phase_n2(signal: &Vec<i32>) -> Vec<i32> {
 }
 
 fn repeat_10000(signal: Vec<i32>) -> Vec<i32> {
-    iter::repeat(signal)
-        .take(10000)
-        .flat_map(|v| v.into_iter())
-        .collect()
+    iter::repeat(signal).take(10000).flatten().collect()
 }
 
 fn main() {
@@ -89,7 +80,9 @@ fn main() {
 
     let message_offset = input_signal.iter().take(7).fold(0, |acc, x| acc * 10 + x) as usize;
     let repeated_signal: Vec<i32> = repeat_10000(input_signal);
-    let phase_100 = (0..100).fold(repeated_signal.clone(), |signal, _| next_phase_n2(&signal));
+    let phase_100 = (0..100).fold(repeated_signal.clone(), |signal, _| {
+        next_phase_n2(&signal, message_offset)
+    });
     let phase_100_message: String = phase_100
         .iter()
         .skip(message_offset as usize)
@@ -130,12 +123,12 @@ mod tests {
         ];
         let message_offset = input_signal.iter().take(7).fold(0, |acc, x| acc * 10 + x) as usize;
         let repeated_signal = repeat_10000(input_signal);
-        let phase_100 = (0..100).fold(repeated_signal.clone(), |signal, _| next_phase_n2(&signal));
-        let phase_100_first8: Vec<i32> = phase_100
-            .into_iter()
-            .skip(message_offset as usize)
-            .take(8)
-            .collect();
-        assert_eq!(phase_100_first8, &[8, 4, 4, 6, 2, 0, 2, 6]);
+        let phase_100 = (0..100).fold(repeated_signal.clone(), |signal, _| {
+            next_phase_n2(&signal, message_offset)
+        });
+        assert_eq!(
+            &phase_100[message_offset..message_offset + 8],
+            &[8, 4, 4, 6, 2, 0, 2, 6]
+        );
     }
 }
