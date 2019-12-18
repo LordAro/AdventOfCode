@@ -99,6 +99,28 @@ fn next_right(pos: Coord, dir: usize, scaffolds: &Vec<Vec<isize>>) -> isize {
     }
 }
 
+fn get_ascii_length(seq: &[String]) -> usize {
+    seq.iter().map(|s| s.len()).sum::<usize>() + seq.len() - 1
+}
+
+fn compress(sequence: &Vec<String>) -> (Vec<String>, Vec<String>, Vec<String>, Vec<String>) {
+    for step in (2..sequence.len() / 3).step_by(2) {
+        let func_a = &sequence[0..step];
+        if get_ascii_length(func_a) > 20 {
+            continue;
+        }
+
+        println!("{:?}", func_a);
+        for i in (step..sequence.len() - step).step_by(2) {
+            let test_case = &sequence[i..i + step];
+            if func_a == test_case {
+                println!("Found repeat at {}", i);
+            }
+        }
+    }
+    (vec![], vec![], vec![], vec![])
+}
+
 fn main() {
     let program_str = BufReader::new(
         File::open(
@@ -164,6 +186,7 @@ fn main() {
     }
     println!("Generated movement sequence: {:?}", seq);
 
+    let (main_func, func_a, func_b, func_c) = compress(&seq);
     // XXX Hand rolled!
     let movement_sequence = "A,B,A,B,C,C,B,A,B,C\n\
                              L,8,R,12,R,12,R,10\n\
