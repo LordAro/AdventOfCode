@@ -16,13 +16,62 @@ enum State {
     Me,
 }
 
-fn get_adjacents(pos: Coord) -> [Coord; 4] {
-    [
-        (pos.0, pos.1 - 1), // north
-        (pos.0, pos.1 + 1), // south
-        (pos.0 - 1, pos.1), // west
-        (pos.0 + 1, pos.1), // east
-    ]
+fn parse_map<T: AsRef<str>>(
+    input_lines: &[T],
+) -> (
+    Vec<Vec<State>>,
+    HashMap<Coord, char>,
+    HashMap<Coord, char>,
+    Coord,
+) {
+    let mut keys: HashMap<Coord, char> = HashMap::new();
+    let mut doors: HashMap<Coord, char> = HashMap::new();
+    let mut me: Coord = Default::default();
+    let map = input_lines
+        .iter()
+        .enumerate()
+        .map(|(y, l)| {
+            l.as_ref()
+                .chars()
+                .enumerate()
+                .map(|(x, c)| match c {
+                    '#' => State::Wall,
+                    '.' => State::Clear,
+                    '@' => {
+                        me = (x, y);
+                        State::Me
+                    }
+                    'a'..='z' => {
+                        keys.insert((x, y), c);
+                        State::Key(c)
+                    }
+                    'A'..='Z' => {
+                        doors.insert((x, y), c);
+                        State::Door(c)
+                    }
+                    _ => panic!("Unrecognised character {}", c),
+                })
+                .collect()
+        })
+        .collect();
+    (map, keys, doors, me)
+}
+
+fn open_adjacents(pos: Coord, map: &Vec<Vec<State>>) -> Vec<Coord> {
+    let mut ret = vec![];
+    if pos.1 > 0 && map[pos.1 - 1][pos.0] != State::Wall {
+        ret.push((pos.0, pos.1 - 1));
+    }
+    if pos.1 < map.len() - 1 && map[pos.1 + 1][pos.0] != State::Wall {
+        ret.push((pos.0, pos.1 + 1));
+    }
+    if pos.0 > 0 && map[pos.1][pos.0 - 1] != State::Wall {
+        ret.push((pos.0 - 1, pos.1));
+    }
+    if pos.0 < map[pos.1].len() - 1 && map[pos.1][pos.0 + 1] != State::Wall {
+        ret.push((pos.0 + 1, pos.1));
+    }
+    ret
 }
 
 fn print_map(positions: &Vec<Vec<State>>) {
@@ -40,7 +89,7 @@ fn print_map(positions: &Vec<Vec<State>>) {
     }
 }
 
-fn get_route(source: Coord, target: Coord, known_positions: &HashMap<Coord, State>) -> Vec<Coord> {
+fn get_route(source: Coord, target: Coord, map: &Vec<Vec<State>>) -> Vec<Coord> {
     let mut came_from: HashMap<Coord, Coord> = HashMap::new();
     let mut open_set = VecDeque::new();
     open_set.push_back(source);
@@ -60,42 +109,89 @@ fn get_route(source: Coord, target: Coord, known_positions: &HashMap<Coord, Stat
             total_path.reverse();
             return total_path;
         }
-        if known_positions.get(&current).unwrap_or(&State::Wall) == &State::Wall {
-            continue;
-        }
 
-        for adj in get_adjacents(current).into_iter() {
+        for adj in open_adjacents(current, map).into_iter() {
             let dist = g_score[&current] + 1;
             if &dist < g_score.get(&adj).unwrap_or(&isize::max_value()) {
-                came_from.insert(*adj, current);
-                g_score.insert(*adj, dist);
-                open_set.push_back(*adj);
+                came_from.insert(adj, current);
+                g_score.insert(adj, dist);
+                open_set.push_back(adj);
             }
         }
     }
     panic!("Unable to find route between {:?} and {:?}", source, target);
 }
 
-fn insert_unknown_positions(unknowns: &mut Vec<Coord>, knowns: &HashMap<Coord, State>, pos: Coord) {
-    for adj in get_adjacents(pos).into_iter() {
-        if !knowns.contains_key(adj) {
-            unknowns.push(*adj);
+fn tsp(
+    start: Coord,
+    remaining_keys: &HashMap<Coord, char>,
+    keys_so_far: &HashSet<char>,
+    doors: &HashMap<Coord, char>,
+    map: &Vec<Vec<State>>,
+    route_cache: &HashMap<(Coord, Coord), Vec<Coord>>,
+) -> impl Iterator<Item = Coord> {
+    let mut shortest_route = vec![];
+    let mut shortest_dist = usize::max_value();
+    for (&key, key_name) in remaining_keys {
+        let mut route = route_cache.get(&(start, key)).unwrap().clone();
+        if route
+            .iter()
+            .filter_map(|c| {
+                if doors.contains_key(&c) {
+                    Some(doors[c])
+                } else {
+                    None
+                }
+            })
+            .any(|d| !keys_so_far.contains(&d.to_ascii_lowercase()))
+        {
+            continue;
+        }
+        //println!("{:?} -> {:?} = {}", start, key, route.len() - 1);
+        let mut new_remaining_keys = remaining_keys.clone();
+        new_remaining_keys.remove(&key);
+        let mut new_keys_so_far = keys_so_far.clone();
+        new_keys_so_far.insert(*key_name);
+        let recurse = tsp(
+            key,
+            &new_remaining_keys,
+            &new_keys_so_far,
+            doors,
+            map,
+            route_cache,
+        );
+        route.extend(recurse);
+        if route.len() < shortest_dist {
+            shortest_dist = route.len();
+            shortest_route = route;
         }
     }
+    //shortest_dist - 1
+    shortest_route.into_iter().skip(1) // Remove starting position from the route
 }
 
-fn get_dir(a: Coord, b: Coord) -> usize {
-    get_adjacents(a)
-        .iter()
-        .enumerate()
-        .filter(|&(_, adj)| adj == &b)
-        .map(|(i, _)| i + 1) // 1 based
-        .next()
-        .unwrap()
+fn build_route_cache(
+    keys: &HashMap<Coord, char>,
+    start: Coord,
+    map: &Vec<Vec<State>>,
+) -> HashMap<(Coord, Coord), Vec<Coord>> {
+    let mut route_cache: HashMap<(Coord, Coord), Vec<Coord>> = HashMap::new();
+    for &key1 in keys.keys() {
+        let route = get_route(start, key1, &map);
+        route_cache.insert((start, key1), route);
+        for &key2 in keys.keys() {
+            if key1 == key2 {
+                continue;
+            }
+            let route = get_route(key1, key2, &map);
+            route_cache.insert((key1, key2), route);
+        }
+    }
+    route_cache
 }
 
 fn main() {
-    let map: Vec<Vec<_>> = BufReader::new(
+    let input_lines: Vec<_> = BufReader::new(
         File::open(
             &env::args()
                 .nth(1)
@@ -104,32 +200,101 @@ fn main() {
         .expect("Could not open input file"),
     )
     .lines()
-    .map(|l| {
-        l.unwrap()
-            .chars()
-            .map(|c| match c {
-                '#' => State::Wall,
-                '.' => State::Clear,
-                '@' => State::Me,
-                'a'..='z' => State::Key(c),
-                'A'..='Z' => State::Door(c),
-                _ => panic!("Unrecognised character {}", c),
-            })
-            .collect()
-    })
+    .map(|l| l.unwrap())
     .collect();
 
-    let targets: HashMap<_, _> = map
-        .iter()
-        .enumerate()
-        .flat_map(|(j, r)| {
-            r.iter().enumerate().filter_map(move |(i, e)| match e {
-                State::Key(_) | State::Door(_) => Some(((i, j), e)),
-                _ => None,
-            })
-        })
-        .collect();
-
-    println!("{:?}", targets);
+    let (map, keys, doors, me) = parse_map(&input_lines);
     print_map(&map);
+
+    let route_cache = build_route_cache(&keys, me, &map);
+
+    let final_route: Vec<_> = tsp(me, &keys, &HashSet::new(), &doors, &map, &route_cache).collect();
+    println!("Route length: {} {:?}", final_route.len(), final_route);
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+
+    #[test]
+    fn ex1() {
+        let input: Vec<_> = "#########\n\
+                             #b.A.@.a#\n\
+                             #########"
+            .lines()
+            .collect();
+        let (map, keys, doors, me) = parse_map(&input);
+        let route_cache = build_route_cache(&keys, me, &map);
+        let final_route: Vec<_> =
+            tsp(me, &keys, &HashSet::new(), &doors, &map, &route_cache).collect();
+        assert_eq!(final_route.len(), 8);
+    }
+
+    #[test]
+    fn ex2() {
+        let input: Vec<_> = "########################\n\
+                             #f.D.E.e.C.b.A.@.a.B.c.#\n\
+                             ######################.#\n\
+                             #d.....................#\n\
+                             ########################"
+            .lines()
+            .collect();
+        let (map, keys, doors, me) = parse_map(&input);
+        let route_cache = build_route_cache(&keys, me, &map);
+        let final_route: Vec<_> =
+            tsp(me, &keys, &HashSet::new(), &doors, &map, &route_cache).collect();
+        assert_eq!(final_route.len(), 86);
+    }
+    #[test]
+    fn ex3() {
+        let input: Vec<_> = "########################\n\
+                             #...............b.C.D.f#\n\
+                             #.######################\n\
+                             #.....@.a.B.c.d.A.e.F.g#\n\
+                             ########################"
+            .lines()
+            .collect();
+        let (map, keys, doors, me) = parse_map(&input);
+        let route_cache = build_route_cache(&keys, me, &map);
+        let final_route: Vec<_> =
+            tsp(me, &keys, &HashSet::new(), &doors, &map, &route_cache).collect();
+        assert_eq!(final_route.len(), 132);
+    }
+
+    #[test]
+    fn ex4() {
+        let input: Vec<_> = "#################\n\
+                             #i.G..c...e..H.p#\n\
+                             ########.########\n\
+                             #j.A..b...f..D.o#\n\
+                             ########@########\n\
+                             #k.E..a...g..B.n#\n\
+                             ########.########\n\
+                             #l.F..d...h..C.m#\n\
+                             #################"
+            .lines()
+            .collect();
+        let (map, keys, doors, me) = parse_map(&input);
+        let route_cache = build_route_cache(&keys, me, &map);
+        let final_route: Vec<_> =
+            tsp(me, &keys, &HashSet::new(), &doors, &map, &route_cache).collect();
+        assert_eq!(final_route.len(), 136);
+    }
+
+    #[test]
+    fn ex5() {
+        let input: Vec<_> = "########################\n\
+                             #@..............ac.GI.b#\n\
+                             ###d#e#f################\n\
+                             ###A#B#C################\n\
+                             ###g#h#i################\n\
+                             ########################"
+            .lines()
+            .collect();
+        let (map, keys, doors, me) = parse_map(&input);
+        let route_cache = build_route_cache(&keys, me, &map);
+        let final_route: Vec<_> =
+            tsp(me, &keys, &HashSet::new(), &doors, &map, &route_cache).collect();
+        assert_eq!(final_route.len(), 81);
+    }
 }
