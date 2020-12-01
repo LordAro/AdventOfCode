@@ -1,19 +1,19 @@
+import algorithm
 import os
 import sequtils
 import strutils
 
 var inputData = open(paramStr(1)).readAll().strip().splitLines().map(parseInt)
+inputData.sort()
 
 var matchedI = 0
 var matchedJ = 0
 
-block outer:
-  for i in low(inputData) .. high(inputData) - 1:
-    for j in i + 1 .. high(inputData):
-      if inputData[i] + inputData[j] == 2020:
-        matchedI = i
-        matchedJ = j
-        break outer
+for i in 0 .. high(inputData):
+  let foundIdx = binarySearch(inputData, 2020 - inputData[i])
+  if foundIdx != -1:
+    matchedI = i
+    matchedJ = foundIdx
 
 let pairProduct = inputData[matchedI] * inputData[matchedJ]
 echo "Matched pair: ", $(pairProduct)
@@ -21,14 +21,14 @@ echo "Matched pair: ", $(pairProduct)
 var matchedK = 0
 
 block outer:
-  for i in low(inputData) .. high(inputData) - 2:
-    for j in i + 1 .. high(inputData) - 1:
-      for k in j + 1 .. high(inputData):
-        if inputData[i] + inputData[j] + inputData[k] == 2020:
-          matchedI = i
-          matchedJ = j
-          matchedK = k
-          break outer
+  for i in 0 .. high(inputData) - 1:
+    for j in i + 1 .. high(inputData):
+      let foundIdx = binarySearch(inputData, 2020 - (inputData[i] + inputData[j]))
+      if foundIdx != -1:
+        matchedI = i
+        matchedJ = j
+        matchedK = foundIdx
+        break outer
 
 let tripleProduct = inputData[matchedI] * inputData[matchedJ] * inputData[matchedK]
 echo "Matched triple: ", $(tripleProduct)
