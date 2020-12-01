@@ -2,10 +2,31 @@ import os
 import strutils
 import sequtils
 
-echo "Hello, world!"
+let inputData = open(paramStr(1)).readAll().strip().splitLines().map(parseInt)
 
-let inputData = open(paramStr(1)).readAll().strip()
-echo "I have read this from a file: '" & inputData & "'"
+var matchedI = 0
+var matchedJ = 0
 
-let charVals = inputData.map(proc(x: char): int = ord(x))
-echo "I have read this from a file: '" & $(charVals) & "'"
+block outer:
+    for i in low(inputData) .. high(inputData) - 1:
+        for j in i + 1.. high(inputData):
+            if inputData[i] + inputData[j] == 2020:
+                matchedI = i
+                matchedJ = j
+                break outer
+
+echo "Matched pair: ", $(inputData[matchedI] * inputData[matchedJ])
+
+var matchedK = 0
+
+block outer:
+    for i in low(inputData) .. high(inputData) - 2:
+        for j in i + 1.. high(inputData) - 1:
+            for k in j + 1.. high(inputData):
+                if inputData[i] + inputData[j] + inputData[k] == 2020:
+                    matchedI = i
+                    matchedJ = j
+                    matchedK = k
+                    break outer
+
+echo "Matched triple: ", $(inputData[matchedI] * inputData[matchedJ] * inputData[matchedK])
