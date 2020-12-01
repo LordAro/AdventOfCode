@@ -14,7 +14,7 @@ builds/day%: src/day%.nim
 	@./builds/day$* inputs/day$*.input
 
 time%: builds/day%
-	bash -c 'time for i in (1..1000); do ./builds/day$* inputs/day$*.input; done' > /dev/null
+	bash -c 'time for i in {1..1000}; do ./builds/day$* inputs/day$*.input; done' > /dev/null
 
 time: $(addprefix time,$(CUR_SLNS))
 
