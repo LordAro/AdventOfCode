@@ -1,4 +1,5 @@
-FLAGS=--warnings:on --hint[Conf]:off --hint[Link]:off --hint[SuccessX]:off -d:release
+DISABLED_HINT_FLAGS=$(patsubst %,--hint[%]:off,Conf Exec Link SuccessX)
+FLAGS=--warnings:on $(DISABLED_HINT_FLAGS) -d:release
 
 CUR_SLNS=$(sort $(patsubst src/day%.nim,%,$(wildcard src/day*.nim)))
 
