@@ -3,7 +3,7 @@ import os
 import sequtils
 import strutils
 
-var inputData = open(paramStr(1)).readAll().strip().splitLines().map(parseInt)
+var inputData = toSeq(paramStr(1).lines).map(parseInt)
 inputData.sort()
 
 var matchedI = 0
