@@ -19,6 +19,12 @@ time%: builds/day%
 
 time: $(addprefix time,$(CUR_SLNS))
 
+PERF_COUNT=10000
+
+perf%: builds/day%
+	@echo -e '\x1b[1;32mRunning day $* solution (perf)\x1b[0m'
+	@perf stat -r$(PERF_COUNT) ./builds/day$* inputs/day$*.input 2>&1 > /dev/null
+
 clean:
 	rm -f $(addprefix builds/day, $(CUR_SLNS))
 
