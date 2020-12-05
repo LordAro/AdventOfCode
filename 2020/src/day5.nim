@@ -2,33 +2,25 @@ import algorithm
 import os
 import sequtils
 
-var seatIds = toSeq(paramStr(1).lines).map(proc(pass: string): int =
-  let row = pass[0 .. ^4]
-  let col = pass[^3 .. ^1]
+let seatIds = toSeq(paramStr(1).lines).map(proc(pass: string): int =
+  var
+    row_lb = 0
+    row_ub = 128
+    col_lb = 0
+    col_ub = 8
 
-  var lb = 0
-  var ub = 128
-  for c in row:
+  for c in pass:
     if c == 'F':
-      ub = (lb + ub) div 2
+      row_ub = (row_lb + row_ub) div 2
     elif c == 'B':
-      lb = (lb + ub) div 2
-
-  let row_num = lb
-
-  lb = 0
-  ub = 8
-  for c in col:
-    if c == 'L':
-      ub = (lb + ub) div 2
+      row_lb = (row_lb + row_ub) div 2
+    elif c == 'L':
+      col_ub = (col_lb + col_ub) div 2
     elif c == 'R':
-      lb = (lb + ub) div 2
+      col_lb = (col_lb + col_ub) div 2
 
-  let col_num = lb
-
-  row_num * 8 + col_num
-)
-seatIds.sort()
+  row_lb * 8 + col_lb
+).sorted()
 
 echo "Max seat ID: ", $(seatIds[^1])
 
