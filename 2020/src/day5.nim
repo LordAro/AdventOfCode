@@ -2,25 +2,17 @@ import algorithm
 import os
 import sequtils
 
-let seatIds = toSeq(paramStr(1).lines).map(proc(pass: string): int =
-  var
-    row_lb = 0
-    row_ub = 128
-    col_lb = 0
-    col_ub = 8
+var seatIds = toSeq(paramStr(1).lines).map(proc(pass: string): int =
+  var pass_no = 0
+  for i, c in pass:
+    pass_no = pass_no or ord(c == 'B' or c == 'R') shl (pass.len - i - 1)
 
-  for c in pass:
-    if c == 'F':
-      row_ub = (row_lb + row_ub) div 2
-    elif c == 'B':
-      row_lb = (row_lb + row_ub) div 2
-    elif c == 'L':
-      col_ub = (col_lb + col_ub) div 2
-    elif c == 'R':
-      col_lb = (col_lb + col_ub) div 2
+  let row = pass_no shr 3    # Take first 7 bits
+  let col = pass_no and 0x7  # Take last 3 bits
 
-  row_lb * 8 + col_lb
-).sorted()
+  row * 8 + col
+)
+seatIds.sort()
 
 echo "Max seat ID: ", $(seatIds[^1])
 
