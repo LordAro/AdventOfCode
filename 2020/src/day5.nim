@@ -1,8 +1,9 @@
 import algorithm
 import os
-import sequtils
 
-var seatIds = toSeq(paramStr(1).lines).map(proc(pass: string): int =
+var seatIds: seq[int] = @[]
+
+for pass in paramStr(1).lines:
   var pass_no = 0
   for i, c in pass:
     pass_no = pass_no or ord(c == 'B' or c == 'R') shl (pass.len - i - 1)
@@ -10,8 +11,7 @@ var seatIds = toSeq(paramStr(1).lines).map(proc(pass: string): int =
   let row = pass_no shr 3    # Take first 7 bits
   let col = pass_no and 0x7  # Take last 3 bits
 
-  row * 8 + col
-)
+  seatIds.add(row * 8 + col)
 seatIds.sort()
 
 echo "Max seat ID: ", $(seatIds[^1])
