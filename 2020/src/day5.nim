@@ -17,7 +17,7 @@ seatIds.sort()
 
 echo "Max seat ID: ", $(seatIds[^1])
 
-for i in 1 .. len(seatIds) - 1:
-  if seatIds[i - 1] + 2 == seatIds[i]:
+for i in 1 .. high(seatIds):
+  if seatIds[i - 1] + 1 != seatIds[i]:
     echo "My seat ID: ", $(seatIds[i - 1] + 1)
     break
