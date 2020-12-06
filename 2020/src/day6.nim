@@ -3,8 +3,12 @@ import os
 import strutils
 import sequtils
 
-proc toBitset(s: string): set[char] =
-  result = {}
+type
+  Answer = 'a' .. 'z'
+  AnsSet = set[Answer]
+
+proc toBitset(s: string): AnsSet =
+  result = {}.AnsSet
   for c in s:
     result.incl(c)
 
