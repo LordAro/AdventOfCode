@@ -7,9 +7,9 @@ import strutils
 import tables
 
 type
-  BagColour = string
-  Bags = Table[BagColour, seq[BagColour]]
-  BagMap = Table[BagColour, seq[(int, BagColour)]]
+  Colour = string
+  Bags = Table[Colour, seq[Colour]]
+  BagMap = Table[Colour, seq[(int, Colour)]]
 
 var
   containingBags: Bags
@@ -27,15 +27,15 @@ for line in paramStr(1).lines:
     if content == "no other bags":
       break
     var num: int
-    var colour: BagColour
+    var colour: Colour
     let i = parseInt(content, num)
     discard parseUntil(content, colour, " bag", start=i+1)
 
     containingBags.mgetOrPut(colour, @[]).add(primaryColour)
     bagMap[primaryColour].add((num, colour))
 
-var outerBags: HashSet[BagColour]
-var bagsToCheck = @["shiny gold".BagColour]
+var outerBags: HashSet[Colour]
+var bagsToCheck = @["shiny gold"]
 
 while bagsToCheck.len > 0:
   let col = bagsToCheck.pop
@@ -45,10 +45,10 @@ while bagsToCheck.len > 0:
 
 echo "Number of outer bags: ", $(outerBags.len)
 
-proc GetBagCount(bagMap : BagMap, col: BagColour): int =
+proc GetBagCount(bagMap : BagMap, col: Colour): int =
   if col notin bagMap:
     return 0
   let containingBags = bagMap[col]
   containingBags.mapIt(it[0] * (GetBagCount(bagMap, it[1]) + 1)).sum
 
-echo "Bag count: ", $(GetBagCount(bagMap, "shiny gold".BagColour))
+echo "Bag count: ", $(GetBagCount(bagMap, "shiny gold"))
