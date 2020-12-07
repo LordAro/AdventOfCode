@@ -1,9 +1,10 @@
-import os
-import strutils
-import sequtils
-import tables
 import math
+import os
+import parseutils
+import sequtils
 import sets
+import strutils
+import tables
 
 type
   BagColour = string
@@ -15,31 +16,23 @@ var
   bagMap: BagMap
 
 for line in paramStr(1).lines:
-  let idx = line.find(" bags contain ")
-  if idx == -1:
-    continue
-  let primaryColour = line[0 .. idx - 1]
+  var primaryColour, contents: string
+  let i = parseUntil(line, primaryColour, " bags")
+  let j = " bags contain ".len
+  discard parseUntil(line, contents, ".", start=i+j)
 
-  let slicePoint = idx + len(" bags contain ")
   bagMap[primaryColour] = @[]
-  var inBag = 0
-  var num = 0
-  var containedColour = "";
-  for w in line[slicePoint .. ^3].split:
-    if inBag == 2:
-      containedColour &= " " & w
 
-      containingBags.mgetOrPut(containedColour, @[]).add(primaryColour)
-      bagMap[primaryColour].add((num, containedColour))
+  for content in contents.split(", "):
+    if content == "no other bags":
+      break
+    var num: int
+    var colour: BagColour
+    let i = parseInt(content, num)
+    discard parseUntil(content, colour, " bag", start=i+1)
 
-      inBag = 0
-      num = 0
-    elif inBag == 1:
-      containedColour = w
-      inBag = 2
-    elif w[0] in '0' .. '9':
-      num = int(w[0]) - int('0')
-      inBag = 1
+    containingBags.mgetOrPut(colour, @[]).add(primaryColour)
+    bagMap[primaryColour].add((num, colour))
 
 var outerBags: HashSet[BagColour]
 var bagsToCheck = @["shiny gold".BagColour]
