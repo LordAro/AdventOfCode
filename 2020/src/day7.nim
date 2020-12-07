@@ -18,6 +18,8 @@ var
 for line in paramStr(1).lines:
   var primaryColour, contents: string
   let i = parseUntil(line, primaryColour, " bags")
+  if i == 0:
+    continue # blank line
   let j = " bags contain ".len
   discard parseUntil(line, contents, ".", start=i+j)
 
@@ -34,6 +36,16 @@ for line in paramStr(1).lines:
     containingBags.mgetOrPut(colour, @[]).add(primaryColour)
     bagMap[primaryColour].add((num, colour))
 
+# Nice recursive solution that doesn't need containingBags, but is slow (27ms vs 3.5ms) :(
+#proc Contains(bagMap : BagMap, value : Colour): bool =
+#  bagMap[value].anyIt(it[1] == "shiny gold" or Contains(bagMap, it[1]))
+#
+#var outerBags = 0
+#for col in bagMap.keys:
+#  if Contains(bagMap, col):
+#    inc outerBags
+#echo "Number of outer bags: ", outerBags
+
 var outerBags: HashSet[Colour]
 var bagsToCheck = @["shiny gold"]
 
@@ -42,13 +54,9 @@ while bagsToCheck.len > 0:
   for c in containingBags.getOrDefault(col):
     bagsToCheck.add(c)
     outerBags.incl(c)
-
 echo "Number of outer bags: ", $(outerBags.len)
 
 proc GetBagCount(bagMap : BagMap, col: Colour): int =
-  if col notin bagMap:
-    return 0
-  let containingBags = bagMap[col]
-  containingBags.mapIt(it[0] * (GetBagCount(bagMap, it[1]) + 1)).sum
+  bagMap[col].mapIt(it[0] * (GetBagCount(bagMap, it[1]) + 1)).sum
 
 echo "Bag count: ", $(GetBagCount(bagMap, "shiny gold"))
