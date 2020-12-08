@@ -14,13 +14,12 @@ for line in paramStr(1).lines:
   let arg = parseInt(line[4..^1])
   initialProg.add((opcode, arg))
 
-proc RunProg(inputProg: Program): (bool, int) =
+proc RunProg(prog: Program): (bool, int) =
   var seenIns: set[uint16] # upper limit for program size
-  var prog = inputProg
   var pc = 0
   result = (true, 0)
 
-  while pc < inputProg.len():
+  while pc < prog.len():
     if cast[uint16](pc) in seenIns:
       result[0] = false  # have looped
       break
