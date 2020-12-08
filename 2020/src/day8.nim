@@ -14,16 +14,17 @@ for line in paramStr(1).lines:
   let arg = parseInt(line[4..^1])
   initialProg.add((opcode, arg))
 
-proc RunProg(prog: Program): (bool, int, set[uint16]) =
+proc RunProg(prog: Program): (bool, int) =
   var pc = 0
-  result = (true, 0, {})
+  result = (true, 0)
+  var seenIns: set[uint16]
 
   while pc < prog.len():
-    if cast[uint16](pc) in result[2]:
+    if cast[uint16](pc) in seenIns:
       result[0] = false  # have looped
       break
     let ins = prog[pc]
-    result[2].incl(cast[uint16](pc))
+    seenIns.incl(cast[uint16](pc))
     case ins[0]:
       of nop:
         discard
@@ -36,51 +37,55 @@ proc RunProg(prog: Program): (bool, int, set[uint16]) =
 let res = RunProg(initialProg)
 echo "Accumulator value: ", res[1]
 
-let trace = res[2]
+proc fillReds(prog: Program): seq[bool] =
+  result = newSeq[bool](prog.len())
+  var i = 0
+  while not result[i]:
+    result[i] = true
+    if prog[i][0] == jmp:
+      i += prog[i][1]
+    else:
+      inc i
 
-var potential_landing_spots: set[uint16]
+proc fillBlues(prog: Program): seq[bool] =
+  let l = prog.len()
+  result = newSeq[bool](l)
+  var comesFrom = newSeq[seq[int]](l)
+  for i, ins in prog:
+    if ins[0] == jmp and i + ins[1] < l:
+      comesFrom[i + ins[1]].add(i)
+    elif i + 1 < l:
+      comesFrom[i + 1].add(i)
 
-var i = initialProg.len()
-while true:
-  potential_landing_spots.incl(cast[uint16](i))
-  dec i
+  var Idxs = @[prog.high()]
+  while Idxs.len != 0:
+    let i = Idxs.pop
+    if result[i]:
+      break
+    result[i] = true
+    Idxs.add(comesFrom[i])
 
-  if initialProg[i][0] == jmp and initialProg[i][1] < 0:
-    break
-
-let start = i
-var swapIdx = 0
-
-if cast[uint16](i) in trace:
-  swapIdx = i
-else:
-  while true:
-    dec i
-    if cast[uint16](i) in potential_landing_spots:
+proc fixProgram(prog: Program): int =
+  let
+    reds = fillReds(prog)
+    blues = fillBlues(prog)
+  for i, ins in prog:
+    if not reds[i]:
       continue
-    elif initialProg[i][0] == nop:
-      if cast[uint16](i) in trace and cast[uint16](i + initialProg[i][1]) in potential_landing_spots:
-        swapIdx = i
-        break
-    elif initialProg[i][0] == jmp:
-      if cast[uint16](i) notin trace and
-        cast[uint16](i) notin potential_landing_spots and
-        cast[uint16](i + initialProg[i][1]) in potential_landing_spots:
-        var j = i - 1
-        while true:
-          if initialProg[j][0] == jmp:
-            break
-          dec j
+    case prog[i][0]:
+      of acc:
+        discard
+      of jmp:
+        if blues[i + 1]:
+          return i
+      of nop:
+        if blues[i + prog[i][1]]:
+          return i
+  return -1
 
-        if cast[uint16](j) in trace:
-          swapIdx = j
-          break
-        else:
-          for k in j + 1..i:
-            potential_landing_spots.incl(cast[uint16](k))
-          i = start
+let swapIdx = fixProgram(initialProg)
 
 var modifiedProg = initialProg
 modifiedProg[swapIdx][0] = (if modifiedProg[swapIdx][0] == nop: jmp else: nop)
 let res2 = RunProg(modifiedProg)
-echo "Accumulator value after properly terminating: ", (res2[0], res2[1])
+echo "Accumulator value after properly terminating: ", res2[1]
