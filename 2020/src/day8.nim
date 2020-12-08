@@ -5,7 +5,7 @@ type
   Opcode = enum
     nop, jmp, acc
   Instruction = (Opcode, int)
-  Program = seq[(Instruction, bool)]
+  Program = seq[Instruction]
 
 var initialProg: Program
 
@@ -13,19 +13,20 @@ for line in paramStr(1).lines:
   let linewords = line.strip.split
   let opcode = parseEnum[Opcode](linewords[0])
   let arg = parseInt(linewords[1])
-  initialProg.add(((opcode, arg), false))
+  initialProg.add((opcode, arg))
 
 proc RunProg(inputProg: Program): (bool, int) =
+  var seenIns: set[uint16] # upper limit for program size
   var prog = inputProg
   var pc = 0
   result = (true, 0)
 
   while pc < inputProg.len():
-    if prog[pc][1]:
+    if cast[uint16](pc) in seenIns:
       result[0] = false  # have looped
       break
-    let ins = prog[pc][0]
-    prog[pc][1] = true
+    let ins = prog[pc]
+    seenIns.incl(cast[uint16](pc))
     case ins[0]:
       of nop:
         discard
@@ -39,10 +40,10 @@ let res = RunProg(initialProg)
 echo "Accumulator value: ", res[1]
 
 for i, ins in initialProg:
-  if ins[0][0] == nop or ins[0][0] == jmp:
-    let newOpcode = (if ins[0][0] == nop: jmp else: nop)
+  if ins[0] == nop or ins[0] == jmp:
+    let newOpcode = (if ins[0] == nop: jmp else: nop)
     var modifiedProg = initialProg
-    modifiedProg[i] = ((newOpcode, ins[0][1]), false)
+    modifiedProg[i] = (newOpcode, ins[1])
     let res = RunProg(modifiedProg)
     if res[0]:
       echo "Accumulator value after properly terminating: ", res[1]
