@@ -10,9 +10,8 @@ type
 var initialProg: Program
 
 for line in paramStr(1).lines:
-  let linewords = line.strip.split
-  let opcode = parseEnum[Opcode](linewords[0])
-  let arg = parseInt(linewords[1])
+  let opcode = parseEnum[Opcode](line[0..2])
+  let arg = parseInt(line[4..^1])
   initialProg.add((opcode, arg))
 
 proc RunProg(inputProg: Program): (bool, int) =
