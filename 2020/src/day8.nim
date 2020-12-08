@@ -37,13 +37,13 @@ proc RunProg(prog: Program): (bool, int) =
 let res = RunProg(initialProg)
 echo "Accumulator value: ", res[1]
 
+var modifiedProg = initialProg
 for i, ins in initialProg:
   if ins[0] == nop or ins[0] == jmp:
     let newOpcode = (if ins[0] == nop: jmp else: nop)
-    var modifiedProg = initialProg
-    modifiedProg[i] = (newOpcode, ins[1])
+    modifiedProg[i][0] = newOpcode
     let res = RunProg(modifiedProg)
     if res[0]:
       echo "Accumulator value after properly terminating: ", res[1]
       break
-
+    modifiedProg[i][0] = ins[0] # put it back
