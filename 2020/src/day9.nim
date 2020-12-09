@@ -30,13 +30,16 @@ echo "Found invalid number: ", firstInvalidNum
 
 block outer:
   for i, c in previousNums:
-    var sumNums = @[c]
-    var sum = c
+    var
+      sum = c
+      sumNumMax = c
+      sumNumMin = c
     for d in previousNums[i + 1 .. ^1]:
       sum += d
-      sumNums.add(d)
+      sumNumMin = min(sumNumMin, d)
+      sumNumMax = max(sumNumMax, d)
       if sum == firstInvalidNum:
-        echo "Encryption weakness pair: ", sumNums.min, ", ", sumNums.max, " = ", sumNums.min + sumNums.max
+        echo "Encryption weakness pair sum: ", sumNumMin + sumNumMax
         break outer
       if sum > firstInvalidNum:
         break
