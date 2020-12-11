@@ -7,22 +7,25 @@ type
   State = seq[seq[SeatState]]
   AdjacentProc = proc(state: State, x: int, y: int): int
 
-proc CountOccupiedAdjacent(state: State, x : int, y : int): int =
-  let deltas = @[(-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1)]
+const deltas = [(-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1)]
+
+proc CountOccupiedAdjacent(state: State, x: int, y: int): int =
+  let cHigh = state.high()
+  let rHigh = state[0].high()
   for d in deltas:
     var y1 = y + d[0]
     var x1 = x + d[1]
-    if x1 in 0 .. state[0].high() and y1 in 0 .. state.high():
+    if y1 in 0 .. cHigh and x1 in 0 .. rHigh:
       result += int(state[y1][x1] == Occupied)
 
-proc CountOccupiedAdjacentDistant(state: State, x : int, y : int): int =
-  let deltas = @[(-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1)]
-
+proc CountOccupiedAdjacentDistant(state: State, x: int, y: int): int =
+  let cHigh = state.high()
+  let rHigh = state[0].high()
   for d in deltas:
     var y1 = y + d[0]
     var x1 = x + d[1]
 
-    while x1 in 0 .. state[0].high() and y1 in 0 .. state.high():
+    while y1 in 0 .. cHigh and x1 in 0 .. rHigh:
       if state[y1][x1] != None:
         result += int(state[y1][x1] == Occupied)
         break
