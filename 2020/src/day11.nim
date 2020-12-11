@@ -1,5 +1,4 @@
 import os
-import sequtils
 
 type
   SeatState = enum
@@ -13,8 +12,8 @@ proc CountOccupiedAdjacent(state: State, x: int, y: int): int =
   let cHigh = state.high()
   let rHigh = state[0].high()
   for d in deltas:
-    var y1 = y + d[0]
-    var x1 = x + d[1]
+    let y1 = y + d[0]
+    let x1 = x + d[1]
     if y1 in 0 .. cHigh and x1 in 0 .. rHigh:
       result += int(state[y1][x1] == Occupied)
 
@@ -44,33 +43,32 @@ for line in paramStr(1).lines:
     inputData[^1].add(seat)
 
 proc RunSeats(state: State, adjacentProc: AdjacentProc, adjacentLimit: int): int =
-  var prevOccupied = -1
-  var nowOccupied = 0
-  var currState = state
-  while prevOccupied != nowOccupied:
-    prevOccupied = nowOccupied
-    nowOccupied = 0
-    var newState = newSeqWith(currState.len(), newSeq[SeatState](currState[0].len()))
+  var
+    currState = state
+    changed = true
+  while changed:
+    changed = false
+    var newState = currState
     for y, row in currState:
       for x, cell in row:
         if cell == None:
-          newState[y][x] = None
-        else:
-          let adjacent = adjacentProc(currState, x, y)
-          let newSeat =
-            if adjacent == 0:
-              Occupied
-            elif adjacent >= adjacentLimit:
-              Vacant
-            else:
-              cell  # No change
-
-          if newSeat == Occupied:
-            inc nowOccupied
-          newState[y][x] = newSeat
+          continue
+        let adjacent = adjacentProc(currState, x, y)
+        if cell == Vacant and adjacent == 0:
+          newState[y][x] = Occupied
+          changed = true
+        elif cell == Occupied and adjacent >= adjacentLimit:
+          newState[y][x] = Vacant
+          changed = true
 
     currState = newState
-  return nowOccupied
+
+  var occupied = 0
+  for row in currState:
+    for cell in row:
+      if cell == Occupied:
+        inc occupied
+  return occupied
 
 echo "Final seat count: ", RunSeats(inputData, CountOccupiedAdjacent, 4)
 echo "Final seat count with updated rules: ", RunSeats(inputData, CountOccupiedAdjacentDistant, 5)
