@@ -1,5 +1,9 @@
 DISABLED_HINT_FLAGS=$(patsubst %,--hint[%]:off,Conf Exec Link SuccessX)
-FLAGS=--warnings:on $(DISABLED_HINT_FLAGS) -d:release
+ifdef PROFILE
+FLAGS=--warnings:on $(DISABLED_HINT_FLAGS) --profiler:on --stacktrace:on
+else
+FLAGS=--warnings:on $(DISABLED_HINT_FLAGS) --d:release
+endif
 
 CUR_SLNS=$(sort $(patsubst src/day%.nim,%,$(wildcard src/day*.nim)))
 
