@@ -1,51 +1,35 @@
 import os
-import sequtils
-import tables
 
 type
   SeatState = enum
     None, Vacant, Occupied
   State = seq[seq[SeatState]]
-  AdjacentTable = Table[(int, int), seq[(int, int)]]
-  AdjacentProc = proc(state: State): AdjacentTable
+  AdjacentProc = proc(state: State, x: int, y: int): int
 
 const deltas = [(-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1)]
 
-proc FindAdjacents(state: State): AdjacentTable =
-  let
-    cHigh = state.high()
-    rHigh = state[0].high()
-  for y in 0 .. cHigh:
-    for x in 0 .. rHigh:
-      if state[y][x] == None:
-        continue
-      result[(y, x)] = @[]
-      for d in deltas:
-        let
-          y1 = y + d[0]
-          x1 = x + d[1]
-        if y1 in 0 .. cHigh and x1 in 0 .. rHigh:
-          result[(y, x)].add((y1, x1))
+proc CountOccupiedAdjacent(state: State, x: int, y: int): int =
+  let cHigh = state.high()
+  let rHigh = state[0].high()
+  for d in deltas:
+    let y1 = y + d[0]
+    let x1 = x + d[1]
+    if y1 in 0 .. cHigh and x1 in 0 .. rHigh:
+      result += int(state[y1][x1] == Occupied)
 
-proc FindAdjacentsWithDistance(state: State): AdjacentTable =
-  let
-    cHigh = state.high()
-    rHigh = state[0].high()
-  for y in 0 .. cHigh:
-    for x in 0 .. rHigh:
-      if state[y][x] == None:
-        continue
-      result[(y, x)] = @[]
-      for d in deltas:
-        var
-          y1 = y + d[0]
-          x1 = x + d[1]
-        while y1 in 0 .. cHigh and x1 in 0 .. rHigh:
-          if state[y1][x1] != None:
-            result[(y, x)].add((y1, x1))
-            break
-          y1 += d[0]
-          x1 += d[1]
+proc CountOccupiedAdjacentDistant(state: State, x: int, y: int): int =
+  let cHigh = state.high()
+  let rHigh = state[0].high()
+  for d in deltas:
+    var y1 = y + d[0]
+    var x1 = x + d[1]
+
+    while y1 in 0 .. cHigh and x1 in 0 .. rHigh:
+      if state[y1][x1] != None:
+        result += int(state[y1][x1] == Occupied)
+        break
+      y1 += d[0]
+      x1 += d[1]
 
 var inputData: State
 
@@ -59,24 +43,23 @@ for line in paramStr(1).lines:
     inputData[^1].add(seat)
 
 proc RunSeats(state: State, adjacentProc: AdjacentProc, adjacentLimit: int): int =
-  let adjacentTable = adjacentProc(state)
   var
     currState = state
     changed = true
   while changed:
     changed = false
     var newState = currState
-    for coord, adjacents in adjacentTable:
-      let
-        y = coord[0]
-        x = coord[1]
-        occupiedAdjacents = adjacents.filterIt(currState[it[0]][it[1]] == Occupied).len
-      if currState[y][x] == Vacant and occupiedAdjacents == 0:
-        newState[y][x] = Occupied
-        changed = true
-      elif currState[y][x] == Occupied and occupiedAdjacents >= adjacentLimit:
-        newState[y][x] = Vacant
-        changed = true
+    for y, row in currState:
+      for x, cell in row:
+        if cell == None:
+          continue
+        let adjacent = adjacentProc(currState, x, y)
+        if cell == Vacant and adjacent == 0:
+          newState[y][x] = Occupied
+          changed = true
+        elif cell == Occupied and adjacent >= adjacentLimit:
+          newState[y][x] = Vacant
+          changed = true
 
     currState = newState
 
@@ -87,5 +70,5 @@ proc RunSeats(state: State, adjacentProc: AdjacentProc, adjacentLimit: int): int
         inc occupied
   return occupied
 
-echo "Final seat count: ", RunSeats(inputData, FindAdjacents, 4)
-echo "Final seat count with updated rules: ", RunSeats(inputData, FindAdjacentsWithDistance, 5)
+echo "Final seat count: ", RunSeats(inputData, CountOccupiedAdjacent, 4)
+echo "Final seat count with updated rules: ", RunSeats(inputData, CountOccupiedAdjacentDistant, 5)
