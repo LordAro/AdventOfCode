@@ -2,7 +2,7 @@ DISABLED_HINT_FLAGS=$(patsubst %,--hint[%]:off,Conf Exec Link SuccessX)
 ifdef PROFILE
 FLAGS=--warnings:on $(DISABLED_HINT_FLAGS) --profiler:on --stacktrace:on
 else
-FLAGS=--warnings:on $(DISABLED_HINT_FLAGS) --d:release
+FLAGS=--warnings:on $(DISABLED_HINT_FLAGS) --gc:arc -d:release
 endif
 
 CUR_SLNS=$(sort $(patsubst src/day%.nim,%,$(wildcard src/day*.nim)))
@@ -10,7 +10,7 @@ CUR_SLNS=$(sort $(patsubst src/day%.nim,%,$(wildcard src/day*.nim)))
 all: $(CUR_SLNS)
 
 .PRECIOUS: builds/day%
-builds/day%: src/day%.nim
+builds/day%: src/day%.nim Makefile
 	@echo -e '\x1b[1;34mCompiling day $* solution\x1b[0m'
 	nim compile -o:$@ $(FLAGS) $(FLAGS_DAY_$*) $<
 
@@ -23,7 +23,7 @@ time%: builds/day%
 
 time: $(addprefix time,$(CUR_SLNS))
 
-PERF_COUNT=10000
+PERF_COUNT?=10000
 
 perf%: builds/day%
 	@echo -e '\x1b[1;32mRunning day $* solution (perf)\x1b[0m'
