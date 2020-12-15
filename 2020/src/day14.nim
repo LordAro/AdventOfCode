@@ -59,12 +59,10 @@ for line in paramStr(1).lines:
         of 'X':
           bitTwiddles.add(b)
         of '1':
-          mask0.setBit(b)
           mask1.setBit(b)
           memAddrMask.setBit(b)
         of '0':
           mask0.clearBit(b)
-          mask1.clearBit(b)
         else:
           raise newException(ValueError, "Unknown bitmask char")
   else:
