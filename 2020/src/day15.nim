@@ -1,37 +1,31 @@
 import os
 import strutils
 import sequtils
-import tables
 
 let inputData = open(paramStr(1)).readAll.strip.split(",").map(proc(x: string): int = parseInt(x))
-#let inputData = @[0, 3, 6]
 
-var
-  seenNums: Table[int, seq[int]]
+const LIMIT = 30_000_000
+
+var seenNums = newSeq[int](LIMIT)
 
 for i, v in inputData:
-  seenNums[v] = @[i]
+  seenNums[v] = i + 1 # one-based turn num
+
+seenNums[inputData[^1]] = 0  # reset last value as we don't want to insert it yet
 
 var
   lastNum = inputData[^1]
   turnNum = inputData.len
 
-while turnNum < 30_000_000:
-  let lastNumWasNew = seenNums[lastNum].len == 1
+while turnNum < LIMIT:
+  let lastNumWasNew = seenNums[lastNum] == 0
   let newNum = (
     if lastNumWasNew:
       0
     else:
-      seenNums[lastNum][^1] - seenNums[lastNum][^2]
+      turnNum - seenNums[lastNum]
   )
-  if seenNums.contains(newNum):
-    if seenNums[newNum].len == 2:
-      seenNums[newNum][0] = seenNums[newNum][1]
-      seenNums[newNum][1] = turnNum
-    else:
-      seenNums[newNum].add(turnNum)
-  else:
-    seenNums[newNum] = @[turnNum]
+  seenNums[lastNum] = turnNum
   lastNum = newNum
   inc turnNum
   if turnNum == 2020:
