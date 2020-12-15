@@ -2,7 +2,11 @@ DISABLED_HINT_FLAGS=$(patsubst %,--hint[%]:off,Conf Exec Link SuccessX)
 ifdef PROFILE
 FLAGS=--warnings:on $(DISABLED_HINT_FLAGS) --profiler:on --stacktrace:on
 else
+ifdef DEBUG
+FLAGS=--warnings:on $(DISABLED_HINT_FLAGS) --gc:arc --stacktrace:on
+else
 FLAGS=--warnings:on $(DISABLED_HINT_FLAGS) --gc:arc -d:release
+endif
 endif
 
 CUR_SLNS=$(sort $(patsubst src/day%.nim,%,$(wildcard src/day*.nim)))
