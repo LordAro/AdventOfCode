@@ -3,9 +3,9 @@ ifdef PROFILE
 FLAGS=--warnings:on $(DISABLED_HINT_FLAGS) --profiler:on --stacktrace:on
 else
 ifdef DEBUG
-FLAGS=--warnings:on $(DISABLED_HINT_FLAGS) --gc:arc --stacktrace:on
+FLAGS=--warnings:on $(DISABLED_HINT_FLAGS) --stacktrace:on
 else
-FLAGS=--warnings:on $(DISABLED_HINT_FLAGS) --gc:arc -d:release
+FLAGS=--warnings:on $(DISABLED_HINT_FLAGS) -d:release
 endif
 endif
 
