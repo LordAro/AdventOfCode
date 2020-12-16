@@ -1,3 +1,4 @@
+import bitops
 import os
 import sequtils
 import strscans
@@ -21,20 +22,6 @@ var
   field_name: string
   range1a, range1b, range2a, range2b: int
 
-#for line in [
-#"class: 1-3 or 5-7",
-#"row: 6-11 or 33-44",
-#"seat: 13-40 or 45-50",
-#"",
-#"your ticket:",
-#"7,1,14",
-#"",
-#"nearby tickets:",
-#"7,3,47",
-#"40,4,50",
-#"55,2,20",
-#"38,6,12",
-#]:
 for line in paramStr(1).lines:
   if nearbyTicketParse:
     nearbyTickets.add(line.split(",").mapIt(parseInt(it)))
@@ -54,7 +41,7 @@ for line in paramStr(1).lines:
 
 var
   invalidTicketSum = 0
-  validTickets = @[myTicket]
+  validTickets: seq[Ticket] = @[]
 
 for ticket in nearbyTickets:
   var valid = true
@@ -68,19 +55,16 @@ for ticket in nearbyTickets:
 
 echo "Invalid ticket sum: ", invalidTicketSum
 
-iterator iota(n: int): int =
-  for i in 0 ..< n:
-    yield i
-
-var possibleKeys: Table[string, seq[int]]
+let bitMask = toMask[int32](0 .. myTicket.high)
+var possibleKeys: Table[string, int32]
 for fieldName in fieldRanges.keys:
-  possibleKeys[fieldName] = toSeq(iota(myTicket.len))
+  possibleKeys[fieldName] = bitMask
 
 for ticket in validTickets:
   for i, v in ticket:
     for field, fieldRange in fieldRanges:
       if v notin fieldRange[0][0] .. fieldRange[0][1] and v notin fieldRange[1][0] .. fieldRange[1][1]:
-        possibleKeys[field].del(possibleKeys[field].find(i))
+        possibleKeys[field].clearBit(i)
 
 var actualKeys: Table[string, int]
 
@@ -88,15 +72,20 @@ while possibleKeys.len != 0:
   var
     oneElementName: string
     oneElementIdx: int
+    found = false
   for key, value in possibleKeys:
-    if value.len == 1:
+    if value.countSetBits == 1:
       oneElementName = key
-      oneElementIdx = value[0]
+      oneElementIdx = value.firstSetBit - 1
+      found = true
       break
-  possibleKeys.del(oneElementName)
-  for value in possibleKeys.mvalues:
-    value.del(value.find(oneElementIdx))
-  actualKeys[oneElementName] = oneElementIdx
+  if found:
+    possibleKeys.del(oneElementName)
+    for value in possibleKeys.mvalues:
+      value.clearBit(oneElementIdx)
+    actualKeys[oneElementName] = oneElementIdx
+  else:
+    raise newException(ValueError, "Could not find candidate key")
 
 var departureMult = 1
 for key, idx in actualKeys:
