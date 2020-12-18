@@ -8,10 +8,9 @@ type
   Coord[N: static int] = array[0 .. N - 1, int]
   State[N: static int] = HashSet[Coord[N]]
 
-const deltas = @[-1, 0, 1]
-
 iterator getAllNeighbours(coord: Coord): Coord =
-  for c in product(repeat(deltas, coord.N)):
+  const deltas = product(repeat(@[-1, 0, 1], coord.N)) # compile-time baby!
+  for c in deltas:
     var n = coord
     for i, v in c:
       n[i] += v
