@@ -1,49 +1,6 @@
 import os
 import strutils
 
-proc findMatchingParen(s: string, startIdx: int): int =
-  var
-    nestNum = 0
-  for idx in startIdx .. s.high:
-    if s[idx] == '(':
-      inc nestNum
-    elif s[idx] == ')':
-      dec nestNum
-    if nestNum == 0:
-      return idx
-  raise newException(ValueError, "could not find matching paren")
-
-proc doLTRMaths(s: string): int =
-  var
-    idx = 0
-    lastAction = ' '
-  while idx < s.len:
-    if isDigit(s[idx]):
-      let v = ord(s[idx]) - ord('0')
-      case lastAction:
-        of '*':
-          result *= v
-        of '+':
-          result += v
-        else: # not set, first value
-          result = v
-
-    elif s[idx] == '*' or s[idx] == '+':
-      lastAction = s[idx]
-    elif s[idx] == '(':
-      let endIdx = findMatchingParen(s, idx)
-      let v = doLTRMaths(s[idx + 1 .. endIdx - 1])
-      case lastAction:
-        of '*':
-          result *= v
-        of '+':
-          result += v
-        else: # not set, first value
-          result = v
-      idx = endIdx
-    inc idx
-  return result
-
 proc calcParse(s: string, noPrec: static bool): seq[char] =
   var operatorStack: seq[char]
   for idx, c in s:
