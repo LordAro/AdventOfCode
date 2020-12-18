@@ -2,6 +2,7 @@ import os
 import sets
 import algorithm
 import sequtils
+import tables
 
 type
   Coord[N: static int] = array[0 .. N - 1, int]
@@ -10,7 +11,7 @@ type
 const deltas = @[-1, 0, 1]
 
 iterator getAllNeighbours(coord: Coord): Coord =
-  for c in product(repeat(deltas, coord.len)):
+  for c in product(repeat(deltas, coord.N)):
     var n = coord
     for i, v in c:
       n[i] += v
@@ -18,22 +19,13 @@ iterator getAllNeighbours(coord: Coord): Coord =
       continue
     yield n
 
-proc countNeighbours(state: State, coord: Coord): int =
-  for neighbour in getAllNeighbours(coord):
-    if state.contains(neighbour):
-      inc result
-
 proc runStep[N](inputState: State[N]): State[N] =
-  var
-    possibleActiveNeighbours: HashSet[Coord[N]]
+  var neighbourCount: Table[Coord[N], int]
   for c in inputState:
     for n in getAllNeighbours(c):
-      if n notin inputState:
-        possibleActiveNeighbours.incl(n)
-    if countNeighbours(inputState, c) in 2 .. 3:
-      result.incl(c)
-  for n in possibleActiveNeighbours:
-    if countNeighbours(inputState, n) == 3:
+      inc neighbourCount.mgetOrPut(n, 0)
+  for n, count in neighbourCount:
+    if count == 3 or (count == 2 and n in inputState):
       result.incl(n)
 
 var state3d: State[3]
