@@ -1,22 +1,22 @@
 import os
-import strutils
 
-proc calcParse(s: string, noPrec: static bool): seq[char] =
+proc calcParse(s: string, noPrecedence: static bool): seq[char] =
   var operatorStack: seq[char]
-  for idx, c in s:
-    if isDigit(s[idx]):
-      result.add(s[idx])
-    elif s[idx] == '*' or s[idx] == '+':
-      while operatorStack.len > 0 and (noPrec or operatorStack[^1] == '+') and operatorStack[^1] != '(':
+  for c in s:
+    if c in '0' .. '9':
+      result.add(c)
+    elif c == '*' or c == '+':
+      while operatorStack.len > 0 and
+          (noPrecedence or operatorStack[^1] == '+') and
+          operatorStack[^1] != '(':
         result.add(operatorStack.pop)
-      operatorStack.add(s[idx])
-    elif s[idx] == '(':
+      operatorStack.add(c)
+    elif c == '(':
       operatorStack.add('(')
-    elif s[idx] == ')':
+    elif c == ')':
       while operatorStack[^1] != '(':
         result.add(operatorStack.pop)
-      if operatorStack[^1] == '(':
-        discard operatorStack.pop
+      discard operatorStack.pop # always a '(' unless bracket mismatching has happened
   while operatorStack.len > 0:
     result.add(operatorStack.pop)
 
