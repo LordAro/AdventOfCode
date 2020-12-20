@@ -1,4 +1,5 @@
 import algorithm
+import math
 import os
 import sets
 import sequtils
@@ -107,7 +108,9 @@ echo "Corner product: ", cornerProduct
 #       If edges match
 #         Place piece
 
-var positionedTiles: array[12, array[12, Tile]] # Hardcoded size. Meh.
+let gridSize = sqrt(tiles.len.float).int
+let emptyTile = newSeqWith(0, newSeq[bool](0)) # something to initialise the 2d array (that's actually a 4d array) with
+var positionedTiles = newSeqWith(gridSize, newSeqWith[Tile](gridSize, emptyTile))
 var positionedTileIndexes: Table[int, (int, int)]
 
 # Find correct orientation for first corner
@@ -184,13 +187,16 @@ for y in 0 .. positionedTiles.high:
     for j in 0 .. positionedTiles[y][x].high:
       positionedTiles[y][x][j] = positionedTiles[y][x][j][1 .. ^2]
 
+for gridrow in positionedTiles:
+  for y in 0 .. gridrow[0][0].high:
+    echo concat(gridrow.mapIt(it[y])).mapIt(if it: '#' else: '.').join
+
 # Flatten
 var flattenedGrid: Tile
 for gridrow in positionedTiles:
   for y in 0 .. gridrow[0][0].high:
     flattenedGrid.add(concat(gridrow.mapIt(it[y])))
 
-echo flattenedGrid
 ## v (1, 0)          #
 ## #    ##    ##    ###
 ##  #  #  #  #  #  #
@@ -198,18 +204,18 @@ echo flattenedGrid
 let seaMonster = [(1, 0), (2, 1), (2, 4), (1, 5), (1, 6), (2, 7), (2, 10), (1, 11), (1, 12), (2, 13), (2, 16), (1, 17), (1, 18), (1, 19), (0, 18)]
 var monsterCount = 0
 for grid in getTileVariants(flattenedGrid):
-  #echo flattenedGrid, "\n"
+  #echo grid, "\n"
   for y in 0 .. grid.high:
     for x in 0 .. grid[y].high:
       if seaMonster.all(proc(d: (int, int)): bool =
           let y1 = y + d[0]
           let x1 = x + d[1]
-          return y1 in 0 .. grid.high and x1 in 0 .. grid[y1].high and grid[y + d[0]][x + d[1]]
+          return y1 in 0 .. grid.high and x1 in 0 .. grid[y1].high and grid[y1][x1]
       ):
         inc monsterCount
-        echo "Found seamonster at ", (y, x)
   if monsterCount > 0:
+    # This is the correct image orientation, no need to go any further
     break
 
 let numberHashes = flattenedGrid.foldl(a + b.filterIt(it).len, 0)
-echo "Number of waves: ", numberHashes - (monsterCount * seaMonster.len)
+echo "Number of waves: ", numberHashes - (monsterCount * seaMonster.len), " (", monsterCount, " sea monsters)"
