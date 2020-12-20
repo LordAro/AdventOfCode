@@ -187,9 +187,9 @@ for y in 0 .. positionedTiles.high:
     for j in 0 .. positionedTiles[y][x].high:
       positionedTiles[y][x][j] = positionedTiles[y][x][j][1 .. ^2]
 
-for gridrow in positionedTiles:
-  for y in 0 .. gridrow[0][0].high:
-    echo concat(gridrow.mapIt(it[y])).mapIt(if it: '#' else: '.').join
+#for gridrow in positionedTiles:
+#  for y in 0 .. gridrow[0][0].high:
+#    echo concat(gridrow.mapIt(it[y])).mapIt(if it: '#' else: '.').join
 
 # Flatten
 var flattenedGrid: Tile
