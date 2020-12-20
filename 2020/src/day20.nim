@@ -16,26 +16,30 @@ proc getEdges(t: Tile): seq[seq[bool]] =
   result.add(t.mapIt(it[^1]))
   result.add(result.mapIt(it.reversed)) # reverse everything
 
-proc rotateTile[T](t: seq[seq[T]]): seq[seq[T]] =
+proc rotateTile(t: Tile): Tile =
   result = t # easy way of creating same size tile
   for i in 0 .. t.high:
-    for j in 0 .. t.high: # assumes square
+    for j in 0 .. t.high:
       result[i][j] = t[t.len - j - 1][i]
 
-proc flipTile[T](t: seq[seq[T]]): seq[seq[T]] =
+proc flipTile(t: Tile): Tile =
   result = t # easy way of creating same size tile
   for i in 0 .. t.high:
-    for j in 0 .. t.high: # assumes square
+    for j in 0 .. t.high:
       result[j][i] = t[i][j]
 
 iterator getTileVariants(t: Tile): Tile =
-  var tile = t
-  for f in 0 .. 1:
-    yield tile
-    for r in 1 .. 3:
-      tile = rotateTile(tile)
-      yield tile
-    tile = flipTile(t)
+  for variant in [
+    t,
+    rotateTile(t),
+    rotateTile(rotateTile(t)),
+    rotateTile(rotateTile(rotateTile(t))),
+    flipTile(t),
+    rotateTile(flipTile(t)),
+    rotateTile(rotateTile(flipTile(t))),
+    rotateTile(rotateTile(rotateTile(flipTile(t)))),
+  ]:
+    yield variant
 
 iterator choose*[T](a: openarray[T], num_choose: int): seq[T] =
   var
@@ -58,7 +62,8 @@ iterator choose*[T](a: openarray[T], num_choose: int): seq[T] =
     else:
       break
 
-proc `$`(t: Tile): string =
+# Debugging
+proc `$`(t: Tile): string {.used.} =
   t.mapIt(it.mapIt(if it: '#' else: '.').join).join("\n")
 
 
@@ -187,16 +192,13 @@ for y in 0 .. positionedTiles.high:
     for j in 0 .. positionedTiles[y][x].high:
       positionedTiles[y][x][j] = positionedTiles[y][x][j][1 .. ^2]
 
-#for gridrow in positionedTiles:
-#  for y in 0 .. gridrow[0][0].high:
-#    echo concat(gridrow.mapIt(it[y])).mapIt(if it: '#' else: '.').join
-
 # Flatten
 var flattenedGrid: Tile
 for gridrow in positionedTiles:
-  for y in 0 .. gridrow[0][0].high:
+  for y in 0 .. gridrow[0][0].high: # just gets the tilesize
     flattenedGrid.add(concat(gridrow.mapIt(it[y])))
 
+# Find the monsters!
 ## v (1, 0)          #
 ## #    ##    ##    ###
 ##  #  #  #  #  #  #
@@ -204,14 +206,9 @@ for gridrow in positionedTiles:
 let seaMonster = [(1, 0), (2, 1), (2, 4), (1, 5), (1, 6), (2, 7), (2, 10), (1, 11), (1, 12), (2, 13), (2, 16), (1, 17), (1, 18), (1, 19), (0, 18)]
 var monsterCount = 0
 for grid in getTileVariants(flattenedGrid):
-  #echo grid, "\n"
-  for y in 0 .. grid.high:
-    for x in 0 .. grid[y].high:
-      if seaMonster.all(proc(d: (int, int)): bool =
-          let y1 = y + d[0]
-          let x1 = x + d[1]
-          return y1 in 0 .. grid.high and x1 in 0 .. grid[y1].high and grid[y1][x1]
-      ):
+  for y in 0 .. grid.high - 2:
+    for x in 0 .. grid[y].high - 19:
+      if seaMonster.all(proc(d: (int, int)): bool = grid[y + d[0]][x + d[1]]):
         inc monsterCount
   if monsterCount > 0:
     # This is the correct image orientation, no need to go any further
