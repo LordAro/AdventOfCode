@@ -74,7 +74,7 @@ fn get_route(source: Coord, target: Coord, known_positions: &HashMap<Coord, Stat
             continue;
         }
 
-        for adj in get_adjacents(current).into_iter() {
+        for adj in get_adjacents(current).iter() {
             let dist = g_score[&current] + 1;
             if &dist < g_score.get(&adj).unwrap_or(&isize::max_value()) {
                 came_from.insert(*adj, current);
@@ -88,7 +88,7 @@ fn get_route(source: Coord, target: Coord, known_positions: &HashMap<Coord, Stat
 }
 
 fn insert_unknown_positions(unknowns: &mut Vec<Coord>, knowns: &HashMap<Coord, State>, pos: Coord) {
-    for adj in get_adjacents(pos).into_iter() {
+    for adj in get_adjacents(pos).iter() {
         if !knowns.contains_key(adj) {
             unknowns.push(*adj);
         }
