@@ -1,15 +1,14 @@
 import os
 import sequtils
 import strutils
-import tables
-#import nimprof
 
 let inputData = open(paramStr(1)).readAll.strip.mapIt(ord(it) - ord('0'))
 
-proc playCrabGame(startCups: seq[int], numCups: int, numRounds: int): Table[int, int] =
-  # Set up ring as a table
-  # Use a table so we've got O(1) searching
-  var cups: Table[int, int] # n pointing to first
+proc playCrabGame(startCups: seq[int], numCups: int, numRounds: int): seq[int] =
+  # Set up ring as an array
+  # Use the array indices as links from one cup to another so we've got O(1) "searching"
+  # Note that '0' is unused
+  var cups = newSeq[int](numCups + 1)
   for i in 1 .. startCups.high:
     cups[startCups[i - 1]] = startCups[i]
   var prev = startCups[startCups.high]
