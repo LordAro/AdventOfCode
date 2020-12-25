@@ -186,7 +186,7 @@ fn main() {
     }
     println!("Generated movement sequence: {:?}", seq);
 
-    let (main_func, func_a, func_b, func_c) = compress(&seq);
+    let (_main_func, _func_a, _func_b, _func_c) = compress(&seq);
     // XXX Hand rolled!
     let movement_sequence = "A,B,A,B,C,C,B,A,B,C\n\
                              L,8,R,12,R,12,R,10\n\
