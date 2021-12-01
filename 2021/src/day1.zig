@@ -23,13 +23,13 @@ pub fn main() anyerror!void {
     var buf: [16]u8 = undefined;
     while (try file.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
         const next = try std.fmt.parseInt(u32, line, 0);
-        if (next > previous) count += 1;
+        count += @boolToInt(next > previous);
 
         std.mem.rotate(u32, cur_window[0..], 1); // Extremely basic windowing system
         cur_window[0] = next;
         if (cur_window[0] != 0 and cur_window[1] != 0 and cur_window[2] != 0) {
             const new_sum = cur_window[0] + cur_window[1] + cur_window[2];
-            if (new_sum > prev_sum) sum_count += 1;
+            sum_count += @boolToInt(new_sum > prev_sum);
             prev_sum = new_sum;
         }
         previous = next;
