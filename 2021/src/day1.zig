@@ -6,20 +6,21 @@ pub fn main() anyerror!void {
     const alloc = &arena.allocator;
 
     var args_iter = std.process.args();
-    _ = args_iter.skip();
-    const input_file = args_iter.next(alloc).? catch unreachable;
-    const file = std.fs.cwd().openFile(input_file, .{ .read = true }) catch |err| {
+    _ = args_iter.skip(); // program name
+    const input_file = try args_iter.next(alloc) orelse unreachable;
+    defer alloc.free(input_file);
+    const input = std.fs.cwd().openFile(input_file, .{ .read = true }) catch |err| {
         std.log.err("Could not open {s} due to: {s}", .{ input_file, err });
-        return;
+        std.os.exit(1);
     };
-    defer file.close();
+    defer input.close();
 
     var p1_count: u32 = 0;
     var p2_count: u32 = 0;
     var cur_window = [_]u32{ 0, 0, 0 };
 
     var buf: [16]u8 = undefined;
-    while (try file.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
+    while (try input.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
         const next = try std.fmt.parseInt(u32, line, 0);
 
         p1_count += @boolToInt(next > cur_window[0] and cur_window[0] != 0); // Previous number
