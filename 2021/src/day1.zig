@@ -13,27 +13,21 @@ pub fn main() anyerror!void {
         return;
     };
     defer file.close();
-    var count: u32 = 0;
-    var previous: u32 = std.math.maxInt(u32);
 
-    var sum_count: u32 = 0;
+    var p1_count: u32 = 0;
+    var p2_count: u32 = 0;
     var cur_window = [_]u32{ 0, 0, 0 };
-    var prev_sum: u32 = std.math.maxInt(u32);
 
     var buf: [16]u8 = undefined;
     while (try file.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
         const next = try std.fmt.parseInt(u32, line, 0);
-        count += @boolToInt(next > previous);
+
+        p1_count += @boolToInt(next > cur_window[0] and cur_window[0] != 0); // Previous number
 
         std.mem.rotate(u32, cur_window[0..], 1); // Extremely basic windowing system
+        p2_count += @boolToInt(next > cur_window[0] and cur_window[0] != 0); // Only need to check the differing value, not the actual sum
         cur_window[0] = next;
-        if (cur_window[0] != 0 and cur_window[1] != 0 and cur_window[2] != 0) {
-            const new_sum = cur_window[0] + cur_window[1] + cur_window[2];
-            sum_count += @boolToInt(new_sum > prev_sum);
-            prev_sum = new_sum;
-        }
-        previous = next;
     }
-    std.log.info("Number of increases: {}", .{count});
-    std.log.info("Number of 3-sum increases: {}", .{sum_count});
+    std.log.info("Number of increases: {}", .{p1_count});
+    std.log.info("Number of 3-sum increases: {}", .{p2_count});
 }
