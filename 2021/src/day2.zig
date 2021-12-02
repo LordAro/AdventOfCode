@@ -1,5 +1,11 @@
 const std = @import("std");
 
+const Dir = enum {
+    down,
+    up,
+    forward,
+};
+
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -26,18 +32,22 @@ pub fn main() anyerror!void {
     var buf: [16]u8 = undefined;
     while (try input.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
         var it = std.mem.split(line, " ");
-        const dir = it.next().?;
+        const dir = std.meta.stringToEnum(Dir, it.next().?).?;
         const val = try std.fmt.parseInt(u32, it.next().?, 0);
-        if (std.mem.eql(u8, dir, "down")) {
-            depth += val;
-            p2_aim += val;
-        } else if (std.mem.eql(u8, dir, "up")) {
-            depth -= val;
-            p2_aim -= val;
-        } else if (std.mem.eql(u8, dir, "forward")) {
-            pos += val;
-            p2_pos += val;
-            p2_depth += val * p2_aim;
+        switch (dir) {
+            Dir.down => {
+                depth += val;
+                p2_aim += val;
+            },
+            Dir.up => {
+                depth -= val;
+                p2_aim -= val;
+            },
+            Dir.forward => {
+                pos += val;
+                p2_pos += val;
+                p2_depth += val * p2_aim;
+            },
         }
     }
 
