@@ -20,21 +20,24 @@ pub fn main() anyerror!void {
     var input_length: u32 = 0;
     var num_bits: usize = 0;
 
+    var diagnostic_numbers = std.ArrayList(u16).init(alloc);
+    defer diagnostic_numbers.deinit();
+
     var buf: [16]u8 = undefined;
     while (try input.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
         num_bits = line.len;
-        var i: usize = 0;
+        try diagnostic_numbers.append(try std.fmt.parseInt(u16, line, 2));
+    }
+
+    for (diagnostic_numbers.items) |dn| {
+        var i: u4 = 0;
         while (i < num_bits) : (i += 1) {
-            if (line[i] == '0') {
-                // skip
-            } else if (line[i] == '1') {
+            if ((dn & (@as(u16, 1) << i)) > 0) {
                 bit_counts[i] += 1;
-            } else {
-                unreachable;
             }
         }
-        input_length += 1;
     }
+
     std.debug.print("{any}\n", .{bit_counts});
 
     var gamma_rate: u32 = 0;
@@ -42,7 +45,7 @@ pub fn main() anyerror!void {
 
     var i: u32 = 0;
     while (i < num_bits) : (i += 1) {
-        if (bit_counts[i] < input_length / 2) {
+        if (bit_counts[i] < diagnostic_numbers.items.len / 2) {
             epsilon_rate += std.math.pow(u32, 2, i);
         } else {
             gamma_rate += std.math.pow(u32, 2, i);
