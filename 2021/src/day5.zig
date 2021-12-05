@@ -87,14 +87,14 @@ pub fn main() anyerror!void {
     };
     defer input.close();
 
-    var map = std.AutoHashMap(Coord, u32).init(alloc);
+    var map = std.AutoArrayHashMap(Coord, u32).init(alloc);
     defer map.deinit();
-    var diag_map = std.AutoHashMap(Coord, u32).init(alloc);
+    var diag_map = std.AutoArrayHashMap(Coord, u32).init(alloc);
     defer diag_map.deinit();
 
     var buf: [64]u8 = undefined;
     while (try input.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
-        var it = std.mem.split(line, " "); // tokenize squashes duplicate delimiters
+        var it = std.mem.split(line, " ");
         var coord1 = parse_coord(it.next().?);
         _ = it.next();
         var coord2 = parse_coord(it.next().?);
@@ -112,17 +112,15 @@ pub fn main() anyerror!void {
     }
 
     var count: u32 = 0;
-    var it = map.valueIterator();
-    while (it.next()) |val| {
-        if (val.* > 1) {
+    for (map.values()) |val| {
+        if (val > 1) {
             count += 1;
         }
     }
 
     var count2: u32 = 0;
-    var it2 = diag_map.valueIterator();
-    while (it2.next()) |val| {
-        if (val.* > 1) {
+    for (diag_map.values()) |val| {
+        if (val > 1) {
             count2 += 1;
         }
     }
