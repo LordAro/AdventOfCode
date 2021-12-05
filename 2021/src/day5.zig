@@ -20,6 +20,57 @@ fn add_point(map: anytype, c: Coord) !void {
     gop.value_ptr.* += 1;
 }
 
+const LineIterator = struct {
+    start: Coord,
+    end: Coord,
+    step_x: i32,
+    step_y: i32,
+    next_val: Coord,
+
+    pub fn init(start: Coord, end: Coord) LineIterator {
+        var step_x: i32 = 0;
+        if (start.x == end.x) {
+            step_x = 0;
+        } else if (start.x > end.x) {
+            step_x = -1;
+        } else {
+            step_x = 1;
+        }
+        var step_y: i32 = 0;
+        if (start.y == end.y) {
+            step_y = 0;
+        } else if (start.y > end.y) {
+            step_y = -1;
+        } else {
+            step_y = 1;
+        }
+        return LineIterator{
+            .next_val = start,
+            .start = start,
+            .end = end,
+            .step_x = step_x,
+            .step_y = step_y,
+        };
+    }
+
+    pub fn next(self: *LineIterator) ?Coord {
+        const rv = self.next_val;
+        if ((self.step_x < 0 and rv.x < self.end.x) or (self.step_y < 0 and rv.y < self.end.y)) {
+            // Done counting down
+            return null;
+        } else if ((self.step_x > 0 and rv.x > self.end.x) or (self.step_y > 0 and rv.y > self.end.y)) {
+            // Done counting up
+            return null;
+        }
+        self.next_val = Coord{ .x = @intCast(u32, @intCast(i32, rv.x) + self.step_x), .y = @intCast(u32, @intCast(i32, rv.y) + self.step_y) };
+        return rv;
+    }
+
+    pub fn reset(self: *LineIterator) void {
+        self.next_val = self.start;
+    }
+};
+
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -48,36 +99,15 @@ pub fn main() anyerror!void {
         _ = it.next();
         var coord2 = parse_coord(it.next().?);
 
-        const x_inc: i32 = if (coord1.x > coord2.x) -1 else 1;
-        const y_inc: i32 = if (coord1.y > coord2.y) -1 else 1;
-        if (coord1.x != coord2.x and coord1.y != coord2.y) {
-            var x = coord1.x;
-            var y = coord1.y;
-            while (x != coord2.x) {
-                const c = Coord{ .x = x, .y = y };
+        const is_diagonal = coord1.x != coord2.x and coord1.y != coord2.y;
+        var line_it = LineIterator.init(coord1, coord2);
+        while (line_it.next()) |c| {
+            if (is_diagonal) {
                 try add_point(&diag_map, c);
-                x = @intCast(u32, @intCast(i32, x) + x_inc);
-                y = @intCast(u32, @intCast(i32, y) + y_inc);
-            }
-            try add_point(&diag_map, coord2);
-        } else if (coord1.x != coord2.x) {
-            var x = coord1.x;
-            while (x != coord2.x) : (x = @intCast(u32, @intCast(i32, x) + x_inc)) {
-                const c = Coord{ .x = x, .y = coord1.y };
+            } else {
+                try add_point(&diag_map, c);
                 try add_point(&map, c);
-                try add_point(&diag_map, c);
             }
-            try add_point(&map, coord2);
-            try add_point(&diag_map, coord2);
-        } else if (coord1.y != coord2.y) {
-            var y = coord1.y;
-            while (y != coord2.y) : (y = @intCast(u32, @intCast(i32, y) + y_inc)) {
-                const c = Coord{ .x = coord1.x, .y = y };
-                try add_point(&map, c);
-                try add_point(&diag_map, c);
-            }
-            try add_point(&map, coord2);
-            try add_point(&diag_map, coord2);
         }
     }
 
@@ -98,4 +128,28 @@ pub fn main() anyerror!void {
     }
     try stdout.print("Duplicate vent count (straight lines): {}\n", .{count});
     try stdout.print("Duplicate vent count (diagonals): {}\n", .{count2});
+}
+
+test "line coords" {
+    var it = LineIterator.init(Coord{ .x = 1, .y = 1 }, Coord{ .x = 1, .y = 3 });
+    try std.testing.expectEqual(it.next().?, Coord{ .x = 1, .y = 1 });
+    try std.testing.expectEqual(it.next().?, Coord{ .x = 1, .y = 2 });
+    try std.testing.expectEqual(it.next().?, Coord{ .x = 1, .y = 3 });
+    try std.testing.expectEqual(it.next(), null);
+}
+
+test "line coords 2" {
+    var it = LineIterator.init(Coord{ .x = 9, .y = 7 }, Coord{ .x = 7, .y = 7 });
+    try std.testing.expectEqual(it.next().?, Coord{ .x = 9, .y = 7 });
+    try std.testing.expectEqual(it.next().?, Coord{ .x = 8, .y = 7 });
+    try std.testing.expectEqual(it.next().?, Coord{ .x = 7, .y = 7 });
+    try std.testing.expectEqual(it.next(), null);
+}
+
+test "line coords 3" {
+    var it = LineIterator.init(Coord{ .x = 9, .y = 7 }, Coord{ .x = 7, .y = 9 });
+    try std.testing.expectEqual(it.next().?, Coord{ .x = 9, .y = 7 });
+    try std.testing.expectEqual(it.next().?, Coord{ .x = 8, .y = 8 });
+    try std.testing.expectEqual(it.next().?, Coord{ .x = 7, .y = 9 });
+    try std.testing.expectEqual(it.next(), null);
 }
