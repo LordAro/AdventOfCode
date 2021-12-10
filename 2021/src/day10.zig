@@ -10,6 +10,16 @@ fn illegal_char_score(c: u8) u32 {
     };
 }
 
+fn closed(c: u8) u8 {
+    return switch (c) {
+        '(' => ')',
+        '[' => ']',
+        '{' => '}',
+        '<' => '>',
+        else => unreachable,
+    };
+}
+
 fn autocomplete_char_score(c: u8) u32 {
     return switch (c) {
         '(' => 1,
@@ -51,19 +61,7 @@ pub fn main() anyerror!void {
                 '(', '[', '{', '<' => try stack.append(c),
                 ')', ']', '}', '>' => {
                     const tail = stack.pop();
-                    if (tail == '(' and c != ')') {
-                        illegal_score += illegal_char_score(c);
-                        is_illegal = true;
-                        break;
-                    } else if (tail == '[' and c != ']') {
-                        illegal_score += illegal_char_score(c);
-                        is_illegal = true;
-                        break;
-                    } else if (tail == '{' and c != '}') {
-                        illegal_score += illegal_char_score(c);
-                        is_illegal = true;
-                        break;
-                    } else if (tail == '<' and c != '>') {
+                    if (closed(tail) != c) {
                         illegal_score += illegal_char_score(c);
                         is_illegal = true;
                         break;
