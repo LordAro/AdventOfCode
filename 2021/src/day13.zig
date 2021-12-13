@@ -70,15 +70,12 @@ pub fn main() anyerror!void {
         }
     }
 
-    try stdout.print("Points after one fold: {}\n", .{num_points});
-
     var max_x: u32 = 0;
     var max_y: u32 = 0;
     for (grid.keys()) |c| {
         max_x = std.math.max(max_x, c.x);
         max_y = std.math.max(max_y, c.y);
     }
-    std.debug.print("{} {}\n", .{ max_x, max_y });
 
     try stdout.print("Points after one fold: {}\n", .{num_points});
     try stdout.print("Code:\n", .{});
@@ -86,7 +83,7 @@ pub fn main() anyerror!void {
     while (y <= max_y) : (y += 1) {
         var x: u32 = 0;
         while (x <= max_x) : (x += 1) {
-            const c: u8 = if (grid.contains(Coord{ .x = x, .y = y })) '#' else '.';
+            const c: u8 = if (grid.contains(Coord{ .x = x, .y = y })) '#' else ' ';
             try stdout.print("{c}", .{c});
         }
         try stdout.print("\n", .{});
