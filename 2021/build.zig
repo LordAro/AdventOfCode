@@ -34,10 +34,10 @@ pub fn build(b: *std.build.Builder) void {
             const input_arg = std.fmt.allocPrint(alloc, "inputs/day{}.input", .{day}) catch unreachable;
             defer alloc.free(input_arg);
 
-            run_cmd.addArg(input_arg);
-
             if (b.args) |args| {
                 run_cmd.addArgs(args);
+            } else {
+                run_cmd.addArg(input_arg);
             }
 
             const run_name = std.fmt.allocPrint(alloc, "run{}", .{day}) catch unreachable;
