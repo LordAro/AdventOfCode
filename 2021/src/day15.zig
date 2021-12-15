@@ -34,26 +34,34 @@ fn find_path(alloc: *std.mem.Allocator, grid: std.ArrayList(std.ArrayList(u8)), 
             found_dist = current.cost;
         }
 
-        // Adjacents TODO: Check searched here, rather than above?
+        // Adjacent coords. Could factor out into a loop, if I cared enough
         if (current.coord.x > 0) {
             const adj_coord = Coord{ .x = current.coord.x - 1, .y = current.coord.y };
-            const new_cost = current.cost + grid.items[adj_coord.y].items[adj_coord.x];
-            try toSearch.add(PathCost{ .coord = adj_coord, .cost = new_cost });
+            if (!searched.contains(adj_coord)) {
+                const new_cost = current.cost + grid.items[adj_coord.y].items[adj_coord.x];
+                try toSearch.add(PathCost{ .coord = adj_coord, .cost = new_cost });
+            }
         }
         if (current.coord.x < grid.items[current.coord.y].items.len - 1) {
             const adj_coord = Coord{ .x = current.coord.x + 1, .y = current.coord.y };
-            const new_cost = current.cost + grid.items[adj_coord.y].items[adj_coord.x];
-            try toSearch.add(PathCost{ .coord = adj_coord, .cost = new_cost });
+            if (!searched.contains(adj_coord)) {
+                const new_cost = current.cost + grid.items[adj_coord.y].items[adj_coord.x];
+                try toSearch.add(PathCost{ .coord = adj_coord, .cost = new_cost });
+            }
         }
         if (current.coord.y > 0) {
             const adj_coord = Coord{ .x = current.coord.x, .y = current.coord.y - 1 };
-            const new_cost = current.cost + grid.items[adj_coord.y].items[adj_coord.x];
-            try toSearch.add(PathCost{ .coord = adj_coord, .cost = new_cost });
+            if (!searched.contains(adj_coord)) {
+                const new_cost = current.cost + grid.items[adj_coord.y].items[adj_coord.x];
+                try toSearch.add(PathCost{ .coord = adj_coord, .cost = new_cost });
+            }
         }
         if (current.coord.y < grid.items.len - 1) {
             const adj_coord = Coord{ .x = current.coord.x, .y = current.coord.y + 1 };
-            const new_cost = current.cost + grid.items[adj_coord.y].items[adj_coord.x];
-            try toSearch.add(PathCost{ .coord = adj_coord, .cost = new_cost });
+            if (!searched.contains(adj_coord)) {
+                const new_cost = current.cost + grid.items[adj_coord.y].items[adj_coord.x];
+                try toSearch.add(PathCost{ .coord = adj_coord, .cost = new_cost });
+            }
         }
     }
     return found_dist;
