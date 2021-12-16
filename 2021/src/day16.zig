@@ -1,6 +1,26 @@
 const std = @import("std");
 
-fn get_bits(blob: []bool) u32 {
+const Packet = struct {
+    version: u3,
+    typeid: u3,
+    length: u32,
+    value: u64,
+    subpackets: std.ArrayList(Packet),
+};
+
+fn input_to_bits(alloc: *std.mem.Allocator, input: []const u8) !std.ArrayList(bool) {
+    var program_bits = std.ArrayList(bool).init(alloc);
+    for (input) |c| {
+        const digit: u4 = @intCast(u4, try std.fmt.charToDigit(c, 16));
+        try program_bits.append(((digit >> 3) & 1) != 0);
+        try program_bits.append(((digit >> 2) & 1) != 0);
+        try program_bits.append(((digit >> 1) & 1) != 0);
+        try program_bits.append(((digit >> 0) & 1) != 0);
+    }
+    return program_bits;
+}
+
+fn bits_to_num(blob: []bool) u32 {
     var out: u32 = 0;
     for (blob) |b, i| {
         out |= @as(u32, @boolToInt(b)) << @intCast(u5, blob.len) - @intCast(u5, i) - 1;
@@ -8,44 +28,20 @@ fn get_bits(blob: []bool) u32 {
     return out;
 }
 
-const Packet = struct {
-    version: u3,
-    typeid: u3,
-    length: u32,
-    value: u32,
-    subpackets: std.ArrayList(Packet),
-};
-
-fn packetlist_deinit(pl: std.ArrayList(Packet)) void {
-    for (pl.items) |p| {
-        packetlist_deinit(p.subpackets);
-    }
-    pl.deinit();
-}
-
-fn get_packet_version(p: Packet) u32 {
-    var version: u32 = 0;
-    for (p.subpackets.items) |sp| {
-        version += get_packet_version(sp);
-    }
-    version += p.version;
-    return version;
-}
-
 fn parse_packet(alloc: *std.mem.Allocator, program: []bool) Packet {
-    const version = @intCast(u3, get_bits(program[0..3]));
-    const typeid = @intCast(u3, get_bits(program[3..6]));
+    const version = @intCast(u3, bits_to_num(program[0..3]));
+    const typeid = @intCast(u3, bits_to_num(program[3..6]));
 
     var packet = Packet{ .version = version, .typeid = typeid, .length = 0, .value = 0, .subpackets = undefined };
     var pc: u32 = 6;
     if (typeid == 4) {
         // literal
-        var val: u32 = 0; // max 4 groups
+        var val: u64 = 0; // max 8 groups
         var n: u1 = 1;
         while (n != 0) {
-            n = @intCast(u1, get_bits(program[pc .. pc + 1]));
+            n = @intCast(u1, bits_to_num(program[pc .. pc + 1]));
             pc += 1;
-            const segment = get_bits(program[pc .. pc + 4]);
+            const segment = bits_to_num(program[pc .. pc + 4]);
             val = (val << 4) + segment;
             pc += 4;
         }
@@ -54,17 +50,17 @@ fn parse_packet(alloc: *std.mem.Allocator, program: []bool) Packet {
         packet.subpackets = std.ArrayList(Packet).init(alloc);
     } else {
         // operator
-        const lengthtypeid = @intCast(u1, get_bits(program[pc .. pc + 1]));
+        const lengthtypeid = @intCast(u1, bits_to_num(program[pc .. pc + 1]));
         pc += 1;
 
         if (lengthtypeid == 0) {
-            const subpacketlength = get_bits(program[pc .. pc + 15]);
+            const subpacketlength = bits_to_num(program[pc .. pc + 15]);
             pc += 15;
 
             packet.length = pc + subpacketlength;
             packet.subpackets = parse_packets(alloc, program[pc .. pc + subpacketlength]);
         } else {
-            const num_subpackets = get_bits(program[pc .. pc + 11]);
+            const num_subpackets = bits_to_num(program[pc .. pc + 11]);
             pc += 11;
 
             packet.subpackets = std.ArrayList(Packet).init(alloc);
@@ -76,8 +72,54 @@ fn parse_packet(alloc: *std.mem.Allocator, program: []bool) Packet {
             }
             packet.length = pc;
         }
+
+        switch (packet.typeid) {
+            0 => { // sum
+                packet.value = 0;
+                for (packet.subpackets.items) |sp| {
+                    packet.value += sp.value;
+                }
+            },
+            1 => { // product
+                packet.value = 1;
+                for (packet.subpackets.items) |sp| {
+                    packet.value *= sp.value;
+                }
+            },
+            2 => { // minimum
+                packet.value = std.math.maxInt(u32);
+                for (packet.subpackets.items) |sp| {
+                    packet.value = std.math.min(packet.value, sp.value);
+                }
+            },
+            3 => { // maximum
+                packet.value = 0;
+                for (packet.subpackets.items) |sp| {
+                    packet.value = std.math.max(packet.value, sp.value);
+                }
+            },
+            4 => unreachable, // literals
+            5 => { // greater than
+                packet.value = if (packet.subpackets.items[0].value > packet.subpackets.items[1].value) 1 else 0;
+            },
+            6 => { // less than
+                packet.value = if (packet.subpackets.items[0].value < packet.subpackets.items[1].value) 1 else 0;
+            },
+            7 => { // less than
+                packet.value = if (packet.subpackets.items[0].value == packet.subpackets.items[1].value) 1 else 0;
+            },
+        }
     }
     return packet;
+}
+
+fn get_packet_version(p: Packet) u64 {
+    var version: u64 = 0;
+    for (p.subpackets.items) |sp| {
+        version += get_packet_version(sp);
+    }
+    version += p.version;
+    return version;
 }
 
 fn parse_packets(alloc: *std.mem.Allocator, program: []bool) std.ArrayList(Packet) {
@@ -92,16 +134,11 @@ fn parse_packets(alloc: *std.mem.Allocator, program: []bool) std.ArrayList(Packe
     return packets;
 }
 
-fn input_to_bits(alloc: *std.mem.Allocator, input: []const u8) !std.ArrayList(bool) {
-    var program_bits = std.ArrayList(bool).init(alloc);
-    for (input) |c| {
-        const digit: u4 = @intCast(u4, try std.fmt.charToDigit(c, 16));
-        try program_bits.append(((digit >> 3) & 1) != 0);
-        try program_bits.append(((digit >> 2) & 1) != 0);
-        try program_bits.append(((digit >> 1) & 1) != 0);
-        try program_bits.append(((digit >> 0) & 1) != 0);
+fn packetlist_deinit(pl: std.ArrayList(Packet)) void {
+    for (pl.items) |p| {
+        packetlist_deinit(p.subpackets);
     }
-    return program_bits;
+    pl.deinit();
 }
 
 pub fn main() anyerror!void {
@@ -127,12 +164,8 @@ pub fn main() anyerror!void {
     var packets = parse_packets(alloc, program_bits.items);
     defer packetlist_deinit(packets);
 
-    std.debug.print("{any}\n", .{packets.items});
-    var version_sum: u32 = 0;
-    for (packets.items) |p| {
-        version_sum += get_packet_version(p);
-    }
-    try stdout.print("Packet version sum: {}\n", .{version_sum});
+    try stdout.print("Packet version sum: {}\n", .{get_packet_version(packets.items[0])});
+    try stdout.print("Packet value: {}\n", .{packets.items[0].value});
 }
 
 test "example1" {
@@ -195,4 +228,33 @@ test "example4" {
     const p = packets.items[0];
     try std.testing.expectEqual(p.version, 4);
     try std.testing.expectEqual(p.subpackets.items.len, 1);
+}
+
+test "p2_examples" {
+    var test_alloc = std.testing.allocator;
+    const inputs = [_][]const u8{
+        "C200B40A82",
+        "04005AC33890",
+        "880086C3E88112",
+        "CE00C43D881120",
+        "D8005AC2A8F0",
+        "F600BC2D8F",
+        "9C005AC2F8F0",
+        "9C0141080250320F1802104A08",
+    };
+
+    const expected_value = [_]u32{
+        3, 54, 7, 9, 1, 0, 0, 1,
+    };
+
+    for (inputs) |input, i| {
+        const program = try input_to_bits(test_alloc, input);
+        defer program.deinit();
+        std.debug.print("\n", .{});
+
+        const packet = parse_packet(test_alloc, program.items);
+        defer packetlist_deinit(packet.subpackets);
+
+        try std.testing.expectEqual(packet.value, expected_value[i]);
+    }
 }
