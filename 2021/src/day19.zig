@@ -111,11 +111,11 @@ pub fn main() !void {
 
     while (scanner_outputs.items.len != 0) {
         outer: for (scanner_outputs.items) |relative_beacons, beacon_number| {
-            var rot_n: u32 = 0;
-            while (rot_n < 24) : (rot_n += 1) {
-                var abs_beacon_it = absolute_beacons.keyIterator();
-                while (abs_beacon_it.next()) |abs_beacon| {
-                    for (relative_beacons.items) |initial_relative_beacon| {
+            var abs_beacon_it = absolute_beacons.keyIterator();
+            while (abs_beacon_it.next()) |abs_beacon| {
+                for (relative_beacons.items) |initial_relative_beacon| {
+                    var rot_n: u32 = 0;
+                    while (rot_n < 24) : (rot_n += 1) {
                         const beacon_offset = abs_beacon.sub(rotate_coord(initial_relative_beacon, rot_n));
                         var count_matching: u32 = 0;
                         for (relative_beacons.items) |relative_beacon| {
@@ -126,7 +126,7 @@ pub fn main() !void {
                             if (count_matching >= 12) break;
                         }
                         if (count_matching >= 12) {
-                            std.debug.print("rot: {} offset: {any}\n", .{ rot_n, beacon_offset });
+                            //std.debug.print("rot: {} offset: {any}\n", .{ rot_n, beacon_offset });
                             for (relative_beacons.items) |relative_beacon| {
                                 const new_abs_beacon = rotate_coord(relative_beacon, rot_n).add(beacon_offset);
                                 try absolute_beacons.put(new_abs_beacon, {});
