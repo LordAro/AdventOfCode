@@ -43,7 +43,7 @@ const Board = struct {
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const alloc = &arena.allocator;
+    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();
@@ -66,7 +66,7 @@ pub fn main() anyerror!void {
     var buf: [300]u8 = undefined;
     while (try input.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
         if (first_line) {
-            var it = std.mem.split(line, ",");
+            var it = std.mem.split(u8, line, ",");
             while (it.next()) |n_str| {
                 try picked_numbers.append(try std.fmt.parseInt(u32, n_str, 0));
             }
@@ -82,7 +82,7 @@ pub fn main() anyerror!void {
             }
             const b = &boards.items[boards.items.len - 1];
 
-            var it = std.mem.tokenize(line, " "); // tokenize squashes duplicate delimiters
+            var it = std.mem.tokenize(u8, line, " "); // tokenize squashes duplicate delimiters
             var i: usize = 0;
             while (it.next()) |n_str| : (i += 1) {
                 b.b[board_line][i] = try std.fmt.parseInt(u32, n_str, 0);

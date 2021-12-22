@@ -5,8 +5,8 @@ const Coord = struct {
     y: u32,
 };
 
-fn parse_coord(str: anytype) Coord {
-    var it = std.mem.split(str, ",");
+fn parse_coord(str: []const u8) Coord {
+    var it = std.mem.split(u8, str, ",");
     const x = std.fmt.parseInt(u32, it.next().?, 0) catch unreachable;
     const y = std.fmt.parseInt(u32, it.next().?, 0) catch unreachable;
     return Coord{ .x = x, .y = y };
@@ -74,7 +74,7 @@ const LineIterator = struct {
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const alloc = &arena.allocator;
+    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();
@@ -94,7 +94,7 @@ pub fn main() anyerror!void {
 
     var buf: [64]u8 = undefined;
     while (try input.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
-        var it = std.mem.split(line, " ");
+        var it = std.mem.split(u8, line, " ");
         var coord1 = parse_coord(it.next().?);
         _ = it.next();
         var coord2 = parse_coord(it.next().?);

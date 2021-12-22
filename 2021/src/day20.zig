@@ -53,7 +53,7 @@ fn count_lit(img: Image) usize {
     return lit_pixels;
 }
 
-fn enhance(alloc: *std.mem.Allocator, input: Image, program: []u8, missing_is_lit: bool) !Image {
+fn enhance(alloc: std.mem.Allocator, input: Image, program: []u8, missing_is_lit: bool) !Image {
     const bb = get_minmax(input);
 
     var enhanced = Image.init(alloc);
@@ -73,7 +73,7 @@ fn enhance(alloc: *std.mem.Allocator, input: Image, program: []u8, missing_is_li
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const alloc = &arena.allocator;
+    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();

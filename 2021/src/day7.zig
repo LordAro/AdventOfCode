@@ -3,7 +3,7 @@ const std = @import("std");
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const alloc = &arena.allocator;
+    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();
@@ -47,8 +47,6 @@ pub fn main() anyerror!void {
         minFuelCost = std.math.min(minFuelCost, fuelCost);
         minFuelCost2 = std.math.min(minFuelCost2, fuelCost2);
     }
-
-    var distanceTotal: u32 = 0;
 
     try stdout.print("Min fuel cost (constant rate): {}\n", .{minFuelCost});
     try stdout.print("Min fuel cost (variable rate): {}\n", .{minFuelCost2});

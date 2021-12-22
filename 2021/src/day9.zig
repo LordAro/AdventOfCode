@@ -26,7 +26,7 @@ fn flood_fill(grid: anytype, contents: *std.AutoHashMap(u32, void), x: usize, y:
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const alloc = &arena.allocator;
+    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();

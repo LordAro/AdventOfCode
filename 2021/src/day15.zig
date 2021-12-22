@@ -10,15 +10,15 @@ const PathCost = struct {
     cost: u32,
 };
 
-fn lt(a: PathCost, b: PathCost) std.math.Order {
+fn lt(_: void, a: PathCost, b: PathCost) std.math.Order {
     return std.math.order(a.cost, b.cost);
 }
 
-fn find_path(alloc: *std.mem.Allocator, grid: std.ArrayList(std.ArrayList(u8)), start: Coord, target: Coord) !u32 {
+fn find_path(alloc: std.mem.Allocator, grid: std.ArrayList(std.ArrayList(u8)), start: Coord, target: Coord) !u32 {
     var searched = std.AutoHashMap(Coord, void).init(alloc); // set
     defer searched.deinit();
 
-    var toSearch = std.PriorityQueue(PathCost).init(alloc, lt);
+    var toSearch = std.PriorityQueue(PathCost, void, lt).init(alloc, {});
     defer toSearch.deinit();
     try toSearch.add(PathCost{ .coord = start, .cost = 0 });
     var found_dist: u32 = @intCast(u32, grid.items.len) * @intCast(u32, grid.items.len);
@@ -70,7 +70,7 @@ fn find_path(alloc: *std.mem.Allocator, grid: std.ArrayList(std.ArrayList(u8)), 
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const alloc = &arena.allocator;
+    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();

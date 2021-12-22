@@ -15,7 +15,7 @@ const ScoreObj = struct {
 
 const Polymer = std.AutoArrayHashMap(Pair, u64);
 
-fn apply_insertion_rules(alloc: *std.mem.Allocator, rules: anytype, input: Polymer) !Polymer {
+fn apply_insertion_rules(alloc: std.mem.Allocator, rules: anytype, input: Polymer) !Polymer {
     var output = Polymer.init(alloc);
 
     var it = input.iterator();
@@ -33,7 +33,7 @@ fn apply_insertion_rules(alloc: *std.mem.Allocator, rules: anytype, input: Polym
     return output;
 }
 
-fn get_polymer_score(alloc: *std.mem.Allocator, poly: Polymer, last_letter: u8) !ScoreObj {
+fn get_polymer_score(alloc: std.mem.Allocator, poly: Polymer, last_letter: u8) !ScoreObj {
     var element_quantities = std.AutoHashMap(u8, u64).init(alloc);
     defer element_quantities.deinit();
     // Can't count the last letter, and we can't know which one it was in the array of pairs, so add it here to make up for it
@@ -75,7 +75,7 @@ fn get_polymer_score(alloc: *std.mem.Allocator, poly: Polymer, last_letter: u8) 
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const alloc = &arena.allocator;
+    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();
@@ -104,7 +104,7 @@ pub fn main() anyerror!void {
         }
 
         if (parse_map) {
-            var it = std.mem.split(line, " -> ");
+            var it = std.mem.split(u8, line, " -> ");
 
             var lr = it.next().?;
             try insertion_rules.put(Pair{ .a = lr[0], .b = lr[1] }, it.next().?[0]);

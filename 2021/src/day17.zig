@@ -17,7 +17,7 @@ fn is_within_target(tl: Coord, br: Coord, pos: Coord) bool {
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const alloc = &arena.allocator;
+    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();
@@ -36,13 +36,13 @@ pub fn main() anyerror!void {
     var buf: [64]u8 = undefined;
     if (try input.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
         // Parsing is hard when you haven't got a regex library
-        var split = std.mem.split(line[13..], ", "); // "target area: " == 13
+        var split = std.mem.split(u8, line[13..], ", "); // "target area: " == 13
         const x_vals = split.next().?;
-        var x_split = std.mem.split(x_vals[2..], "..");
+        var x_split = std.mem.split(u8, x_vals[2..], "..");
         const x1 = try std.fmt.parseInt(i32, x_split.next().?, 0);
         const x2 = try std.fmt.parseInt(i32, x_split.next().?, 0);
         const y_vals = split.next().?;
-        var y_split = std.mem.split(y_vals[2..], "..");
+        var y_split = std.mem.split(u8, y_vals[2..], "..");
         const y1 = try std.fmt.parseInt(i32, y_split.next().?, 0);
         const y2 = try std.fmt.parseInt(i32, y_split.next().?, 0);
 

@@ -9,7 +9,7 @@ const Dir = enum {
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const alloc = &arena.allocator;
+    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();
@@ -31,7 +31,7 @@ pub fn main() anyerror!void {
 
     var buf: [16]u8 = undefined;
     while (try input.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
-        var it = std.mem.split(line, " ");
+        var it = std.mem.split(u8, line, " ");
         const dir = std.meta.stringToEnum(Dir, it.next().?).?;
         const val = try std.fmt.parseInt(u32, it.next().?, 0);
         switch (dir) {

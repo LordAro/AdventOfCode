@@ -13,7 +13,7 @@ fn get_bitcount(arr: std.ArrayList(u16), i: u4) u16 {
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const alloc = &arena.allocator;
+    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();
@@ -29,13 +29,10 @@ pub fn main() anyerror!void {
     var diagnostic_numbers = std.ArrayList(u16).init(alloc);
     defer diagnostic_numbers.deinit();
 
-    const example_numbers = [_][]const u8{ "00100", "11110", "10110", "10111", "10101", "01111", "00111", "11100", "10000", "11001", "00010", "01010" };
-
     var num_bits: u4 = 0;
 
     var buf: [16]u8 = undefined;
     while (try input.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
-        //for (example_numbers) |line| {
         num_bits = @intCast(u4, line.len);
         try diagnostic_numbers.append(try std.fmt.parseInt(u16, line, 2));
     }

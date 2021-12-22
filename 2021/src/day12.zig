@@ -1,6 +1,6 @@
 const std = @import("std");
 
-fn dup(alloc: *std.mem.Allocator, s: []const u8) []u8 {
+fn dup(alloc: std.mem.Allocator, s: []const u8) []u8 {
     var newStr = alloc.alloc(u8, s.len) catch unreachable;
     std.mem.copy(u8, newStr, s);
     return newStr;
@@ -20,7 +20,7 @@ fn arr_contains(arr: std.ArrayList([]const u8), s: []const u8) bool {
     return false;
 }
 
-fn has_dup_lowercase(alloc: *std.mem.Allocator, arr: std.ArrayList([]const u8)) bool {
+fn has_dup_lowercase(alloc: std.mem.Allocator, arr: std.ArrayList([]const u8)) bool {
     var uniq = std.StringHashMap(void).init(alloc); // set
     defer uniq.deinit();
     for (arr.items) |r| {
@@ -35,7 +35,7 @@ fn has_dup_lowercase(alloc: *std.mem.Allocator, arr: std.ArrayList([]const u8)) 
 
 const Graph = std.StringArrayHashMap(std.ArrayList([]u8));
 
-fn bfs(G: *const Graph, alloc: *std.mem.Allocator, route: std.ArrayList([]const u8)) u32 {
+fn bfs(G: *const Graph, alloc: std.mem.Allocator, route: std.ArrayList([]const u8)) u32 {
     const tail = route.items[route.items.len - 1];
     if (std.mem.eql(u8, tail, "end")) return 1;
 
@@ -52,7 +52,7 @@ fn bfs(G: *const Graph, alloc: *std.mem.Allocator, route: std.ArrayList([]const 
     return num_routes;
 }
 
-fn bfs2(G: *const Graph, alloc: *std.mem.Allocator, route: std.ArrayList([]const u8)) u32 {
+fn bfs2(G: *const Graph, alloc: std.mem.Allocator, route: std.ArrayList([]const u8)) u32 {
     const tail = route.items[route.items.len - 1];
     if (std.mem.eql(u8, tail, "end")) {
         //std.debug.print("{s}\n", .{route.items});
@@ -75,7 +75,7 @@ fn bfs2(G: *const Graph, alloc: *std.mem.Allocator, route: std.ArrayList([]const
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const alloc = &arena.allocator;
+    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();
@@ -93,7 +93,7 @@ pub fn main() anyerror!void {
 
     var buf: [16]u8 = undefined;
     while (try input.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
-        var it = std.mem.split(line, "-");
+        var it = std.mem.split(u8, line, "-");
         var a = dup(alloc, it.next().?);
         var b = dup(alloc, it.next().?);
 

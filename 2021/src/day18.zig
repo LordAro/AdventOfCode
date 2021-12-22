@@ -2,14 +2,14 @@ const std = @import("std");
 //const rb = @import("./rb.zig");
 
 const TreeNode = struct {
-    allocator: *std.mem.Allocator,
+    allocator: std.mem.Allocator,
 
     parent: ?*TreeNode,
     value: ?usize,
     left_child: ?*TreeNode,
     right_child: ?*TreeNode,
 
-    fn init(alloc: *std.mem.Allocator) !*TreeNode {
+    fn init(alloc: std.mem.Allocator) !*TreeNode {
         var node = try alloc.create(TreeNode);
         node.* = TreeNode{
             .allocator = alloc,
@@ -142,7 +142,7 @@ const TreeNode = struct {
 
 const ParseError = std.mem.Allocator.Error || std.fmt.ParseIntError;
 
-fn parse_snail(alloc: *std.mem.Allocator, line: []const u8) ParseError!*TreeNode {
+fn parse_snail(alloc: std.mem.Allocator, line: []const u8) ParseError!*TreeNode {
     var root = try TreeNode.init(alloc);
     if (line[0] == '[') {
         var depth: usize = 0;
@@ -223,7 +223,6 @@ fn explode_node(node: *TreeNode) !void {
 }
 
 fn explode_tree(tree: *TreeNode) !bool {
-    var exploded = false;
     const deep_node = find_deep(tree, 0, 5);
     if (deep_node) |n| {
         //std.debug.print("ex: t: {any} d: {any}\n", .{ tree, n });
@@ -255,7 +254,7 @@ fn split_tree(tree: *TreeNode) !bool {
     return big_node != null;
 }
 
-fn add_snail(alloc: *std.mem.Allocator, left: *TreeNode, right: *TreeNode) !*TreeNode {
+fn add_snail(alloc: std.mem.Allocator, left: *TreeNode, right: *TreeNode) !*TreeNode {
     var root = try TreeNode.init(alloc);
     root.add_left_child(try left.copy());
     root.add_right_child(try right.copy());
@@ -267,7 +266,7 @@ fn add_snail(alloc: *std.mem.Allocator, left: *TreeNode, right: *TreeNode) !*Tre
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const alloc = &arena.allocator;
+    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();

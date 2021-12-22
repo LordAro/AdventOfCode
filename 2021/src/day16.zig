@@ -8,7 +8,7 @@ const Packet = struct {
     subpackets: std.ArrayList(Packet),
 };
 
-fn input_to_bits(alloc: *std.mem.Allocator, input: []const u8) !std.ArrayList(bool) {
+fn input_to_bits(alloc: std.mem.Allocator, input: []const u8) !std.ArrayList(bool) {
     var program_bits = std.ArrayList(bool).init(alloc);
     for (input) |c| {
         const digit: u4 = @intCast(u4, try std.fmt.charToDigit(c, 16));
@@ -28,7 +28,7 @@ fn bits_to_num(blob: []bool) u32 {
     return out;
 }
 
-fn parse_packet(alloc: *std.mem.Allocator, program: []bool) Packet {
+fn parse_packet(alloc: std.mem.Allocator, program: []bool) Packet {
     const version = @intCast(u3, bits_to_num(program[0..3]));
     const typeid = @intCast(u3, bits_to_num(program[3..6]));
 
@@ -122,7 +122,7 @@ fn get_packet_version(p: Packet) u64 {
     return version;
 }
 
-fn parse_packets(alloc: *std.mem.Allocator, program: []bool) std.ArrayList(Packet) {
+fn parse_packets(alloc: std.mem.Allocator, program: []bool) std.ArrayList(Packet) {
     var packets = std.ArrayList(Packet).init(alloc);
 
     var pc: usize = 0;
@@ -144,7 +144,7 @@ fn packetlist_deinit(pl: std.ArrayList(Packet)) void {
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const alloc = &arena.allocator;
+    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();

@@ -20,15 +20,19 @@ fn contains(a: []const u8, b: []const u8) bool {
 
 // Unique lengths
 inline fn is_1(s: []const u8, foundItems: anytype) bool {
+    _ = foundItems;
     return s.len == 2;
 }
 inline fn is_4(s: []const u8, foundItems: anytype) bool {
+    _ = foundItems;
     return s.len == 4;
 }
 inline fn is_7(s: []const u8, foundItems: anytype) bool {
+    _ = foundItems;
     return s.len == 3;
 }
 inline fn is_8(s: []const u8, foundItems: anytype) bool {
+    _ = foundItems;
     return s.len == 7;
 }
 
@@ -62,18 +66,18 @@ inline fn is_9(s: []const u8, foundItems: anytype) bool {
     return s.len == 6 and contains(s, foundItems[4]);
 }
 
-fn decodeSegments(alloc: *std.mem.Allocator, line: []const u8) anyerror![4]u32 {
-    var line_it = std.mem.split(line, " | ");
+fn decodeSegments(alloc: std.mem.Allocator, line: []const u8) anyerror![4]u32 {
+    var line_it = std.mem.split(u8, line, " | ");
 
     // Can't find any better way of converting an iterator into an array
-    var input_values_it = std.mem.split(line_it.next().?, " ");
+    var input_values_it = std.mem.split(u8, line_it.next().?, " ");
     var input_values = std.ArrayList([]const u8).init(alloc);
     while (input_values_it.next()) |str| {
         try input_values.append(str);
     }
     defer input_values.deinit();
 
-    var output_values_it = std.mem.split(line_it.next().?, " ");
+    var output_values_it = std.mem.split(u8, line_it.next().?, " ");
     var output_values = std.ArrayList([]const u8).init(alloc);
     defer output_values.deinit();
     while (output_values_it.next()) |str| {
@@ -116,7 +120,7 @@ fn decodeSegments(alloc: *std.mem.Allocator, line: []const u8) anyerror![4]u32 {
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const alloc = &arena.allocator;
+    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();

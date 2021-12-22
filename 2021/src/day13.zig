@@ -8,7 +8,7 @@ const Coord = struct {
 pub fn main() anyerror!void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const alloc = &arena.allocator;
+    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();
@@ -36,12 +36,12 @@ pub fn main() anyerror!void {
         }
 
         if (parse_points) {
-            var it = std.mem.split(line, ",");
+            var it = std.mem.split(u8, line, ",");
             const x = try std.fmt.parseInt(u32, it.next().?, 0);
             const y = try std.fmt.parseInt(u32, it.next().?, 0);
             try grid.put(Coord{ .x = x, .y = y }, {});
         } else {
-            var it = std.mem.split(line, " ");
+            var it = std.mem.split(u8, line, " ");
             _ = it.next();
             _ = it.next(); // skip
 
