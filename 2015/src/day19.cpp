@@ -32,7 +32,7 @@ int fabrication_count(const map_t &conversions, const std::string &input)
 {
 	if (input == "") return 0;
 	for (const auto &conv : conversions) {
-		size_t pos;
+		size_t pos = std::string::npos;
 		size_t len = 1;
 		for (const auto &res : conv.second) {
 			pos = input.find(res);

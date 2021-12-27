@@ -3,8 +3,6 @@
 #include <iostream>
 #include <fstream>
 
-std::string secret = "ckczppom";
-
 std::string bytetostr(unsigned char array[MD5_DIGEST_LENGTH])
 {
 	char hexstr[MD5_DIGEST_LENGTH * 2 + 1];
@@ -39,12 +37,12 @@ int main(int argc, char **argv)
 
 		std::string hexstr = bytetostr(result);
 
-		if (!found5 && hexstr.substr(0, 5) == "00000") {
-			std::cout << newstr << ": " << hexstr << "\n";
+		if (!found5 && result[0] == 0 && result[1] == 0 && result[2] >> 4 == 0) {
+			std::cout << newstr << ": " << bytetostr(result) << "\n";
 			found5 = true;
 		}
-		if (hexstr.substr(0, 6) == "000000") {
-			std::cout << newstr << ": " << hexstr << "\n";
+		if (result[0] == 0 && result[1] == 0 && result[2] == 0) {
+			std::cout << newstr << ": " << bytetostr(result) << "\n";
 			return 0;
 		}
 

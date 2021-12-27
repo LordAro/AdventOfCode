@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <vector>
-#include <algorithm>
+#include <unordered_set>
 
 struct Pos {
 	int x;
@@ -13,10 +12,15 @@ bool operator==(const Pos &a, const Pos &b)
 	return a.x == b.x && a.y == b.y;
 }
 
-bool is_in(const std::vector<Pos> &vec, const Pos &x)
+struct PosHash
 {
-	return std::find(vec.begin(), vec.end(), x) != vec.end();
-}
+    std::size_t operator()(const Pos &s) const noexcept
+    {
+        std::size_t h1 = std::hash<int>{}(s.x);
+        std::size_t h2 = std::hash<int>{}(s.y);
+        return h1 ^ (h2 << 1); // or use boost::hash_combine
+    }
+};
 
 int main(int argc, char **argv)
 {
@@ -35,8 +39,8 @@ int main(int argc, char **argv)
 	Pos santa_pos{0, 0};
 	Pos robo_pos{0, 0};
 
-	std::vector<Pos> visited = {normal_pos};
-	std::vector<Pos> robo_assisted_visited = {santa_pos};
+	std::unordered_set<Pos, PosHash> visited = {normal_pos};
+	std::unordered_set<Pos, PosHash> robo_assisted_visited = {santa_pos};
 
 	int move_num = 0;
 
@@ -50,12 +54,8 @@ int main(int argc, char **argv)
 			case '<': cur_pos.x--; normal_pos.x--; break;
 		}
 
-		if (!is_in(visited, normal_pos)) {
-			visited.push_back(normal_pos);
-		}
-		if (!is_in(robo_assisted_visited, cur_pos)) {
-			robo_assisted_visited.push_back(cur_pos);
-		}
+		visited.insert(normal_pos);
+		robo_assisted_visited.insert(cur_pos);
 		move_num++;
 	}
 
