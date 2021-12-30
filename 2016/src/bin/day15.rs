@@ -24,15 +24,26 @@ fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64) {
     return (r.1, s.1, t.1);
 }
 
-fn _gcd(a_: i64, b_: i64) -> i64 {
-    let mut a = a_;
-    let mut b = b_;
-    while b != 0 {
-        let r = a % b;
-        a = b;
-        b = r;
-    }
-    return a;
+// https://crypto.stanford.edu/pbc/notes/numbertheory/crt.html
+// for series of equations x = a_i mod m_i
+// x = sum(a_i * b_i * b'_i)
+// where b = M / m_i
+// where M = product(m_1 .. m_n)
+// where b' = multiplicative inverse of b mod m
+fn get_release_time(discs: &Vec<(i64, i64)>) -> i64 {
+    let big_m: i64 = discs.iter().map(|(_, m)| m).product();
+
+    return discs
+        .iter()
+        .map(|&(a, m)| {
+            let b = big_m / m;
+            let (_r, s, _) = extended_gcd(b, m);
+            // r (gcd) always equals 1 ...hopefully
+            let b_inverse = s;
+            return a * b * b_inverse;
+        })
+        .sum::<i64>()
+        .rem_euclid(big_m);
 }
 
 fn main() {
@@ -64,19 +75,16 @@ fn main() {
         .map(|(i, (num, pos))| ((num - pos - ((i as i64) + 1)).rem_euclid(num), num))
         .collect::<_>();
 
-    let big_m: i64 = discs.iter().map(|(_, m)| m).product();
+    let time1 = get_release_time(&discs);
 
-    let time = discs
-        .iter()
-        .map(|&(a, m)| {
-            let b = big_m / m;
-            let (_r, s, _) = extended_gcd(b, m);
-            // r (gcd) always equals 1 ...hopefully
-            let b_inverse = s;
-            return a * b * b_inverse;
-        })
-        .sum::<i64>()
-        .rem_euclid(big_m);
+    println!("Button press time: {}", time1);
 
-    println!("Disc release time: {}", time);
+    // new disc, 11 positions, starting at position 0, below bottom disc
+    let new_disc = vec![((11 - 0 - (discs.len() as i64 + 1)).rem_euclid(11), 11)];
+    let discs2 = discs
+        .into_iter()
+        .chain(new_disc.into_iter())
+        .collect::<Vec<_>>();
+    let time2 = get_release_time(&discs2);
+    println!("Button press time with additional disc: {}", time2);
 }
