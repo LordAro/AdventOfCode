@@ -1,37 +1,16 @@
 #include <fstream>
 #include <iostream>
 
-bool is_win(char opponent, char self)
+int result(int opponent, int self)
 {
-	return (opponent == 0 && self == 1) || (opponent == 1 && self == 2) || (opponent == 2 && self == 0);
+	// correctly returns 0 = lose, 1 = draw, 2 = win... somehow
+	return (self - opponent + 1 + 3) % 3;
 }
 
-bool is_draw(char opponent, char self)
+int needed_move(int opponent, int outcome)
 {
-	return opponent == self;
-}
-
-char needed_move(char opponent, char outcome)
-{
-	switch (opponent) {
-		case 0:
-			switch (outcome) {
-				case 0: return 2;
-				case 1: return 0;
-				case 2: return 1;
-			}
-			__builtin_unreachable();
-		case 1:
-			return outcome;
-		case 2:
-			switch (outcome) {
-				case 0: return 1;
-				case 1: return 2;
-				case 2: return 0;
-			}
-			__builtin_unreachable();
-	}
-	__builtin_unreachable();
+	// returns the needed move to get desired outcome
+	return (opponent + outcome + 2) % 3;
 }
 
 int main(int argc, char **argv)
@@ -61,11 +40,7 @@ int main(int argc, char **argv)
 		int my_move = my_move_ch - 'X';
 
 		p1_score += my_move + 1;
-		if (is_win(opponent_move, my_move)) {
-			p1_score += 6;
-		} else if (is_draw(opponent_move, my_move)) {
-			p1_score += 3;
-		}
+		p1_score += result(opponent_move, my_move) * 3;
 
 		const int needed_outcome = my_move;
 		int my_move2 = needed_move(opponent_move, needed_outcome);
