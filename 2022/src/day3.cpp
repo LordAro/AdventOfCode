@@ -1,8 +1,15 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <set>
 #include <vector>
+
+int priority(char c)
+{
+	if (std::isupper(c)) {
+		return c - 'A' + 1 + 26;
+	}
+	return c - 'a' + 1;
+}
 
 int main(int argc, char **argv)
 {
@@ -18,48 +25,41 @@ int main(int argc, char **argv)
 
 	std::vector<std::string> bags;
 
-	std::string line;
-	while (input >> line) {
-		bags.push_back(line);
+	std::string bag;
+	while (input >> bag) {
+		bags.push_back(bag);
 	}
 
 	int priority_sum = 0;
 	for (const auto &line : bags) {
 		size_t half = line.length() / 2;
-		std::set<char> compartment1; // set_intersection requires sorted ranges
-		std::set<char> compartment2;
 
-		compartment1.insert(line.begin(), line.begin() + half);
-		compartment2.insert(line.begin() + half, line.end());
+		std::string compartment1(line.begin(), line.begin() + half);
+		std::string compartment2(line.begin() + half, line.end());
+		std::sort(compartment1.begin(), compartment1.end());
+		std::sort(compartment2.begin(), compartment2.end());
 
 		std::string intersection;
 		std::set_intersection(compartment1.begin(), compartment1.end(), compartment2.begin(), compartment2.end(), std::back_inserter(intersection));
-		char duplicate = intersection[0];
-		if (std::isupper(duplicate)) {
-			priority_sum += duplicate - 'A' + 1 + 26;
-		} else {
-			priority_sum += duplicate - 'a' + 1;
-		}
+		priority_sum += priority(intersection[0]); // only 1!
 	}
 	std::cout << "Duplicate item priority sum: " << priority_sum << '\n';
 
 	int badge_priority_sum = 0;
 	for (size_t i = 0; i < bags.size(); i += 3) {
-		std::set<char> bag1(bags[i].begin(), bags[i].end());
-		std::set<char> bag2(bags[i + 1].begin(), bags[i + 1].end());
-		std::set<char> bag3(bags[i + 2].begin(), bags[i + 2].end());
+		std::string bag1 = bags[i];
+		std::string bag2 = bags[i + 1];
+		std::string bag3 = bags[i + 2];
+		std::sort(bag1.begin(), bag1.end());
+		std::sort(bag2.begin(), bag2.end());
+		std::sort(bag3.begin(), bag3.end());
 
-		std::set<char> bag12;
-		std::set_intersection(bag1.begin(), bag1.end(), bag2.begin(), bag2.end(), std::inserter(bag12, bag12.begin()));
+		std::string bag12;
+		std::set_intersection(bag1.begin(), bag1.end(), bag2.begin(), bag2.end(), std::back_inserter(bag12));
 
 		std::string intersection;
 		std::set_intersection(bag12.begin(), bag12.end(), bag3.begin(), bag3.end(), std::back_inserter(intersection));
-		char duplicate = intersection.at(0);
-		if (std::isupper(duplicate)) {
-			badge_priority_sum += duplicate - 'A' + 1 + 26;
-		} else {
-			badge_priority_sum += duplicate - 'a' + 1;
-		}
+		badge_priority_sum += priority(intersection[0]);
 	}
 	std::cout << "Badge item priority sum: " << badge_priority_sum << '\n';
 }
