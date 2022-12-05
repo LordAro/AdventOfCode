@@ -1,5 +1,5 @@
+#include <algorithm>
 #include <cstdio>
-#include <deque>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	std::vector<std::deque<char>> stacks; // deques representing each stack. the back is the "top"
+	std::vector<std::vector<char>> stacks; // deques representing each stack. the back is the "top"
 	std::vector<MoveInstruction> instrs;
 
 	bool parsing_instructions = false;
@@ -46,10 +46,15 @@ int main(int argc, char **argv)
 				}
 
 				if (line[i] != ' ') {
-					stacks[stack_no].push_front(line[i]);
+					stacks[stack_no].push_back(line[i]);
 				}
 			}
 		}
+	}
+
+	/* Put the bottom of the stack first, so indexes match */
+	for (auto &stack : stacks) {
+		std::reverse(stack.begin(), stack.end());
 	}
 
 //	stacks = { {'Z', 'N'}, {'M', 'C', 'D'}, {'P'} }; // example
@@ -59,19 +64,13 @@ int main(int argc, char **argv)
 	for (const auto &instr : instrs) {
 		size_t from_idx = instr.from_idx - 1; // 1-based -> 0-based
 		size_t to_idx = instr.to_idx - 1;
-		std::vector<char> crane9001;
-		for (int move = 0; move < instr.quantity; move++) {
-			char item = stacks[from_idx].back();
-			stacks[from_idx].pop_back();
-			stacks[to_idx].push_back(item);
 
-			crane9001.push_back(stacks9001[from_idx].back());
-			stacks9001[from_idx].pop_back();
-		}
+		stacks[to_idx].insert(stacks[to_idx].end(), stacks[from_idx].rbegin(), stacks[from_idx].rbegin() + instr.quantity);
+		stacks[from_idx].erase(stacks[from_idx].end() - instr.quantity, stacks[from_idx].end());
 
-		for (auto it = crane9001.rbegin(); it != crane9001.rend(); ++it) {
-			stacks9001[to_idx].push_back(*it);
-		}
+		// Part 2
+		stacks9001[to_idx].insert(stacks9001[to_idx].end(), stacks9001[from_idx].end() - instr.quantity, stacks9001[from_idx].end());
+		stacks9001[from_idx].erase(stacks9001[from_idx].end() - instr.quantity, stacks9001[from_idx].end());
 	}
 
 	std::cout << "Crate on top of each stack: ";
