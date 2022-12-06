@@ -1,14 +1,15 @@
-#include <algorithm>
+#include <bitset>
 #include <fstream>
 #include <iostream>
 
 template<int N>
 bool is_substr_unique(const std::string &communication, size_t start_idx)
 {
-	std::string sub = communication.substr(start_idx, N);
-	std::sort(sub.begin(), sub.end());
-	size_t unique_count = std::unique(sub.begin(), sub.end()) - sub.begin();
-	return unique_count == N;
+	std::bitset<26> set;
+	for (size_t i = start_idx; i < start_idx + N; i++) {
+		set.set(communication[i] - 'a'); // all lower-case
+	}
+	return set.count() == N;
 }
 
 int main(int argc, char **argv)
