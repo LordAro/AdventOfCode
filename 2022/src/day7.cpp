@@ -3,22 +3,20 @@
 #include <iostream>
 #include <map>
 #include <memory>
-#include <sstream>
 #include <vector>
 
 struct Directory {
 	std::string path;
 	Directory *parent;
 	std::map<std::string, std::unique_ptr<Directory>> dirs;
-	std::map<std::string, size_t> files;
+	size_t size;
 };
 
 size_t get_directory_size(const Directory *dir)
 {
 	size_t size = 0;
 	for (const auto &[name, child] : dir->dirs) size += get_directory_size(child.get());
-
-	for (const auto &[name, file_size] : dir->files) size += file_size;
+	size += dir->size;
 	return size;
 }
 
@@ -43,21 +41,19 @@ int main(int argc, char **argv)
 	std::getline(input, line); // first line makes sure we're at the root
 
 	while (std::getline(input, line)) {
-		if (line[0] == '$') {
-			if (line[2] == 'c' && line[3] == 'd') {
-				if (line[5] == '.' && line[6] == '.') {
+		std::string_view line_sv = line;
+		if (line_sv[0] == '$') {
+			if (line_sv.substr(2, 2) == "cd") {
+				auto target_dir = line_sv.substr(5);
+				if (target_dir == "..") {
 					cur_dir = cur_dir->parent;
 				} else {
-					cur_dir = cur_dir->dirs.at(line.substr(5)).get();
+					cur_dir = cur_dir->dirs.at(std::string(target_dir)).get();
 				}
-			} else if (line[2] == 'l' && line[3] == 's') {
-				// don't need to do anything here
-			} else {
-				std::cerr << "Got unexpected command: " << line << '\n';
-				assert(false);
 			}
+			// don't need to do anything for ls commands
 		} else {
-			if (line.substr(0, 3) == "dir") {
+			if (line_sv.substr(0, 3) == "dir") {
 				auto name = line.substr(4);
 				auto new_dir = std::make_unique<Directory>();
 				new_dir->path = name;
@@ -65,10 +61,8 @@ int main(int argc, char **argv)
 				filesystem.push_back(new_dir.get());
 				cur_dir->dirs[name] = std::move(new_dir);
 			} else {
-				size_t size; std::string filename;
-				std::stringstream ss(line);
-				ss >> size >> filename;
-				cur_dir->files[filename] = size;
+				/* Ignore the filenames, we don't care about anything other than the sizes */
+				cur_dir->size += std::stoul(line);
 			}
 		}
 	}
@@ -79,8 +73,8 @@ int main(int argc, char **argv)
 	const size_t deletion_needed = 30'000'000 - total_unused;
 	size_t smallest_deletion_candidate = 70'000'000;
 
-	for (const auto &d : filesystem) {
-		size_t size = get_directory_size(d);
+	for (const auto &dir : filesystem) {
+		size_t size = get_directory_size(dir);
 		if (size < 100'000) {
 			total_small_size += size;
 		}
