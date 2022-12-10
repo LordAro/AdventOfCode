@@ -4,11 +4,11 @@ use std::io::{BufRead, BufReader};
 
 fn josephus2(n: usize) -> usize {
     if n == 1 {
-        return 1;
+        1
     } else if n % 2 == 0 {
-        return 2 * josephus2(n / 2) - 1;
+        2 * josephus2(n / 2) - 1
     } else {
-        return 2 * josephus2(n / 2) + 1; // f(2j+1), but we're using integer division
+        2 * josephus2(n / 2) + 1 // f(2j+1), but we're using integer division
     }
 }
 
@@ -20,12 +20,12 @@ fn josephus_opposite(n: usize) -> usize {
     }
 
     if n == pow3 * 3 {
-        return pow3 * 3;
+        pow3 * 3
     } else if n <= pow3 * 2 {
-        return n - pow3;
+        n - pow3
     } else {
         // 2(n - pow3) - pow3
-        return 2 * n - 3 * pow3;
+        2 * n - 3 * pow3
     }
 }
 
@@ -36,7 +36,7 @@ fn main() {
 
     let num_elves = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
         .lines()
-        .nth(0)
+        .next()
         .unwrap()
         .unwrap()
         .parse::<usize>()

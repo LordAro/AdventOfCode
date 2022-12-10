@@ -15,20 +15,17 @@ fn get_route_hash(key: &[u8], route: &str) -> String {
 }
 
 fn get_new_pos(p: (u64, u64), dir: char) -> (u64, u64) {
-    return match dir {
+    match dir {
         'U' => (p.0, p.1 - 1),
         'D' => (p.0, p.1 + 1),
         'L' => (p.0 - 1, p.1),
         'R' => (p.0 + 1, p.1),
         _ => unreachable!(),
-    };
+    }
 }
 
 fn is_door_open(c: char) -> bool {
-    return match c {
-        'b'..='f' => true,
-        _ => false,
-    };
+    matches!(c, 'b'..='f')
 }
 
 // bfs
@@ -44,7 +41,7 @@ fn find_all_routes(key: &[u8]) -> Vec<String> {
             routes.push(route);
             continue;
         }
-        if pos.1 != 0 && is_door_open(h.chars().nth(0).unwrap()) {
+        if pos.1 != 0 && is_door_open(h.chars().next().unwrap()) {
             // U
             queue.push_back((route.clone() + "U", get_new_pos(pos, 'U')));
         }
@@ -61,7 +58,7 @@ fn find_all_routes(key: &[u8]) -> Vec<String> {
             queue.push_back((route.clone() + "R", get_new_pos(pos, 'R')));
         }
     }
-    return routes;
+    routes
 }
 
 fn main() {
@@ -71,7 +68,7 @@ fn main() {
 
     let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
         .lines()
-        .nth(0)
+        .next()
         .unwrap()
         .unwrap();
     let key = input.as_bytes();

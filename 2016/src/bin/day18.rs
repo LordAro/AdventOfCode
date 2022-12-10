@@ -8,11 +8,11 @@ fn build_next_line(line: &str) -> String {
         .concat()
         .windows(3)
         .map(|slice| match slice {
-            &[b'^', b'^', b'.'] => '^',
-            &[b'.', b'^', b'^'] => '^',
-            &[b'^', b'.', b'.'] => '^',
-            &[b'.', b'.', b'^'] => '^',
-            &[_, _, _] => '.',
+            [b'^', b'^', b'.'] => '^',
+            [b'.', b'^', b'^'] => '^',
+            [b'^', b'.', b'.'] => '^',
+            [b'.', b'.', b'^'] => '^',
+            [_, _, _] => '.',
             _ => unreachable!(),
         })
         .map(|b| b as char)
@@ -26,13 +26,13 @@ fn main() {
 
     let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
         .lines()
-        .nth(0)
+        .next()
         .unwrap()
         .unwrap();
 
     let mut lines = vec![input];
     while lines.len() < 400000 {
-        lines.push(build_next_line(&lines.last().unwrap()));
+        lines.push(build_next_line(lines.last().unwrap()));
     }
 
     let num_safe40 = lines

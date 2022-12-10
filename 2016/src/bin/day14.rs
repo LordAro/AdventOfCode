@@ -20,7 +20,7 @@ fn get_quintuple(arr: &[u8; 32]) -> Option<char> {
 }
 
 fn get_new_keys(idx: u64, arr: &[u8; 32], existing_triples: &mut Vec<(u64, char)>) -> Vec<u64> {
-    if let Some(c) = get_quintuple(&arr) {
+    if let Some(c) = get_quintuple(arr) {
         let matches = existing_triples
             .iter()
             .filter(|&&(ti, tc)| tc == c && ti < idx && idx < ti + 1000)
@@ -30,7 +30,7 @@ fn get_new_keys(idx: u64, arr: &[u8; 32], existing_triples: &mut Vec<(u64, char)
         existing_triples.retain(|&(ti, tc)| !(tc == c && ti < idx && idx < ti + 1000));
         return matches;
     }
-    return vec![];
+    vec![]
 }
 
 fn split_arr(arr: &[u8; 16]) -> [u8; 32] {
@@ -40,7 +40,7 @@ fn split_arr(arr: &[u8; 16]) -> [u8; 32] {
         out[2 * i] = arr[i] >> 4;
         out[2 * i + 1] = arr[i] & 0xF;
     }
-    return out;
+    out
 }
 
 fn main() {
@@ -50,7 +50,7 @@ fn main() {
 
     let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
         .lines()
-        .nth(0)
+        .next()
         .unwrap()
         .unwrap();
     let key = input.as_bytes();

@@ -19,7 +19,7 @@ fn main() {
     let mut locs = vec![(0, 0)]; // Starting point
     let mut visited: Option<(i32, i32)> = None;
     for ins in &instructions {
-        let dir = ins.chars().nth(0);
+        let dir = ins.chars().next();
         cur_dir = match dir.unwrap() {
             'L' => (cur_dir + (4 - 1)) % 4,
             'R' => (cur_dir + 1) % 4,
@@ -27,7 +27,7 @@ fn main() {
         };
 
         let dist: i32 = ins.chars().skip(1).collect::<String>().parse().unwrap();
-        let old_pos = locs.last().unwrap().clone();
+        let old_pos = *locs.last().unwrap();
         for i in 1..dist + 1 {
             let cur_pos = match cur_dir {
                 0 => (old_pos.0 + i, old_pos.1),

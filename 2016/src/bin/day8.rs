@@ -17,7 +17,7 @@ fn main() {
     }
     let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap());
 
-    let mut grid = vec![vec!['.'; 50]; 6]; // 50x6
+    let mut grid = vec![vec![' '; 50]; 6]; // 50x6
 
     let rect_re = Regex::new(r"rect ([0-9]+)x([0-9]+)").unwrap(); // rect 1x1
     let rot_re = Regex::new(r"rotate (row|column) ([xy])=([0-9]+) by ([0-9]+)").unwrap(); // rotate row y=0 by 7
@@ -25,19 +25,18 @@ fn main() {
     for line in input.lines() {
         let l = line.unwrap();
         let cap = rect_re.captures(&l);
-        if cap.is_some() {
-            let caps = cap.unwrap();
+        if let Some(caps) = cap {
             let x: usize = caps.at(1).unwrap().parse().unwrap();
             let y: usize = caps.at(2).unwrap().parse().unwrap();
 
-            for i in 0..x {
-                for j in 0..y {
-                    grid[j][i] = '#';
+            for row in grid.iter_mut().take(y) {
+                for cell in row.iter_mut().take(x) {
+                    *cell = '#';
                 }
             }
         } else {
             let caps = rot_re.captures(&l).unwrap();
-            let dir: char = caps.at(2).unwrap().chars().nth(0).unwrap();
+            let dir: char = caps.at(2).unwrap().chars().next().unwrap();
             let idx: usize = caps.at(3).unwrap().parse().unwrap();
             let dist: usize = caps.at(4).unwrap().parse().unwrap();
 

@@ -18,7 +18,7 @@ fn find_route(start: (usize, usize), magic: usize) -> (usize, usize) {
     let mut p2points = 0;
 
     let mut depth = 0;
-    while new_poses.len() > 0 && p1depth == 0 {
+    while !new_poses.is_empty() && p1depth == 0 {
         let mut queue = vec![];
         for pos in new_poses.drain(..) {
             let mut next_poses = vec![(pos.0 + 1, pos.1), (pos.0, pos.1 + 1)];
@@ -50,7 +50,7 @@ fn find_route(start: (usize, usize), magic: usize) -> (usize, usize) {
         }
         new_poses = queue;
     }
-    return (p1depth, p2points);
+    (p1depth, p2points)
 }
 
 fn main() {
@@ -59,7 +59,7 @@ fn main() {
     }
     let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
         .lines()
-        .nth(0)
+        .next()
         .unwrap()
         .unwrap()
         .parse()

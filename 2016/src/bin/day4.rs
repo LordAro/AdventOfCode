@@ -27,7 +27,7 @@ fn five_most_common(s: &str) -> String {
 
 // Rotate a string n times (n == 13 would be rot13)
 fn rotn(s: &str, n: u32) -> String {
-    let base = 'a' as u8;
+    let base = b'a';
     s.chars()
         .map(|c| c as u8 - base)
         .map(|ord| ((ord as u32 + n) % 26) as u8)
@@ -53,7 +53,7 @@ fn main() {
         .map(|l| {
             let cc: Vec<_> = l[0].trim_end_matches(']').split('[').collect();
             Room {
-                name: l[1].replace("-", ""),
+                name: l[1].replace('-', ""),
                 sector: cc[0].parse().unwrap(),
                 checksum: String::from(cc[1]),
             }

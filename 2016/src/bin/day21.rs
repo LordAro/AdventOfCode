@@ -4,7 +4,7 @@ use std::io::{BufRead, BufReader};
 
 // mm, massive oneliners
 fn scramble(operations: &[String], input: String) -> String {
-    return operations.iter().fold(input, |input, operation| {
+    operations.iter().fold(input, |input, operation| {
         let mut chars: Vec<_> = input.chars().collect();
         if operation.starts_with("swap") {
             let (ix, jx) = if operation.starts_with("swap position") {
@@ -24,7 +24,7 @@ fn scramble(operations: &[String], input: String) -> String {
             if operation.starts_with("rotate based") {
                 let chr = operation.chars().last().unwrap();
                 let chr_ix = input.find(chr).unwrap() as usize;
-                let rotate_n = (chr_ix + 1 + if chr_ix >= 4 { 1 } else { 0 }) % chars.len();
+                let rotate_n = (chr_ix + 1 + usize::from(chr_ix >= 4)) % chars.len();
                 chars.rotate_right(rotate_n);
             } else if operation.starts_with("rotate left") {
                 let rotate_n = operation.chars().nth(12).unwrap().to_digit(10).unwrap();
@@ -40,7 +40,7 @@ fn scramble(operations: &[String], input: String) -> String {
             chars = [
                 &chars[..ix],
                 chars[usize::min(ix, jx)..=usize::max(ix, jx)]
-                    .into_iter()
+                    .iter()
                     .copied()
                     .rev()
                     .collect::<Vec<char>>()
@@ -56,12 +56,12 @@ fn scramble(operations: &[String], input: String) -> String {
         } else {
             panic!("Unrecognised operation: {}", operation);
         }
-        return chars.into_iter().collect();
-    });
+        chars.into_iter().collect()
+    })
 }
 
 fn unscramble(operations: &[String], input: String) -> String {
-    return operations.iter().rev().fold(input, |input, operation| {
+    operations.iter().rev().fold(input, |input, operation| {
         let mut chars: Vec<_> = input.chars().collect();
         if operation.starts_with("swap") {
             let (ix, jx) = if operation.starts_with("swap position") {
@@ -120,7 +120,7 @@ fn unscramble(operations: &[String], input: String) -> String {
             chars = [
                 &chars[..ix],
                 chars[usize::min(ix, jx)..=usize::max(ix, jx)]
-                    .into_iter()
+                    .iter()
                     .copied()
                     .rev()
                     .collect::<Vec<char>>()
@@ -136,8 +136,8 @@ fn unscramble(operations: &[String], input: String) -> String {
         } else {
             panic!("Unrecognised operation: {}", operation);
         }
-        return chars.into_iter().collect();
-    });
+        chars.into_iter().collect()
+    })
 }
 
 fn main() {
@@ -163,15 +163,13 @@ fn main() {
     }
 
     println!(
-        "Scrambled password '{}': {}",
-        "abcdefgh",
+        "Scrambled password 'abcdefgh': {}",
         scramble(&operations, "abcdefgh".to_string())
     );
 
     // fbgdceah
     println!(
-        "Unscrambled password '{}': {}",
-        "fbgdceah",
+        "Unscrambled password 'fbgdceah': {}",
         unscramble(&operations, "fbgdceah".to_string())
     );
 }

@@ -50,23 +50,22 @@ fn main() {
     let valid_tls = splitted_lines
         .iter()
         .filter(|&&(ref sn, ref hn)| {
-            sn.into_iter().any(|s| contains_abba_pair(&s))
-                && hn.into_iter().all(|s| !contains_abba_pair(&s))
+            sn.iter().any(|s| contains_abba_pair(s)) && hn.iter().all(|s| !contains_abba_pair(s))
         })
         .count();
     let valid_ssl = splitted_lines
         .iter()
         .filter(|&&(ref sn, ref hn)| {
             for aba in find_aba(sn).iter() {
-                let a = aba.chars().nth(0).unwrap();
+                let a = aba.chars().next().unwrap();
                 let b = aba.chars().nth(1).unwrap();
                 let bab = String::from_iter(vec![b, a, b]);
 
-                if hn.into_iter().any(|s| s.contains(&bab)) {
+                if hn.iter().any(|s| s.contains(&bab)) {
                     return true;
                 }
             }
-            return false;
+            false
         })
         .count();
     println!("IPs supporting TLS: {}", valid_tls);

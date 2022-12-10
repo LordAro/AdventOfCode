@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 fn parse_reg(word: &str) -> Option<char> {
-    word.chars().nth(0)
+    word.chars().next()
 }
 
 fn run_prog(registers: &mut HashMap<char, i32>, prog: &Vec<Vec<&str>>) {

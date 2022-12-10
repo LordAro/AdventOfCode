@@ -2,7 +2,7 @@ use std::env;
 use std::fs::File;
 use std::io::{BufReader, Read};
 
-fn decompress_len(input: &String, recurse: bool) -> usize {
+fn decompress_len(input: &str, recurse: bool) -> usize {
     let mut length = 0;
     let mut it = input.chars();
     while let Some(c) = it.next() {
@@ -29,7 +29,7 @@ fn decompress_len(input: &String, recurse: bool) -> usize {
             length += 1;
         }
     }
-    return length;
+    length
 }
 
 fn main() {

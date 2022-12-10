@@ -25,7 +25,7 @@ fn calculate_checksum(a: &[bool], len: usize) -> Vec<bool> {
     if checksum.len() % 2 == 0 {
         return calculate_checksum(&checksum, checksum.len());
     }
-    return checksum;
+    checksum
 }
 
 fn main() {

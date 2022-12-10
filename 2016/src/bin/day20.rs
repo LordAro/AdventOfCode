@@ -5,13 +5,13 @@ use std::io::{BufRead, BufReader};
 use std::ops::RangeInclusive;
 
 fn range_overlaps(a: &RangeInclusive<u32>, b: &RangeInclusive<u32>) -> bool {
-    return (b.start() >= a.start() && b.start() <= a.end())
+    (b.start() >= a.start() && b.start() <= a.end())
         || (b.end() >= a.start() && b.end() <= a.end())
-        || (b.start() - 1 == *a.end());
+        || (b.start() - 1 == *a.end())
 }
 
 fn merge_range(a: &RangeInclusive<u32>, b: &RangeInclusive<u32>) -> RangeInclusive<u32> {
-    return u32::min(*a.start(), *b.start())..=u32::max(*a.end(), *b.end());
+    u32::min(*a.start(), *b.start())..=u32::max(*a.end(), *b.end())
 }
 
 fn main() {
@@ -28,8 +28,7 @@ fn main() {
         .iter()
         .map(|l| {
             let mut it = l.split('-');
-            return it.next().unwrap().parse::<u32>().unwrap()
-                ..=it.next().unwrap().parse::<u32>().unwrap();
+            it.next().unwrap().parse::<u32>().unwrap()..=it.next().unwrap().parse::<u32>().unwrap()
         })
         .collect();
 

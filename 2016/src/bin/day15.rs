@@ -21,7 +21,7 @@ fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64) {
         s = (s.1 - quot * s.0, s.0);
         t = (t.1 - quot * t.0, t.0);
     }
-    return (r.1, s.1, t.1);
+    (r.1, s.1, t.1)
 }
 
 // https://crypto.stanford.edu/pbc/notes/numbertheory/crt.html
@@ -30,7 +30,7 @@ fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64) {
 // where b = M / m_i
 // where M = product(m_1 .. m_n)
 // where b' = multiplicative inverse of b mod m
-fn get_release_time(discs: &Vec<(i64, i64)>) -> i64 {
+fn get_release_time(discs: &[(i64, i64)]) -> i64 {
     let big_m: i64 = discs.iter().map(|(_, m)| m).product();
 
     return discs
@@ -40,7 +40,7 @@ fn get_release_time(discs: &Vec<(i64, i64)>) -> i64 {
             let (_r, s, _) = extended_gcd(b, m);
             // r (gcd) always equals 1 ...hopefully
             let b_inverse = s;
-            return a * b * b_inverse;
+            a * b * b_inverse
         })
         .sum::<i64>()
         .rem_euclid(big_m);
@@ -80,7 +80,7 @@ fn main() {
     println!("Button press time: {}", time1);
 
     // new disc, 11 positions, starting at position 0, below bottom disc
-    let new_disc = vec![((11 - 0 - (discs.len() as i64 + 1)).rem_euclid(11), 11)];
+    let new_disc = vec![((11 - (discs.len() as i64 + 1)).rem_euclid(11), 11)];
     let discs2 = discs
         .into_iter()
         .chain(new_disc.into_iter())

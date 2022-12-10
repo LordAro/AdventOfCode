@@ -38,11 +38,7 @@ fn main() {
         if let Some(caps) = initial_re.captures(&line) {
             let v: i32 = caps.at(1).unwrap().parse().unwrap();
             let b: i32 = caps.at(2).unwrap().parse().unwrap();
-            if bots.contains_key(&b) {
-                bots.get_mut(&b).unwrap().push(v);
-            } else {
-                bots.insert(b, vec![v]);
-            }
+            bots.entry(b).or_default().push(v);
         } else if let Some(caps) = give_re.captures(&line) {
             let b: i32 = caps.at(1).unwrap().parse().unwrap();
             let l_num = caps.at(3).unwrap().parse().unwrap();
@@ -72,14 +68,14 @@ fn main() {
         }
         match bot_move.0 {
             // low
-            BotOutput::Bot(b) => bots.entry(b).or_insert(vec![]).push(*l_item),
+            BotOutput::Bot(b) => bots.entry(b).or_default().push(*l_item),
             BotOutput::Output(o) => {
                 let _ = outputs.insert(o, *l_item);
             }
         }
         match bot_move.1 {
             // high
-            BotOutput::Bot(b) => bots.entry(b).or_insert(vec![]).push(*h_item),
+            BotOutput::Bot(b) => bots.entry(b).or_default().push(*h_item),
             BotOutput::Output(o) => {
                 let _ = outputs.insert(o, *h_item);
             }

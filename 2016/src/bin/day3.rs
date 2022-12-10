@@ -33,14 +33,11 @@ fn main() {
             trans[j].push(t[j])
         }
         if trans[0].len() == 3 {
-            for j in 0..3 {
-                if trans[j][0] + trans[j][1] > trans[j][2]
-                    && trans[j][0] + trans[j][2] > trans[j][1]
-                    && trans[j][1] + trans[j][2] > trans[j][0]
-                {
+            for tr in trans.iter_mut() {
+                if tr[0] + tr[1] > tr[2] && tr[0] + tr[2] > tr[1] && tr[1] + tr[2] > tr[0] {
                     count2 += 1;
                 }
-                trans[j].clear();
+                tr.clear();
             }
         }
     }

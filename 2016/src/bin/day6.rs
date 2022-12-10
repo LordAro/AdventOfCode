@@ -9,7 +9,7 @@ fn most_least_common(btm: BTreeMap<char, i32>) -> (char, char) {
     count_vec.sort_by(|a, b| b.1.cmp(&a.1));
     let m = count_vec.first().map(|&(k, _)| k).unwrap();
     let l = count_vec.last().map(|&(k, _)| k).unwrap();
-    return (m, l);
+    (m, l)
 }
 
 fn main() {
