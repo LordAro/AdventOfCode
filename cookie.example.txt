@@ -1,0 +1,2 @@
+# See https://curl.se/docs/http-cookies.html#fields-in-the-file
+adventofcode.com	FALSE	/	TRUE	0	session	<value-goes-here>
