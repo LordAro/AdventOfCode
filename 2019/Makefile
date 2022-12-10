@@ -7,32 +7,24 @@ CARGO_FLAGS=--release
 DIR=release
 endif
 
-CUR_SLNS=$(shell echo $(patsubst src/bin/day%.rs,%,$(wildcard src/bin/day*.rs)) | tr ' ' '\n' | sort -n)
+FILEEXT=rs
+SRCDIR=src/bin
+BINDIR=builds/$(DIR)
+include ../common.mk
 
-all: ${CUR_SLNS}
+builds/$(DIR)/day2: src/intcode.rs
+builds/$(DIR)/day5: src/intcode.rs
+builds/$(DIR)/day7: src/intcode.rs
+builds/$(DIR)/day9: src/intcode.rs
+builds/$(DIR)/day11: src/intcode.rs
+builds/$(DIR)/day13: src/intcode.rs
+builds/$(DIR)/day15: src/intcode.rs
+builds/$(DIR)/day17: src/intcode.rs
 
-builds/${DIR}/day2: src/intcode.rs
-builds/${DIR}/day5: src/intcode.rs
-builds/${DIR}/day7: src/intcode.rs
-builds/${DIR}/day9: src/intcode.rs
-builds/${DIR}/day11: src/intcode.rs
-builds/${DIR}/day13: src/intcode.rs
-builds/${DIR}/day15: src/intcode.rs
-builds/${DIR}/day17: src/intcode.rs
-
-.PRECIOUS: builds/${DIR}/day%
-builds/${DIR}/day%: src/bin/day%.rs
+.PRECIOUS: builds/$(DIR)/day%
+builds/$(DIR)/day%: src/bin/day%.rs
 	@echo -e '\x1b[1;34mCompiling day $* solution\x1b[0m'
-	@RUSTFLAGS='${FLAGS} ${FLAGS_DAY_$@}' cargo build ${CARGO_FLAGS} --tests --target-dir builds --bin day$*
-	@RUSTFLAGS='${FLAGS} ${FLAGS_DAY_$@}' cargo test ${CARGO_FLAGS} --target-dir builds --bin day$*
+	@RUSTFLAGS='$(FLAGS) $(FLAGS_DAY_$@)' cargo build $(CARGO_FLAGS) --tests --target-dir builds --bin day$*
+	@RUSTFLAGS='$(FLAGS) $(FLAGS_DAY_$@)' cargo test $(CARGO_FLAGS) --target-dir builds --bin day$*
 
-%: builds/${DIR}/day%
-	@echo -e '\x1b[1;32mRunning day $* solution\x1b[0m'
-	@./builds/${DIR}/day$* inputs/day$*.input
-
-time%: builds/${DIR}/day%
-	bash -c 'time for i in {1..1000}; do ./builds/release/day$* inputs/day$*.input; done' > /dev/null
-
-time: $(addprefix time,${CUR_SLNS})
-
-.PHONY: all time
+%: builds/$(DIR)/day$*

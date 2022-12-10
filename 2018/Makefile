@@ -1,5 +1,4 @@
-#DC?=ldmd2
-DC=gdc
+DC?=gdc
 ifdef DEBUG
 #DFLAGS=-w -de -debug -g -unittest
 DFLAGS=-Wall -Wdeprecated -funittest
@@ -7,32 +6,10 @@ else
 DFLAGS=-Wall -Wdeprecated -O3 -frelease -fno-debug
 #DFLAGS=-w -de -O -frelease -Winline
 endif
-PERF_COUNT?=1000
 
-CUR_SLNS=$(shell echo $(patsubst src/day%.d,%,$(wildcard src/day*.d)) | tr ' ' '\n' | sort -n)
+FILEEXT=d
+include ../common.mk
 
-all: $(CUR_SLNS)
-timed: $(addprefix time,$(CUR_SLNS))
-perfd: $(addprefix perf,$(CUR_SLNS))
-
-.PRECIOUS: builds/day%
-builds/day%: src/day%.d Makefile
+%: src/day%.d Makefile
 	@echo -e '\x1b[1;34mCompiling day $* solution\x1b[0m'
-	$(DC) -o$@ $(DFLAGS) $(FLAGS_DAY_$@) $<
-
-%: builds/day%
-	@echo -e '\x1b[1;32mRunning day $* solution\x1b[0m'
-	@./builds/day$* inputs/day$*.input
-
-SHELL:=/bin/bash
-time%: builds/day%
-	@echo -e '\x1b[1;32mRunning day $* solution (timed)\x1b[0m'
-	@time ./builds/day$* inputs/day$*.input
-
-perf%: builds/day%
-	@echo -e '\x1b[1;32mRunning day $* solution (timed)\x1b[0m'
-	@perf stat -r$(PERF_COUNT) ./builds/day$* inputs/day$*.input 2>&1 > /dev/null | grep elapsed
-
-clean:
-	rm -f $(addprefix builds/day,$(CUR_SLNS))
-.PHONY: all
+	$(DC) -o builds/day$* $(DFLAGS) $(FLAGS_DAY_$@) $<

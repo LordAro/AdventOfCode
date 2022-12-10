@@ -1,29 +1,49 @@
+
 ifeq ($(FILEEXT),)
 	$(error "FILEEXT not been set!")
 endif
+
+ifeq ($(SRCDIR),)
+SRCDIR=src
+endif
+ifeq ($(BINDIR),)
+BINDIR=builds
+endif
+
 # Echo & sort required for numerical sort
 # TODO: renumber solutions to use 2 digits?
-CUR_SLNS=$(shell echo $(subst day,, $(basename $(notdir $(wildcard src/day*.$(FILEEXT))))) | sort -n)
+CUR_SLNS=$(shell echo $(subst day,, $(basename $(notdir $(wildcard $(SRCDIR)/day*.$(FILEEXT))))) | sort -n)
+.PHONY: $(CUR_SLNS)
 
-.PHONY: all
+.PHONY: all timed perfd
 all: $(CUR_SLNS)
+timed: $(addprefix time,$(CUR_SLNS))
+perfd: $(addprefix perf,$(CUR_SLNS))
 
+PERF_COUNT?=1000
 perf%: % inputs/day%.input
-	perf stat -r1000 ./builds/day$* inputs/day$*.input >/dev/null
+	@echo -e '\x1b[1;32mRunning day $* solution (perf)\x1b[0m'
+	perf stat -r$(PERF_COUNT) ./$(BINDIR)/day$* inputs/day$*.input >/dev/null
 
 time%: % inputs/day%.input
-	time ./builds/day$* inputs/day$*.input
+	@echo -e '\x1b[1;32mRunning day $* solution (timed)\x1b[0m'
+	@bash -c 'time ./$(BINDIR)/day$* inputs/day$*.input'
 
 run%: % inputs/day%.input
-	./builds/day$* inputs/day$*.input
+	@echo -e '\x1b[1;32mRunning day $* solution\x1b[0m'
+	./$(BINDIR)/day$* inputs/day$*.input
 
-inputs:
+clean:
+	rm -f $(addprefix $(BINDIR)/day,$(CUR_SLNS))
+
+$(BINDIR) inputs:
 	mkdir -p $@
 	@touch $@
 
 # Or it deletes it afterwards!
 inputs/day%.input: ../cookie.txt | inputs
-	curl --fail-with-body --silent --user-agent "https://github.com/LordAro/AdventOfCode" --cookie ../cookie.txt -o $@ https://adventofcode.com/$(notdir $(CURDIR))/day/$*/input
+	@echo "Fetching input for Y$(notdir $(CURDIR)) D$*..."
+	@curl --fail-with-body --silent --user-agent "https://github.com/LordAro/AdventOfCode" --cookie ../cookie.txt -o $@ https://adventofcode.com/$(notdir $(CURDIR))/day/$*/input
 .PRECIOUS: inputs/day%.input
 
 ../cookie.txt:
