@@ -21,10 +21,7 @@ builds/$(DIR)/day13: src/intcode.rs
 builds/$(DIR)/day15: src/intcode.rs
 builds/$(DIR)/day17: src/intcode.rs
 
-.PRECIOUS: builds/$(DIR)/day%
 builds/$(DIR)/day%: src/bin/day%.rs
 	@echo -e '\x1b[1;34mCompiling day $* solution\x1b[0m'
 	@RUSTFLAGS='$(FLAGS) $(FLAGS_DAY_$@)' cargo build $(CARGO_FLAGS) --tests --target-dir builds --bin day$*
 	@RUSTFLAGS='$(FLAGS) $(FLAGS_DAY_$@)' cargo test $(CARGO_FLAGS) --target-dir builds --bin day$*
-
-%: builds/$(DIR)/day$*

@@ -10,6 +10,6 @@ endif
 FILEEXT=d
 include ../common.mk
 
-%: src/day%.d Makefile
+builds/day%: src/day%.d
 	@echo -e '\x1b[1;34mCompiling day $* solution\x1b[0m'
-	$(DC) -o builds/day$* $(DFLAGS) $(FLAGS_DAY_$@) $<
+	$(DC) -o builds/day$* $(DFLAGS) $(FLAGS_DAY_$*) $<

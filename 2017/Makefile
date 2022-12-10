@@ -6,9 +6,8 @@ FLAGS_DAY_21=-C opt-level=3 -C debuginfo=0
 
 FILEEXT=rs
 SRCDIR=src/bin
+BINDIR=target/debug
 include ../common.mk
 
-# cargo build --out-dir is unstable :(
-%:
-	@RUSTFLAGS='$(FLAGS) $(FLAGS_DAY_$@)' cargo build --bin day$@
-	cp target/debug/day$* builds/day$*
+target/debug/day%: src/bin/day%.rs
+	@RUSTFLAGS='$(FLAGS) $(FLAGS_DAY_$*)' cargo build --bin day$*
