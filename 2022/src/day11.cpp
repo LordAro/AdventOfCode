@@ -63,9 +63,8 @@ std::ostream &operator<<(std::ostream &output, Monkey &m)
 	return output;
 }
 
-std::vector<Monkey> play_round(const std::vector<Monkey> &input_monkeys, const int monkey_lcm)
+void play_round(std::vector<Monkey> &monkeys, const int monkey_lcm)
 {
-	auto monkeys = input_monkeys;
 	for (auto &m : monkeys) {
 		for (int64_t item : m.items) {
 			m.inspectCount++;
@@ -94,7 +93,6 @@ std::vector<Monkey> play_round(const std::vector<Monkey> &input_monkeys, const i
 		}
 		m.items.clear();
 	}
-	return monkeys;
 }
 
 std::pair<int64_t, int64_t> get_inspector_monkeys(const std::vector<Monkey> &monkeys)
@@ -128,7 +126,7 @@ int main(int argc, char **argv)
 
 	auto non_worrying_monkeys = initial_monkeys;
 	for (int round = 0; round < 20; round++) {
-		non_worrying_monkeys = play_round(non_worrying_monkeys, 0);
+		play_round(non_worrying_monkeys, 0);
 	}
 
 	auto inspectors_p1 = get_inspector_monkeys(non_worrying_monkeys);
@@ -143,7 +141,7 @@ int main(int argc, char **argv)
 	// Possible optimisation: cycle detection. But the cost of finding, storing and comparing
 	// monkey states is too much compared to just doing the full loop
 	for (int round = 0; round < 10'000; round++) {
-		worrying_monkeys = play_round(worrying_monkeys, monkey_lcm);
+		play_round(worrying_monkeys, monkey_lcm);
 	}
 
 	auto inspectors_p2 = get_inspector_monkeys(worrying_monkeys);
