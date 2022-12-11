@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <deque>
 #include <fstream>
 #include <iostream>
 #include <numeric>
@@ -8,7 +7,7 @@
 using OperationType = std::pair<char, int>;
 
 struct Monkey {
-	std::deque<int64_t> items;
+	std::vector<int64_t> items;
 	OperationType worryOp;
 	int testDivN;
 	int monkeyIdxTrue;
@@ -17,9 +16,9 @@ struct Monkey {
 	int inspectCount = 0;
 };
 
-std::deque<int64_t> split_by(const std::string &s, char delim)
+std::vector<int64_t> split_by(const std::string &s, char delim)
 {
-	std::deque<int64_t> res;
+	std::vector<int64_t> res;
 
 	size_t last = 0;
 	size_t next = 0;
@@ -52,6 +51,7 @@ std::istream &operator>>(std::istream &input, Monkey &m)
 	return input;
 }
 
+// Debugging
 std::ostream &operator<<(std::ostream &output, Monkey &m)
 {
 	output << "Inspected: " << m.inspectCount << ' ';
@@ -67,20 +67,18 @@ std::vector<Monkey> play_round(const std::vector<Monkey> &input_monkeys, const i
 {
 	auto monkeys = input_monkeys;
 	for (auto &m : monkeys) {
-		while (!m.items.empty()) {
+		for (int64_t item : m.items) {
 			m.inspectCount++;
-			int64_t item = m.items.front();
-			m.items.pop_front();
 
 			// Monkey inspect
-			int op = m.worryOp.second == -1 ? item : m.worryOp.second; // 'old'
+			int64_t operand = m.worryOp.second == -1 ? item : m.worryOp.second; // 'old'
 			if (m.worryOp.first == '+') {
-				item += op;
+				item += operand;
 			}
 			else if (m.worryOp.first == '*') {
-				item *= op;
+				item *= operand;
 			} else {
-				throw "Unknown worry operation";
+				__builtin_unreachable();
 			}
 
 			// Monkey bored
@@ -91,12 +89,10 @@ std::vector<Monkey> play_round(const std::vector<Monkey> &input_monkeys, const i
 			}
 
 			// Monkey throw
-			if (item % m.testDivN == 0) {
-				monkeys[m.monkeyIdxTrue].items.push_back(item);
-			} else {
-				monkeys[m.monkeyIdxFalse].items.push_back(item);
-			}
+			int monkeyTarget = item % m.testDivN == 0 ? m.monkeyIdxTrue : m.monkeyIdxFalse;
+			monkeys[monkeyTarget].items.push_back(item);
 		}
+		m.items.clear();
 	}
 	return monkeys;
 }
@@ -104,9 +100,7 @@ std::vector<Monkey> play_round(const std::vector<Monkey> &input_monkeys, const i
 std::pair<int64_t, int64_t> get_inspector_monkeys(const std::vector<Monkey> &monkeys)
 {
 	std::vector<int> inspectCounts;
-	for (const auto &m : monkeys) {
-		inspectCounts.push_back(m.inspectCount);
-	}
+	std::transform(monkeys.cbegin(), monkeys.cend(), std::back_inserter(inspectCounts), [](const auto &m) { return m.inspectCount; });
 	std::sort(inspectCounts.begin(), inspectCounts.end());
 	int mostInspected = *(inspectCounts.end() - 1);
 	int nextMostInspected = *(inspectCounts.end() - 2);
@@ -129,17 +123,12 @@ int main(int argc, char **argv)
 
 	Monkey m;
 	while (input >> m) {
-		//std::cout << m << '\n';
 		initial_monkeys.push_back(m);
 	}
 
 	auto non_worrying_monkeys = initial_monkeys;
 	for (int round = 0; round < 20; round++) {
 		non_worrying_monkeys = play_round(non_worrying_monkeys, 0);
-		//std::cout << "After round " << round + 1 << '\n';
-		//for (const auto &m : monkeys) {
-		//	std::cout << m << '\n';
-		//}
 	}
 
 	auto inspectors_p1 = get_inspector_monkeys(non_worrying_monkeys);
@@ -147,10 +136,16 @@ int main(int argc, char **argv)
 	          << " - monkey business = " << inspectors_p1.first * inspectors_p1.second << '\n';
 
 	auto worrying_monkeys = initial_monkeys;
+
+	// All testDivN are co-prime, so this works as lcm
 	int monkey_lcm = std::accumulate(initial_monkeys.begin(), initial_monkeys.end(), 1, [](int t, const Monkey &m) { return t * m.testDivN; });
+
+	// Possible optimisation: cycle detection. But the cost of finding, storing and comparing
+	// monkey states is too much compared to just doing the full loop
 	for (int round = 0; round < 10'000; round++) {
 		worrying_monkeys = play_round(worrying_monkeys, monkey_lcm);
 	}
+
 	auto inspectors_p2 = get_inspector_monkeys(worrying_monkeys);
 	std::cout << "After 10000 rounds, the most active worrying monkeys inspected items " << inspectors_p2.first << " & " << inspectors_p2.second << " times"
 	          << " - monkey business = " << inspectors_p2.first * inspectors_p2.second << '\n';
