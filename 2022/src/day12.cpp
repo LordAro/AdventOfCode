@@ -2,8 +2,8 @@
 #include <deque>
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <vector>
-#include <sstream>
 
 struct Coord {
 	int x;
@@ -16,103 +16,80 @@ std::ostream &operator<<(std::ostream &output, const Coord &c)
 	return output;
 }
 
+bool operator<(const Coord &a, const Coord &b)
+{
+	if (a.y != b.y) return a.y < b.y;
+	return a.x < b.x;
+}
+
 bool operator==(const Coord &a, const Coord &b)
 {
 	return a.x == b.x && a.y == b.y;
 }
 
+using Route = std::vector<Coord>;
 using Grid2D = std::vector<std::vector<int>>;
 
-std::vector<Coord> possible_moves(const Grid2D &heightmap, Coord pos)
+std::vector<Coord> possible_moves(const Grid2D &heightmap, Coord pos, bool reverse)
 {
+	auto check = !reverse
+		? [](int newc, int curc) { return newc <= curc + 1; }
+		: [](int newc, int curc) { return curc - 1 <= newc; };
 	std::vector<Coord> moves;
+	moves.reserve(4);
 	int cur_height = heightmap[pos.y][pos.x];
 	if (pos.y > 0) {
 		int new_height = heightmap[pos.y - 1][pos.x];
-		if (new_height == cur_height || new_height == cur_height + 1) {
+		if (check(new_height, cur_height)) {
 			moves.push_back({pos.x, pos.y - 1});
 		}
 	}
 	if (pos.y < (int)heightmap.size() - 1) {
 		int new_height = heightmap[pos.y + 1][pos.x];
-		if (new_height == cur_height || new_height == cur_height + 1) {
+		if (check(new_height, cur_height)) {
 			moves.push_back({pos.x, pos.y + 1});
 		}
 	}
 	if (pos.x > 0) {
 		int new_height = heightmap[pos.y][pos.x - 1];
-		if (new_height == cur_height || new_height == cur_height + 1) {
+		if (check(new_height, cur_height)) {
 			moves.push_back({pos.x - 1, pos.y});
 		}
 	}
 	if (pos.x < (int)heightmap[pos.y].size() - 1) {
 		int new_height = heightmap[pos.y][pos.x + 1];
-		if (new_height == cur_height || new_height == cur_height + 1) {
+		if (check(new_height, cur_height)) {
 			moves.push_back({pos.x + 1, pos.y});
 		}
 	}
 	return moves;
 }
 
-// bfs
-//fn find_all_routes(key: &[u8]) -> Vec<String> {
-//    let mut routes = Vec::new();
-//    let mut queue = VecDeque::new();
-//    queue.push_back(("".to_string(), (0, 0)));
-//    while !queue.is_empty() {
-//        let (route, pos) = queue.pop_front().unwrap();
-//        let h = get_route_hash(key, &route);
-//        // foo
-//        if pos == (3, 3) {
-//            routes.push(route);
-//            continue;
-//        }
-//        if pos.1 != 0 && is_door_open(h.chars().next().unwrap()) {
-//            // U
-//            queue.push_back((route.clone() + "U", get_new_pos(pos, 'U')));
-//        }
-//        if pos.1 != 3 && is_door_open(h.chars().nth(1).unwrap()) {
-//            // D
-//            queue.push_back((route.clone() + "D", get_new_pos(pos, 'D')));
-//        }
-//        if pos.0 != 0 && is_door_open(h.chars().nth(2).unwrap()) {
-//            // L
-//            queue.push_back((route.clone() + "L", get_new_pos(pos, 'L')));
-//        }
-//        if pos.0 != 3 && is_door_open(h.chars().nth(3).unwrap()) {
-//            // R
-//            queue.push_back((route.clone() + "R", get_new_pos(pos, 'R')));
-//        }
-//    }
-//    routes
-//}
-
-using Route = std::vector<Coord>;
-// bfs
-Route get_shortest_route(const Grid2D &heightmap, Coord start_pos, Coord end_pos)
+Route get_shortest_route(const Grid2D &heightmap, const Coord start_pos, const std::set<Coord> end_points, const bool reverse_check)
 {
-	std::deque<std::pair<Route, Coord>> queue;
-	queue.push_back({{}, start_pos});
+	std::set<Coord> visited;
+	visited.insert(start_pos);
+
+	std::deque<Route> queue;
+	queue.push_back({start_pos});
 	while (!queue.empty()) {
-		auto [route, pos] = queue.front();
+		auto partial_route = queue.front();
 		queue.pop_front();
 
-//		std::cout << "Route: ";
-//		for (const auto &c : route) std::cout << c << ' ';
-//		std::cout << '\n';
-		if (pos == end_pos) {
-			return route;
+		const auto &pos = partial_route.back();
+		if (end_points.find(pos) != end_points.end()) {
+			return partial_route;
 		}
 
-		std::vector<Coord> moves = possible_moves(heightmap, pos);
-		for (const auto move : moves) {
-			if (std::find(route.begin(), route.end(), move) != route.end()) continue;
-			Route r2 = route;
-			r2.push_back(pos);
-			queue.push_back({r2, move});
+		for (const auto &move : possible_moves(heightmap, pos, reverse_check)) {
+			if (visited.find(move) != visited.end()) continue;
+			Route r2 = partial_route;
+			visited.insert(move);
+			r2.push_back(move);
+			queue.push_back(r2);
 		}
 	}
-	return {};
+	return {}; // no route found :(
 }
 
 
@@ -128,9 +105,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-//	std::stringstream input("Sabqponm\n" "abcryxxl\n" "accszExk\n" "acctuvwj\n" "abdefghi");
-
 	Grid2D heightmap;
+	std::set<Coord> lowest_points;
 	Coord start_pos;
 	Coord end_pos;
 
@@ -146,15 +122,16 @@ int main(int argc, char **argv)
 				end_pos = {(int)row.size(), (int)heightmap.size()};
 				c = 'z';
 			}
+			if (c == 'a') {
+				lowest_points.insert({(int)row.size(), (int)heightmap.size()});
+			}
 			row.push_back(c - 'a');
 		}
 		heightmap.push_back(row);
 	}
-	std::cout << start_pos << '\n';
-	std::cout << end_pos << '\n';
+	auto route = get_shortest_route(heightmap, start_pos, {end_pos}, false);
+	std::cout << "Shortest route from starting point: " << route.size() - 1 << '\n'; // discount starting point
 
-	auto route = get_shortest_route(heightmap, start_pos, end_pos);
-	for (const auto &p : route) std::cout << p << ' ';
-	std::cout << '\n';
-	std::cout << "Shortest route: " << route.size() << '\n';
+	auto route_to_lowest = get_shortest_route(heightmap, end_pos, lowest_points, true);
+	std::cout << "Shortest route when starting from low points: " << route_to_lowest.size() - 1 << '\n';
 }
