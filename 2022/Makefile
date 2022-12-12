@@ -1,5 +1,5 @@
 CXX?=clang++
-CXXFLAGS:=-g -Wall -Wextra -pedantic -std=c++17 -march=native $(CXXFLAGS)
+CXXFLAGS:=-O3 -Wall -Wextra -pedantic -std=c++17 -march=native $(CXXFLAGS)
 
 FILEEXT=cpp
 include ../common.mk
