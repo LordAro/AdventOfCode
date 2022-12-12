@@ -1,7 +1,9 @@
 #include <algorithm>
+#include <cassert>
 #include <fstream>
 #include <iostream>
 #include <numeric>
+#include <unordered_map>
 #include <vector>
 
 using OperationType = std::pair<char, int>;
@@ -15,6 +17,44 @@ struct Monkey {
 
 	int inspectCount = 0;
 };
+
+bool operator==(const Monkey &a, const Monkey &b)
+{
+	return a.testDivN == b.testDivN && a.items == b.items;
+}
+
+template <class T>
+inline void hash_combine(std::size_t& seed, T const& v)
+{
+    seed ^= std::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+namespace std {
+template<>
+struct hash<Monkey> {
+	size_t operator()(const Monkey &m) const
+	{
+		std::size_t seed = m.items.size();
+		for (auto& i : m.items) {
+			seed ^= i + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		}
+		return seed ^ (std::hash<int>()(m.testDivN) << 1);
+	}
+};
+
+template<>
+struct hash<std::vector<Monkey>> {
+	size_t operator()(const std::vector<Monkey> &mvec) const
+	{
+		size_t seed = 0;
+		for (size_t i = 0; i < mvec.size(); i++) {
+			// Combine the hash of the current vector with the hashes of the previous ones
+			hash_combine(seed, mvec[i]);
+		}
+		return seed;
+	}
+};
+}
 
 std::vector<int64_t> split_by(const std::string &s, char delim)
 {
@@ -99,9 +139,9 @@ std::pair<int64_t, int64_t> get_inspector_monkeys(const std::vector<Monkey> &mon
 {
 	std::vector<int> inspectCounts;
 	std::transform(monkeys.cbegin(), monkeys.cend(), std::back_inserter(inspectCounts), [](const auto &m) { return m.inspectCount; });
-	std::sort(inspectCounts.begin(), inspectCounts.end());
-	int mostInspected = *(inspectCounts.end() - 1);
-	int nextMostInspected = *(inspectCounts.end() - 2);
+	std::sort(inspectCounts.rbegin(), inspectCounts.rend()); // reverse sort
+	int mostInspected = *inspectCounts.begin();
+	int nextMostInspected = *(inspectCounts.begin() + 1);
 	return {mostInspected, nextMostInspected};
 }
 
@@ -140,11 +180,40 @@ int main(int argc, char **argv)
 
 	// Possible optimisation: cycle detection. But the cost of finding, storing and comparing
 	// monkey states is too much compared to just doing the full loop
+	std::vector<std::vector<Monkey>> monkey_cache;
+	monkey_cache.push_back(worrying_monkeys);
+	size_t cycle_start = 0;
+	size_t cycle_end = 0;
 	for (int round = 0; round < 10'000; round++) {
 		play_round(worrying_monkeys, monkey_lcm);
+		monkey_cache.push_back(worrying_monkeys);
+		if (auto cycle_iterator = std::find(monkey_cache.begin(), monkey_cache.end() - 1, worrying_monkeys); cycle_iterator != monkey_cache.end() - 1) {
+			cycle_start = std::distance(monkey_cache.begin(), cycle_iterator);
+			cycle_end = round; // +1 ?
+			assert(monkey_cache[cycle_start] == monkey_cache[cycle_end + 1]);
+			break;
+		}
 	}
 
-	auto inspectors_p2 = get_inspector_monkeys(worrying_monkeys);
-	std::cout << "After 10000 rounds, the most active worrying monkeys inspected items " << inspectors_p2.first << " & " << inspectors_p2.second << " times"
-	          << " - monkey business = " << inspectors_p2.first * inspectors_p2.second << '\n';
+	{
+		size_t cycle_length = cycle_end - cycle_start;
+		int mod_idx = (10000 % (cycle_length));
+		std::cout << cycle_start << '-' << cycle_end << " = " << cycle_length << '(' << mod_idx << ")\n";
+
+		std::vector<int> inspection_increases;
+		for (size_t i = 0; i < initial_monkeys.size(); i++) {
+			inspection_increases.push_back(monkey_cache[cycle_end][i].inspectCount - monkey_cache[cycle_start][i].inspectCount);
+		}
+
+		std::vector<int64_t> inspection_counts10k;
+		for (size_t i = 0; i < initial_monkeys.size(); i++) {
+			inspection_counts10k.push_back(worrying_monkeys[mod_idx].inspectCount + 4 * inspection_increases[i]); // XXX hardcoded 4
+		}
+		std::sort(inspection_counts10k.rbegin(), inspection_counts10k.rend()); // reverse sort
+		std::cout << "Foo: " << *inspection_counts10k.begin() << ' ' << *(inspection_counts10k.begin() + 1) << " = " << *inspection_counts10k.begin() * *(inspection_counts10k.begin() + 1) << '\n';
+	}
+
+//	auto inspectors_p2 = get_inspector_monkeys(worrying_monkeys);
+//	std::cout << "After 10000 rounds, the most active worrying monkeys inspected items " << inspectors_p2.first << " & " << inspectors_p2.second << " times"
+//	          << " - monkey business = " << inspectors_p2.first * inspectors_p2.second << '\n';
 }
