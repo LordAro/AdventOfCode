@@ -112,6 +112,16 @@ int cmp(const IntListNode &left, const IntListNode &right)
 	// unreachable
 }
 
+bool operator<(const IntListNode &left, const IntListNode &right)
+{
+	return cmp(left, right) == -1;
+}
+
+bool operator==(const IntListNode &left, const IntListNode &right)
+{
+	return cmp(left, right) == 0;
+}
+
 int main(int argc, char **argv)
 {
 	if (argc != 2) {
@@ -158,7 +168,7 @@ int main(int argc, char **argv)
 	while (input >> pd1 >> pd2) {
 		all_nodes.push_back(pd1);
 		all_nodes.push_back(pd2);
-		if (cmp(pd1, pd2) == -1) ordered_pair_index_sum += pair_index;
+		if (pd1 < pd2) ordered_pair_index_sum += pair_index;
 		pair_index++;
 	}
 
@@ -169,29 +179,18 @@ int main(int argc, char **argv)
 	divider_stream >> pd1 >> pd2;
 	all_nodes.push_back(pd1);
 	all_nodes.push_back(pd2);
-	std::sort(all_nodes.begin(), all_nodes.end(), [](const IntListNode &a, const IntListNode &b) { return cmp(a, b) == -1; });
+	std::sort(all_nodes.begin(), all_nodes.end());
 
 	int divkey1 = 0;
 	int divkey2 = 0;
 	for (size_t idx = 0; idx < all_nodes.size(); idx++) {
 		const auto &elem = all_nodes[idx];
 
-		// Jesus.
-		if (std::holds_alternative<std::vector<IntListNode>>(elem.item)) {
-			const auto &vec = std::get<std::vector<IntListNode>>(elem.item);
-			if (vec.size() == 1 && std::holds_alternative<std::vector<IntListNode>>(vec[0].item)) {
-				const auto &inner_vec = std::get<std::vector<IntListNode>>(vec[0].item);
-				if (inner_vec.size() == 1 && std::holds_alternative<int>(inner_vec[0].item)) {
-					int val = std::get<int>(inner_vec[0].item);
-					if (val == 2) {
-						divkey1 = idx + 1;
-					} else if (val == 6) {
-						divkey2 = idx + 1;
-						// definitely comes after divkey1, so stop here
-						break;
-					}
-				}
-			}
+		if (divkey1 == 0 && elem == pd1) divkey1 = idx + 1;
+		if (elem == pd2) {
+			divkey2 = idx + 1;
+			// definitely comes after divkey1, so stop here
+			break;
 		}
 	}
 	std::cout << "Decoder key: " << divkey1 * divkey2 << '\n';
