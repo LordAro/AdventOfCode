@@ -5,17 +5,17 @@
 #include <variant>
 #include <vector>
 
-struct IntListNode {
-	std::variant<int, std::vector<IntListNode>> item;
+struct IntListNode : std::variant<int, std::vector<IntListNode>>  {
+	using variant::variant;
 };
 
 std::ostream &operator<<(std::ostream &os, const IntListNode &node)
 {
-	if (std::holds_alternative<int>(node.item)) {
-		os << std::get<int>(node.item);
+	if (std::holds_alternative<int>(node)) {
+		os << std::get<int>(node);
 	} else {
 		os << '[';
-		for (const auto &n : std::get<std::vector<IntListNode>>(node.item)) {
+		for (const auto &n : std::get<std::vector<IntListNode>>(node)) {
 			os << n << ',';
 		}
 		os << ']';
@@ -44,14 +44,14 @@ std::istream &operator>>(std::istream &is, IntListNode &node)
 				}
 			}
 			if (c == ']') {
-				node.item = nl;
+				node = nl;
 				break;
 			}
 		}
 	} else {
 		int val;
 		is >> val;
-		node.item = val;
+		node = val;
 	}
 	return is;
 }
@@ -63,11 +63,11 @@ std::istream &operator>>(std::istream &is, IntListNode &node)
 int cmp(const IntListNode &left, const IntListNode &right)
 {
 	//std::cout << "Comparing " << left << " & " << right << '\n';
-	if (left.item.index() == right.item.index()) {
-		if (std::holds_alternative<int>(left.item)) {
+	if (left.index() == right.index()) {
+		if (std::holds_alternative<int>(left)) {
 			// if ints equal, continue onto the next. For our purposes, this is equivalent to <=
-			const auto &left_int = std::get<int>(left.item);
-			const auto &right_int = std::get<int>(right.item);
+			const auto &left_int = std::get<int>(left);
+			const auto &right_int = std::get<int>(right);
 			int ret = 0;
 			if (left_int != right_int) {
 				ret = left_int < right_int ? -1 : 1;
@@ -75,8 +75,8 @@ int cmp(const IntListNode &left, const IntListNode &right)
 			//std::cout << " => ret=" << ret << '\n';
 			return ret;
 		}
-		const auto &left_list = std::get<std::vector<IntListNode>>(left.item);
-		const auto &right_list = std::get<std::vector<IntListNode>>(right.item);
+		const auto &left_list = std::get<std::vector<IntListNode>>(left);
+		const auto &right_list = std::get<std::vector<IntListNode>>(right);
 		size_t idx = 0;
 		for (; idx < left_list.size() && idx < right_list.size(); idx++) {
 			int ret = cmp(left_list[idx], right_list[idx]);
@@ -92,11 +92,11 @@ int cmp(const IntListNode &left, const IntListNode &right)
 			return 1;
 		}
 		return 0;
-	} else if (std::holds_alternative<int>(left.item)) {
+	} else if (std::holds_alternative<int>(left)) {
 		std::vector<IntListNode> vec;
 		vec.push_back(left);
 		IntListNode fakelist;
-		fakelist.item = vec;
+		fakelist = vec;
 		int ret = cmp(fakelist, right);
 		//std::cout << " => ret3=" << ret << '\n';
 		return ret;
@@ -104,7 +104,7 @@ int cmp(const IntListNode &left, const IntListNode &right)
 		std::vector<IntListNode> vec;
 		vec.push_back(right);
 		IntListNode fakelist;
-		fakelist.item = vec;
+		fakelist = vec;
 		int ret = cmp(left, fakelist);
 		//std::cout << " => ret4=" << ret << '\n';
 		return ret;
