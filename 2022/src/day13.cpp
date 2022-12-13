@@ -1,4 +1,4 @@
-#include <cassert>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -62,7 +62,7 @@ std::istream &operator>>(std::istream &is, IntListNode &node)
 // +1 == a > b
 int cmp(const IntListNode &left, const IntListNode &right)
 {
-	std::cout << "Comparing " << left << " & " << right << '\n';
+	//std::cout << "Comparing " << left << " & " << right << '\n';
 	if (left.item.index() == right.item.index()) {
 		if (std::holds_alternative<int>(left.item)) {
 			// if ints equal, continue onto the next. For our purposes, this is equivalent to <=
@@ -72,7 +72,7 @@ int cmp(const IntListNode &left, const IntListNode &right)
 			if (left_int != right_int) {
 				ret = left_int < right_int ? -1 : 1;
 			}
-			std::cout << " => ret=" << ret << '\n';
+			//std::cout << " => ret=" << ret << '\n';
 			return ret;
 		}
 		const auto &left_list = std::get<std::vector<IntListNode>>(left.item);
@@ -81,14 +81,14 @@ int cmp(const IntListNode &left, const IntListNode &right)
 		for (; idx < left_list.size() && idx < right_list.size(); idx++) {
 			int ret = cmp(left_list[idx], right_list[idx]);
 			if (ret == 0) continue;
-			std::cout << " => ret2=" << ret << '\n';
+			//std::cout << " => ret2=" << ret << '\n';
 			return ret;
 		}
 		if (idx == left_list.size() && idx != right_list.size()) {
-			std::cout << " => left out of items\n";
+			//std::cout << " => left out of items\n";
 			return -1; // If the left list runs out of items first, the inputs are in the right order
 		} else if (idx == right_list.size() && idx != left_list.size()) {
-			std::cout << " => right out of items\n";
+			//std::cout << " => right out of items\n";
 			return 1;
 		}
 		return 0;
@@ -98,7 +98,7 @@ int cmp(const IntListNode &left, const IntListNode &right)
 		IntListNode fakelist;
 		fakelist.item = vec;
 		int ret = cmp(fakelist, right);
-		std::cout << " => ret3=" << ret << '\n';
+		//std::cout << " => ret3=" << ret << '\n';
 		return ret;
 	} else {
 		std::vector<IntListNode> vec;
@@ -106,7 +106,7 @@ int cmp(const IntListNode &left, const IntListNode &right)
 		IntListNode fakelist;
 		fakelist.item = vec;
 		int ret = cmp(left, fakelist);
-		std::cout << " => ret4=" << ret << '\n';
+		//std::cout << " => ret4=" << ret << '\n';
 		return ret;
 	}
 	// unreachable
@@ -124,40 +124,75 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	std::string example_text =
-		"[1,1,3,1,1]\n"
-		"[1,1,[5],1,1]\n"
-		"[[1],[2,3,4]]\n"
-		"[[1],4]\n"
-		"\n"
-		"[9]\n"
-		"[[8,7,6]]\n"
-		"\n"
-		"[[4,4],4,4]\n"
-		"[[4,4],4,4,4]\n"
-		"\n"
-		"[7,7,7,7]\n"
-		"[7,7,7]\n"
-		"\n"
-		"[]\n"
-		"[3]\n"
-		"\n"
-		"[[[]]]\n"
-		"[[]]\n"
-		"\n"
-		"[1,[2,[3,[4,[5,6,7]]]],8,9]\n"
-		"[1,[2,[3,[4,[5,6,0]]]],8,9]\n"
-	;
-	std::stringstream ss(example_text);
+//	std::string example_text =
+//		"[1,1,3,1,1]\n"
+//		"[1,1,[5],1,1]\n"
+//		"[[1],[2,3,4]]\n"
+//		"[[1],4]\n"
+//		"\n"
+//		"[9]\n"
+//		"[[8,7,6]]\n"
+//		"\n"
+//		"[[4,4],4,4]\n"
+//		"[[4,4],4,4,4]\n"
+//		"\n"
+//		"[7,7,7,7]\n"
+//		"[7,7,7]\n"
+//		"\n"
+//		"[]\n"
+//		"[3]\n"
+//		"\n"
+//		"[[[]]]\n"
+//		"[[]]\n"
+//		"\n"
+//		"[1,[2,[3,[4,[5,6,7]]]],8,9]\n"
+//		"[1,[2,[3,[4,[5,6,0]]]],8,9]\n"
+//	;
+//	std::stringstream ss(example_text);
 
 	int ordered_pair_index_sum = 0;
+	std::vector<IntListNode> all_nodes;
 
 	int pair_index = 1;
 	IntListNode pd1, pd2;
 	while (input >> pd1 >> pd2) {
-	//while (ss >> pd1 >> pd2) {
+		all_nodes.push_back(pd1);
+		all_nodes.push_back(pd2);
 		if (cmp(pd1, pd2) == -1) ordered_pair_index_sum += pair_index;
 		pair_index++;
 	}
+
 	std::cout << "Ordered pair index sum: " << ordered_pair_index_sum << '\n';
+
+	std::string divider_packets = "[[2]] [[6]]"; // this is genuinely the easiest way of constructing this godawful datastructure
+	std::stringstream divider_stream(divider_packets);
+	divider_stream >> pd1 >> pd2;
+	all_nodes.push_back(pd1);
+	all_nodes.push_back(pd2);
+	std::sort(all_nodes.begin(), all_nodes.end(), [](const IntListNode &a, const IntListNode &b) { return cmp(a, b) == -1; });
+
+	int divkey1 = 0;
+	int divkey2 = 0;
+	for (size_t idx = 0; idx < all_nodes.size(); idx++) {
+		const auto &elem = all_nodes[idx];
+
+		// Jesus.
+		if (std::holds_alternative<std::vector<IntListNode>>(elem.item)) {
+			const auto &vec = std::get<std::vector<IntListNode>>(elem.item);
+			if (vec.size() == 1 && std::holds_alternative<std::vector<IntListNode>>(vec[0].item)) {
+				const auto &inner_vec = std::get<std::vector<IntListNode>>(vec[0].item);
+				if (inner_vec.size() == 1 && std::holds_alternative<int>(inner_vec[0].item)) {
+					int val = std::get<int>(inner_vec[0].item);
+					if (val == 2) {
+						divkey1 = idx + 1;
+					} else if (val == 6) {
+						divkey2 = idx + 1;
+						// definitely comes after divkey1, so stop here
+						break;
+					}
+				}
+			}
+		}
+	}
+	std::cout << "Decoder key: " << divkey1 * divkey2 << '\n';
 }
