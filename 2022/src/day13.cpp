@@ -56,70 +56,45 @@ std::istream &operator>>(std::istream &is, IntListNode &node)
 	return is;
 }
 
-// Could be be <=> in C++20
-// -1 == a < b
-//  0 == a == b
-// +1 == a > b
-int cmp(const IntListNode &left, const IntListNode &right)
-{
-	//std::cout << "Comparing " << left << " & " << right << '\n';
-	if (left.index() == right.index()) {
-		if (std::holds_alternative<int>(left)) {
-			// if ints equal, continue onto the next. For our purposes, this is equivalent to <=
-			const auto &left_int = std::get<int>(left);
-			const auto &right_int = std::get<int>(right);
-			int ret = 0;
-			if (left_int != right_int) {
-				ret = left_int < right_int ? -1 : 1;
-			}
-			//std::cout << " => ret=" << ret << '\n';
-			return ret;
+template<bool equal>
+struct IntListNode_Comparison_Visitor {
+	bool operator()(int left, int right)
+	{
+		if constexpr (equal) {
+			return left == right;
+		} else {
+			return left < right;
 		}
-		const auto &left_list = std::get<std::vector<IntListNode>>(left);
-		const auto &right_list = std::get<std::vector<IntListNode>>(right);
-		size_t idx = 0;
-		for (; idx < left_list.size() && idx < right_list.size(); idx++) {
-			int ret = cmp(left_list[idx], right_list[idx]);
-			if (ret == 0) continue;
-			//std::cout << " => ret2=" << ret << '\n';
-			return ret;
-		}
-		if (idx == left_list.size() && idx != right_list.size()) {
-			//std::cout << " => left out of items\n";
-			return -1; // If the left list runs out of items first, the inputs are in the right order
-		} else if (idx == right_list.size() && idx != left_list.size()) {
-			//std::cout << " => right out of items\n";
-			return 1;
-		}
-		return 0;
-	} else if (std::holds_alternative<int>(left)) {
-		std::vector<IntListNode> vec;
-		vec.push_back(left);
-		IntListNode fakelist;
-		fakelist = vec;
-		int ret = cmp(fakelist, right);
-		//std::cout << " => ret3=" << ret << '\n';
-		return ret;
-	} else {
-		std::vector<IntListNode> vec;
-		vec.push_back(right);
-		IntListNode fakelist;
-		fakelist = vec;
-		int ret = cmp(left, fakelist);
-		//std::cout << " => ret4=" << ret << '\n';
-		return ret;
 	}
-	// unreachable
-}
+
+	bool operator()(const std::vector<IntListNode> &left, const std::vector<IntListNode> &right)
+	{
+		if constexpr (equal) {
+			return std::equal(left.begin(), left.end(), right.begin(), right.end());
+		} else {
+			return std::lexicographical_compare(left.begin(), left.end(), right.begin(), right.end());
+		}
+	}
+
+	bool operator()(int left, const std::vector<IntListNode> &right)
+	{
+		return (*this)(std::vector<IntListNode>(1, left), right);
+	}
+
+	bool operator()(const std::vector<IntListNode> &left, int right)
+	{
+		return (*this)(left, std::vector<IntListNode>(1, right));
+	}
+};
 
 bool operator<(const IntListNode &left, const IntListNode &right)
 {
-	return cmp(left, right) == -1;
+	return std::visit(IntListNode_Comparison_Visitor<false>{}, left, right);
 }
 
 bool operator==(const IntListNode &left, const IntListNode &right)
 {
-	return cmp(left, right) == 0;
+	return std::visit(IntListNode_Comparison_Visitor<true>{}, left, right);
 }
 
 int main(int argc, char **argv)
