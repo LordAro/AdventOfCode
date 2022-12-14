@@ -1,3 +1,4 @@
+#include <deque>
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -91,22 +92,27 @@ Coord pour_sand_into_abyss(const std::set<Coord> &rocks)
 	return {0, 0};
 }
 
-Coord pour_sand_with_floor(const std::set<Coord> &rocks, int floor)
+// flood fill all possible positions that sand can reach
+size_t pour_sand_onto_floor(const std::set<Coord> &rocks, int floor)
 {
-	Coord sand = SAND_START;
-	// move
-	while (sand.y < floor - 1) {
-		if (rocks.find(sand + Coord{0, 1}) == rocks.end()) {
-			sand += {0, 1}; // move down
-		} else if (rocks.find(sand + Coord{-1, 1}) == rocks.end()) {
-			sand += {-1, 1}; // move down & left
-		} else if (rocks.find(sand + Coord{1, 1}) == rocks.end()) {
-			sand += {1, 1}; // move down & right
-		} else {
-			return sand;
+	std::set<Coord> visited;
+	std::deque<Coord> to_visit;
+	to_visit.push_back(SAND_START);
+
+	while (!to_visit.empty()) {
+		auto next = to_visit.front();
+		to_visit.pop_front();
+		if (visited.find(next) != visited.end()) continue; // have we already visited this via another neighbour?
+		visited.insert(next);
+
+		auto coords = {next + Coord{0, 1}, next + Coord{-1, 1}, next + Coord{1, 1}}; // valid neighbours
+		for (const auto &c : coords) {
+			if (rocks.find(c) == rocks.end() && visited.find(c) == visited.end() && c.y < floor) {
+				to_visit.push_back(c);
+			}
 		}
 	}
-	return sand;
+	return visited.size();
 }
 
 int main(int argc, char **argv)
@@ -150,12 +156,8 @@ int main(int argc, char **argv)
 		abyss_rocks.insert(pour_result);
 	}
 
-	auto floor_rocks = rocks;
-	int floor = rocks.rbegin()->y + 2; // because of the ordering, the maximum y is at the end of the set
-	for (Coord pour_result = pour_sand_with_floor(floor_rocks, floor); pour_result != SAND_START; pour_result = pour_sand_with_floor(floor_rocks, floor)) {
-		floor_rocks.insert(pour_result);
-	}
-	floor_rocks.insert(SAND_START);
+	int max_y = rocks.rbegin()->y; // because of the ordering, the maximum y is at the end of the set
+	int floor = max_y + 2;
 	std::cout << "Number of sand particles able to come to rest: " << abyss_rocks.size() - rocks.size() << '\n';
-	std::cout << "Number of sand particles able to come to rest with a floor: " << floor_rocks.size() - rocks.size() << '\n';
+	std::cout << "Number of sand particles able to come to rest with a floor: " << pour_sand_onto_floor(rocks, floor) << '\n';
 }
