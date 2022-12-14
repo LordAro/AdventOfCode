@@ -1,8 +1,6 @@
 #include <deque>
-#include <iostream>
 #include <fstream>
-#include <map>
-#include <sstream>
+#include <iostream>
 #include <set>
 #include <vector>
 
@@ -126,9 +124,6 @@ int main(int argc, char **argv)
 		std::cerr << "Could not open input file\n";
 		return 1;
 	}
-
-	std::string example_input = "498,4 -> 498,6 -> 496,6\n503,4 -> 502,4 -> 502,9 -> 494,9";
-	std::stringstream ex_input(example_input);
 
 	std::vector<std::vector<Coord>> points;
 
