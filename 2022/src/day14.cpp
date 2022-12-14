@@ -1,4 +1,3 @@
-#include <deque>
 #include <fstream>
 #include <iostream>
 #include <set>
@@ -90,16 +89,16 @@ Coord pour_sand_into_abyss(const std::set<Coord> &rocks)
 	return {0, 0};
 }
 
-// flood fill all possible positions that sand can reach
+// flood fill (dfs because simpler) all possible positions that sand can reach
 size_t pour_sand_onto_floor(const std::set<Coord> &rocks, int floor)
 {
 	std::set<Coord> visited;
-	std::deque<Coord> to_visit;
+	std::vector<Coord> to_visit;
 	to_visit.push_back(SAND_START);
 
 	while (!to_visit.empty()) {
-		auto next = to_visit.front();
-		to_visit.pop_front();
+		auto next = to_visit.back();
+		to_visit.pop_back();
 		if (visited.find(next) != visited.end()) continue; // have we already visited this via another neighbour?
 		visited.insert(next);
 
