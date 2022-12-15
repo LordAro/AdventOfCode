@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <numeric>
 #include <set>
 #include <vector>
 
@@ -75,6 +76,29 @@ int scan_radius(const Sensor &sensor)
 	return manhattan_distance(sensor.coord, sensor.closest_beacon);
 }
 
+struct Interval {
+	int start, end;
+};
+
+std::vector<Interval> merge_intervals(std::vector<Interval> intervals)
+{
+	std::sort(intervals.begin(), intervals.end(), [](const Interval &a, const Interval &b) { return a.start < b.start; });
+
+	std::vector<Interval> merged;
+	merged.push_back(intervals[0]);
+	for (size_t i = 1; i < intervals.size(); i++) {
+		Interval top = merged.back();
+		if (top.end < intervals[i].start) {
+			merged.push_back(intervals[i]);
+		} else if (top.end < intervals[i].end) {
+			top.end = intervals[i].end;
+			merged.pop_back();
+			merged.push_back(top);
+		}
+	}
+	return merged;
+}
+
 int main(int argc, char **argv)
 {
 	if (argc != 2) {
@@ -101,19 +125,30 @@ int main(int argc, char **argv)
 		sensors.push_back(sensor);
 	}
 
-	//const int SCAN_Y = 10;
 	const int SCAN_Y = 2'000'000;
-	int empty_spaces_count = 0;
+	std::vector<Interval> intervals;
+	std::set<Coord> beacons_on_y;
+	for (const auto &sensor : sensors) {
+		int search_dist = scan_radius(sensor);
+		// if search radius crosses line
+		// otherwise, difference would be negative and screw things up
+		if ((sensor.coord.y <= SCAN_Y && sensor.coord.y + search_dist >= SCAN_Y)
+				|| (sensor.coord.y >= SCAN_Y && sensor.coord.y - search_dist <= SCAN_Y)) {
+			int intersect_radius = std::abs(sensor.coord.y - SCAN_Y);
+			int difference = search_dist - intersect_radius;
 
-	for (int scan_x = bounding_rect_bl.x; scan_x <= bounding_rect_tr.x; scan_x++) {
-		Coord scan_coord = {scan_x, SCAN_Y};
-		if (std::any_of(sensors.begin(), sensors.end(), [scan_coord](const Sensor &sensor) {
-				return manhattan_distance(sensor.coord, scan_coord) <= scan_radius(sensor) && scan_coord != sensor.closest_beacon;
-		})) {
-			empty_spaces_count++;
+			intervals.push_back({sensor.coord.x - difference, sensor.coord.x + difference});
+			if (sensor.closest_beacon.y == SCAN_Y) {
+				beacons_on_y.insert(sensor.closest_beacon);
+			}
 		}
 	}
-	std::cout << "Number of spaces at y=" << SCAN_Y << " that cannot be beacons: " << empty_spaces_count << '\n';
+
+	auto merged_intervals = merge_intervals(intervals);
+	int total_x_in_shadow = std::accumulate(merged_intervals.begin(), merged_intervals.end(), 0,
+			[](int sum, const Interval &interval) { return sum + interval.end - interval.start + 1; } // +1 as ranges are inclusive
+	);
+	std::cout << "Number of spaces at y=" << SCAN_Y << " that cannot be beacons: " << total_x_in_shadow - beacons_on_y.size() << '\n';
 
 	Coord revised_bounding_rect_bl{std::max(bounding_rect_bl.x, 0), std::max(bounding_rect_bl.y, 0)};
 	Coord revised_bounding_rect_tr{std::min(bounding_rect_tr.x, 4'000'000), std::min(bounding_rect_tr.y, 4'000'000)};
