@@ -4,7 +4,6 @@
 #include <limits>
 #include <set>
 #include <vector>
-#include <sstream>
 
 struct Coord {
 	int x;
@@ -34,6 +33,12 @@ bool operator==(const Coord &a, const Coord &b)
 bool operator!=(const Coord &a, const Coord &b)
 {
 	return !(a == b);
+}
+
+bool operator<(const Coord &a, const Coord &b)
+{
+	if (a.y != b.y) return a.y < b.y;
+	return a.x < b.x;
 }
 
 struct Sensor {
@@ -82,24 +87,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	std::string example_input =
-"Sensor at x=2, y=18: closest beacon is at x=-2, y=15\n"
-"Sensor at x=9, y=16: closest beacon is at x=10, y=16\n"
-"Sensor at x=13, y=2: closest beacon is at x=15, y=3\n"
-"Sensor at x=12, y=14: closest beacon is at x=10, y=16\n"
-"Sensor at x=10, y=20: closest beacon is at x=10, y=16\n"
-"Sensor at x=14, y=17: closest beacon is at x=10, y=16\n"
-"Sensor at x=8, y=7: closest beacon is at x=2, y=10\n"
-"Sensor at x=2, y=0: closest beacon is at x=2, y=10\n"
-"Sensor at x=0, y=11: closest beacon is at x=2, y=10\n"
-"Sensor at x=20, y=14: closest beacon is at x=25, y=17\n"
-"Sensor at x=17, y=20: closest beacon is at x=21, y=22\n"
-"Sensor at x=16, y=7: closest beacon is at x=15, y=3\n"
-"Sensor at x=14, y=3: closest beacon is at x=15, y=3\n"
-"Sensor at x=20, y=1: closest beacon is at x=15, y=3\n"
-;
-	std::stringstream ex_input(example_input);
-
 	Coord bounding_rect_bl = {std::numeric_limits<int>::max(), std::numeric_limits<int>::max()};
 	Coord bounding_rect_tr = {std::numeric_limits<int>::min(), std::numeric_limits<int>::min()};
 
@@ -131,20 +118,42 @@ int main(int argc, char **argv)
 
 	Coord revised_bounding_rect_bl = {std::max(bounding_rect_bl.x, 0), std::max(bounding_rect_bl.y, 0)};
 	Coord revised_bounding_rect_tr = {std::min(bounding_rect_tr.x, 4'000'000), std::min(bounding_rect_tr.y, 4'000'000)};
-	Coord distress_beacon;
-	for (int scan_x = revised_bounding_rect_bl.x; scan_x <= revised_bounding_rect_tr.x; scan_x++) {
-		if(scan_x % 4000 == 0) std::cout << scan_x << '\n';
-		for (int scan_y = revised_bounding_rect_bl.y; scan_y <= revised_bounding_rect_tr.y; scan_y++) {
-			Coord scan_coord = {scan_x, scan_y};
-			if (std::none_of(sensors.begin(), sensors.end(), [scan_coord](const Sensor &sensor) {
-					return manhattan_distance(sensor.coord, scan_coord) <= scan_radius(sensor) && scan_coord != sensor.closest_beacon;
-			})) {
-				distress_beacon = scan_coord;
-				goto outer; // yay goto!
-			}
 
+	std::set<Coord> border_coords;
+	// plan:
+	// get all coords just outside border (dist + 1)
+	for (const auto &sensor : sensors) {
+		int search_dist = scan_radius(sensor) + 1;
+		for (int i = 0; i <= search_dist; i++) {
+			Coord c1{sensor.coord.x - search_dist + i, sensor.coord.y + i};
+			Coord c2{sensor.coord.x - search_dist + i, sensor.coord.y - i};
+			Coord c3{sensor.coord.x + search_dist - i, sensor.coord.y + i};
+			Coord c4{sensor.coord.x + search_dist - i, sensor.coord.y - i};
+			if (c1.x >= revised_bounding_rect_bl.x && c1.x <= revised_bounding_rect_tr.x && c1.y >= revised_bounding_rect_bl.y && c1.y <= revised_bounding_rect_tr.y) {
+				border_coords.insert(c1);
+			}
+			if (c2.x >= revised_bounding_rect_bl.x && c2.x <= revised_bounding_rect_tr.x && c2.y >= revised_bounding_rect_bl.y && c2.y <= revised_bounding_rect_tr.y) {
+				border_coords.insert(c2);
+			}
+			if (c3.x >= revised_bounding_rect_bl.x && c3.x <= revised_bounding_rect_tr.x && c3.y >= revised_bounding_rect_bl.y && c3.y <= revised_bounding_rect_tr.y) {
+				border_coords.insert(c3);
+			}
+			if (c4.x >= revised_bounding_rect_bl.x && c4.x <= revised_bounding_rect_tr.x && c4.y >= revised_bounding_rect_bl.y && c4.y <= revised_bounding_rect_tr.y) {
+				border_coords.insert(c4);
+			}
 		}
 	}
-outer:
+
+	// check all those coords to see if they're inside another sensor's search sphere
+	// find the (hopefully) one that isn't
+	Coord distress_beacon;
+	for (const auto &border_coord : border_coords) {
+		if (std::none_of(sensors.begin(), sensors.end(), [border_coord](const Sensor &sensor) {
+				return manhattan_distance(sensor.coord, border_coord) <= scan_radius(sensor);
+		})) {
+			distress_beacon = border_coord;
+			break;
+		}
+	}
 	std::cout << "Tuning frequency of distress beacon (at " << distress_beacon << "): " << (int64_t)distress_beacon.x * 4'000'000 + distress_beacon.y << '\n';
 }
