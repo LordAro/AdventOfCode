@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <limits>
 #include <numeric>
 #include <set>
 #include <vector>
@@ -26,16 +25,6 @@ std::istream &operator>>(std::istream &is, Coord &coord)
 	return is;
 }
 
-bool operator==(const Coord &a, const Coord &b)
-{
-	return a.x == b.x && a.y == b.y;
-}
-
-bool operator!=(const Coord &a, const Coord &b)
-{
-	return !(a == b);
-}
-
 bool operator<(const Coord &a, const Coord &b)
 {
 	if (a.y != b.y) return a.y < b.y;
@@ -45,12 +34,18 @@ bool operator<(const Coord &a, const Coord &b)
 struct Sensor {
 	Coord coord;
 	Coord closest_beacon;
+	int radius; // cached
 };
 
 std::ostream &operator<<(std::ostream &os, const Sensor &sensor)
 {
 	os << sensor.coord << " => " << sensor.closest_beacon;
 	return os;
+}
+
+int manhattan_distance(const Coord &a, const Coord &b)
+{
+	return std::abs(a.x - b.x) + std::abs(a.y - b.y);
 }
 
 std::istream &operator>>(std::istream &is, Sensor &sensor)
@@ -63,17 +58,8 @@ std::istream &operator>>(std::istream &is, Sensor &sensor)
 	is >> skip >> skip >> skip >> skip; // closest beacon is at
 	is.ignore(1); // ' '
 	is >> sensor.closest_beacon;
+	sensor.radius = manhattan_distance(sensor.coord, sensor.closest_beacon);
 	return is;
-}
-
-int manhattan_distance(const Coord &a, const Coord &b)
-{
-	return std::abs(a.x - b.x) + std::abs(a.y - b.y);
-}
-
-int scan_radius(const Sensor &sensor)
-{
-	return manhattan_distance(sensor.coord, sensor.closest_beacon);
 }
 
 struct Interval {
@@ -82,6 +68,7 @@ struct Interval {
 
 std::vector<Interval> merge_intervals(std::vector<Interval> intervals)
 {
+	// Sorts such that we only need one pass to work out what can be merged together
 	std::sort(intervals.begin(), intervals.end(), [](const Interval &a, const Interval &b) { return a.start < b.start; });
 
 	std::vector<Interval> merged;
@@ -89,8 +76,10 @@ std::vector<Interval> merge_intervals(std::vector<Interval> intervals)
 	for (size_t i = 1; i < intervals.size(); i++) {
 		Interval top = merged.back();
 		if (top.end < intervals[i].start) {
+			// Separate range, start a "new" one
 			merged.push_back(intervals[i]);
 		} else if (top.end < intervals[i].end) {
+			// Mergable range
 			top.end = intervals[i].end;
 			merged.pop_back();
 			merged.push_back(top);
@@ -111,17 +100,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	Coord bounding_rect_bl = {std::numeric_limits<int>::max(), std::numeric_limits<int>::max()};
-	Coord bounding_rect_tr = {std::numeric_limits<int>::min(), std::numeric_limits<int>::min()};
-
 	std::vector<Sensor> sensors;
 	for (Sensor sensor; input >> sensor; ) {
-		int search_dist = scan_radius(sensor);
-		bounding_rect_bl.x = std::min(bounding_rect_bl.x, sensor.coord.x - search_dist);
-		bounding_rect_bl.y = std::min(bounding_rect_bl.y, sensor.coord.y - search_dist);
-
-		bounding_rect_tr.x = std::max(bounding_rect_tr.x, sensor.coord.x + search_dist);
-		bounding_rect_tr.y = std::max(bounding_rect_tr.y, sensor.coord.y + search_dist);
 		sensors.push_back(sensor);
 	}
 
@@ -129,7 +109,7 @@ int main(int argc, char **argv)
 	std::vector<Interval> intervals;
 	std::set<Coord> beacons_on_y;
 	for (const auto &sensor : sensors) {
-		int search_dist = scan_radius(sensor);
+		int search_dist = sensor.radius;
 		// if search radius crosses line
 		// otherwise, difference would be negative and screw things up
 		if ((sensor.coord.y <= SCAN_Y && sensor.coord.y + search_dist >= SCAN_Y)
@@ -137,7 +117,10 @@ int main(int argc, char **argv)
 			int intersect_radius = std::abs(sensor.coord.y - SCAN_Y);
 			int difference = search_dist - intersect_radius;
 
+			// interval of sensor diamond at SCAN_Y
 			intervals.push_back({sensor.coord.x - difference, sensor.coord.x + difference});
+
+			// beacons may be repeated, use a set
 			if (sensor.closest_beacon.y == SCAN_Y) {
 				beacons_on_y.insert(sensor.closest_beacon);
 			}
@@ -150,8 +133,9 @@ int main(int argc, char **argv)
 	);
 	std::cout << "Number of spaces at y=" << SCAN_Y << " that cannot be beacons: " << total_x_in_shadow - beacons_on_y.size() << '\n';
 
-	Coord revised_bounding_rect_bl{std::max(bounding_rect_bl.x, 0), std::max(bounding_rect_bl.y, 0)};
-	Coord revised_bounding_rect_tr{std::min(bounding_rect_tr.x, 4'000'000), std::min(bounding_rect_tr.y, 4'000'000)};
+	// We could use the min/max points to refine this slightly, but it's not worth the bother
+	Coord bbox_bl{0, 0};
+	Coord bbox_tr{4'000'000, 4'000'000};
 
 	// Greg's geometric solution. Very fancy.
 	// each sensor casts 2 / direction lines and 2 \ direction lines from the edges of the diamond of its range.
@@ -160,7 +144,7 @@ int main(int argc, char **argv)
 	std::set<int> pos_lines;
 	std::set<int> neg_lines;
 	for (const auto &sensor : sensors) {
-		const int search_dist = scan_radius(sensor) + 1;
+		const int search_dist = sensor.radius + 1;
 		const Coord l{sensor.coord.x - search_dist, sensor.coord.y};
 		pos_lines.insert(l.y - l.x); // '/'
 		neg_lines.insert(l.y + l.x); // '\'
@@ -169,7 +153,7 @@ int main(int argc, char **argv)
 	std::vector<int> double_pos_lines;
 	std::vector<int> double_neg_lines;
 	for (const auto &sensor : sensors) {
-		const int search_dist = scan_radius(sensor) + 1;
+		const int search_dist = sensor.radius + 1;
 		const Coord r{sensor.coord.x + search_dist, sensor.coord.y};
 		if (pos_lines.find(r.y - r.x) != pos_lines.end()) {
 			double_pos_lines.push_back(r.y - r.x); // '/'
@@ -183,8 +167,7 @@ int main(int argc, char **argv)
 	for (const auto &pos : double_pos_lines) {
 		for (const auto &neg : double_neg_lines) {
 			const Coord crossing{(neg - pos) / 2, (neg + pos) / 2};
-			if (crossing.x >= revised_bounding_rect_bl.x && crossing.x <= revised_bounding_rect_tr.x
-					&& crossing.y >= revised_bounding_rect_bl.y && crossing.y <= revised_bounding_rect_tr.y) {
+			if (crossing.x >= bbox_bl.x && crossing.x <= bbox_tr.x && crossing.y >= bbox_bl.y && crossing.y <= bbox_tr.y) {
 				distress_beacon = crossing;
 				goto outer; // yay goto
 			}
