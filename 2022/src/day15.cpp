@@ -113,47 +113,48 @@ int main(int argc, char **argv)
 			empty_spaces_count++;
 		}
 	}
-
 	std::cout << "Number of spaces at y=" << SCAN_Y << " that cannot be beacons: " << empty_spaces_count << '\n';
 
-	Coord revised_bounding_rect_bl = {std::max(bounding_rect_bl.x, 0), std::max(bounding_rect_bl.y, 0)};
-	Coord revised_bounding_rect_tr = {std::min(bounding_rect_tr.x, 4'000'000), std::min(bounding_rect_tr.y, 4'000'000)};
+	Coord revised_bounding_rect_bl{std::max(bounding_rect_bl.x, 0), std::max(bounding_rect_bl.y, 0)};
+	Coord revised_bounding_rect_tr{std::min(bounding_rect_tr.x, 4'000'000), std::min(bounding_rect_tr.y, 4'000'000)};
 
-	std::set<Coord> border_coords;
-	// plan:
-	// get all coords just outside border (dist + 1)
+	// Greg's geometric solution. Very fancy.
+	// each sensor casts 2 / direction lines and 2 \ direction lines from the edges of the diamond of its range.
+	// the unique uncovered square must be in the middle of an intersection of these.
+	// we assume that the uncovered square is not on the edge of the world, and so only need to consider 1 of the 2 in each pair of parallel lines.
+	std::set<int> pos_lines;
+	std::set<int> neg_lines;
 	for (const auto &sensor : sensors) {
-		int search_dist = scan_radius(sensor) + 1;
-		for (int i = 0; i <= search_dist; i++) {
-			Coord c1{sensor.coord.x - search_dist + i, sensor.coord.y + i};
-			Coord c2{sensor.coord.x - search_dist + i, sensor.coord.y - i};
-			Coord c3{sensor.coord.x + search_dist - i, sensor.coord.y + i};
-			Coord c4{sensor.coord.x + search_dist - i, sensor.coord.y - i};
-			if (c1.x >= revised_bounding_rect_bl.x && c1.x <= revised_bounding_rect_tr.x && c1.y >= revised_bounding_rect_bl.y && c1.y <= revised_bounding_rect_tr.y) {
-				border_coords.insert(c1);
-			}
-			if (c2.x >= revised_bounding_rect_bl.x && c2.x <= revised_bounding_rect_tr.x && c2.y >= revised_bounding_rect_bl.y && c2.y <= revised_bounding_rect_tr.y) {
-				border_coords.insert(c2);
-			}
-			if (c3.x >= revised_bounding_rect_bl.x && c3.x <= revised_bounding_rect_tr.x && c3.y >= revised_bounding_rect_bl.y && c3.y <= revised_bounding_rect_tr.y) {
-				border_coords.insert(c3);
-			}
-			if (c4.x >= revised_bounding_rect_bl.x && c4.x <= revised_bounding_rect_tr.x && c4.y >= revised_bounding_rect_bl.y && c4.y <= revised_bounding_rect_tr.y) {
-				border_coords.insert(c4);
-			}
+		const int search_dist = scan_radius(sensor) + 1;
+		const Coord l{sensor.coord.x - search_dist, sensor.coord.y};
+		pos_lines.insert(l.y - l.x); // '/'
+		neg_lines.insert(l.y + l.x); // '\'
+	}
+
+	std::vector<int> double_pos_lines;
+	std::vector<int> double_neg_lines;
+	for (const auto &sensor : sensors) {
+		const int search_dist = scan_radius(sensor) + 1;
+		const Coord r{sensor.coord.x + search_dist, sensor.coord.y};
+		if (pos_lines.find(r.y - r.x) != pos_lines.end()) {
+			double_pos_lines.push_back(r.y - r.x); // '/'
+		}
+		if (neg_lines.find(r.y + r.x) != neg_lines.end()) {
+			double_neg_lines.push_back(r.y + r.x); // '\'
 		}
 	}
 
-	// check all those coords to see if they're inside another sensor's search sphere
-	// find the (hopefully) one that isn't
-	Coord distress_beacon;
-	for (const auto &border_coord : border_coords) {
-		if (std::none_of(sensors.begin(), sensors.end(), [border_coord](const Sensor &sensor) {
-				return manhattan_distance(sensor.coord, border_coord) <= scan_radius(sensor);
-		})) {
-			distress_beacon = border_coord;
-			break;
+	Coord distress_beacon{0, 0};
+	for (const auto &pos : double_pos_lines) {
+		for (const auto &neg : double_neg_lines) {
+			const Coord crossing{(neg - pos) / 2, (neg + pos) / 2};
+			if (crossing.x >= revised_bounding_rect_bl.x && crossing.x <= revised_bounding_rect_tr.x
+					&& crossing.y >= revised_bounding_rect_bl.y && crossing.y <= revised_bounding_rect_tr.y) {
+				distress_beacon = crossing;
+				goto outer; // yay goto
+			}
 		}
 	}
+outer:
 	std::cout << "Tuning frequency of distress beacon (at " << distress_beacon << "): " << (int64_t)distress_beacon.x * 4'000'000 + distress_beacon.y << '\n';
 }
