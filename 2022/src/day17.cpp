@@ -186,26 +186,22 @@ int main(int argc, char **argv)
 	int cycle_length = 0;
 	int cycle_start = 0;
 	// cycle length must be a multiple of 5 - the number of rocks that are available
-	for (int run_length = rocks.size(); cycle_length == 0 && run_length < (int)heights.size() / 5; run_length += rocks.size()) {
+	for (size_t run_length = rocks.size(); cycle_length == 0 && run_length < heights.size() / 5; run_length += rocks.size()) {
 		// assumes cycle establishes itself within 1/5 of the total heights we've generated
 		// also allows us to more thoroughly check that we've got a cycle (i.e. at least 4 repeats)
-		for (auto it = heights.begin(); it != heights.begin() + (heights.size() / 5); ++it) {
-			// get the initial difference
-			const std::vector<int> initial_vec(it, it + run_length - 1);
-			const std::vector<int> next_vec(it + run_length, it + 2 * run_length - 1);
-			std::vector<int> initial_diffs;
-			std::transform(next_vec.begin(), next_vec.end(), initial_vec.begin(), std::back_inserter(initial_diffs), std::minus<>());
+		for (auto it = heights.begin() + 50; it != heights.begin() + (heights.size() / 5); ++it) {
 
 			bool all_matches = true;
-			// looks for sub vectors with matching differences between elements
-			// could probably do this without the copies if you tried hard enough
-			for (auto jt = it + run_length; jt < heights.end() - run_length - 1; jt += run_length) {
-				const std::vector<int> base_vec(jt, jt + run_length - 1);
-				const std::vector<int> compare_vec(jt + run_length, jt + 2 * run_length - 1);
-				std::vector<int> diffs;
-				std::transform(compare_vec.begin(), compare_vec.end(), base_vec.begin(), std::back_inserter(diffs), std::minus<>());
-				if (diffs != initial_diffs) {
-					all_matches = false;
+			// looks for "sub vectors" with matching differences between elements
+			// could be a lot nicer with C++20 std::span
+			for (auto jt = it + run_length; jt < heights.end() - 2 * run_length - 1; jt += run_length) {
+				for (size_t n = 0; all_matches && n < run_length; n++) {
+					if ((*(jt + run_length + n) - *(jt + n)) != (*(it + run_length + n) - *(it + n))) {
+						all_matches = false;
+						break;
+					}
+				}
+				if (!all_matches) {
 					break;
 				}
 			}
