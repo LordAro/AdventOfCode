@@ -106,13 +106,16 @@ bool try_move(const std::set<Coord> &stopped_rocks, const Coord &cur_pos, const 
 			__builtin_unreachable();
 	}
 
+	// We can evaluate whether we'll hit the edges before looking at the specific coordinates
+	// by taking advantage of the "square" nature of the rock pieces
+	if (new_pos.x < 0 || new_pos.x + rock[0].size() - 1 >= GRID_WIDTH) {
+		return false;
+	}
+	if (new_pos.y - ((int)rock.size() - 1) < 0) {
+		return false; // stop at the floor (but rocks are allowed to "slide" along the floor)
+	}
+
 	for (const auto &rock_coord : get_rock_coords(new_pos, rock)) {
-		if (rock_coord.x < 0 || rock_coord.x >= GRID_WIDTH) {
-			return false; // chamber is 7 wide
-		}
-		if (rock_coord.y < 0) {
-			return false; // stop at the floor (but rocks are allowed to "slide" along the floor)
-		}
 		if (stopped_rocks.find(rock_coord) != stopped_rocks.end()) {
 			return false;
 		}
