@@ -2,6 +2,8 @@
 #include <array>
 #include <fstream>
 #include <iostream>
+#include <iterator>
+#include <numeric>
 #include <set>
 #include <vector>
 
@@ -69,7 +71,7 @@ std::vector<Coord> get_rock_coords(const Coord &cur_pos, const Rock &rock)
 void print(const std::set<Coord> &stopped_rocks, const Rock &cur_rock, const Coord &cur_rock_pos)
 {
 	const std::vector<Coord> rock_coords = get_rock_coords(cur_rock_pos, cur_rock);
-	int max_y = std::max(cur_rock_pos.y, stopped_rocks.empty() ? 0 : stopped_rocks.rbegin()->y);
+	int max_y = std::max(cur_rock_pos.y, stopped_rocks.rbegin()->y);
 	for (int y = max_y; y >= 0; y--) {
 		std::cout << '|';
 		for (int x = 0; x < GRID_WIDTH; x++) {
@@ -133,25 +135,27 @@ int main(int argc, char **argv)
 	std::string jet_pattern;
 	std::getline(input, jet_pattern);
 
-//	jet_pattern = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>";
+	//jet_pattern = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>";
 
 	std::set<Coord> stopped_rocks;
+	stopped_rocks.insert(Coord{-1, -1}); // just so it's non-empty
 	size_t jet_idx = 0;
-	size_t next_rock_idx = 0;
 	Rock cur_rock = rocks[0];
 	Coord rock_pos{-1, -1};
 	int rock_count = 0;
-	while (true) {
+
+	std::vector<int> heights;
+
+	while (rock_count < 10'000) {
 		// spawn new rock if needed
 		if (rock_pos == Coord{-1, -1}) {
-			rock_count++;
-			if (rock_count > 2022) break; // done.
-
 			// ordering of set allows us to just take the last element
-			int max_y = !stopped_rocks.empty() ? stopped_rocks.rbegin()->y : -1;
-			cur_rock = rocks[next_rock_idx];
-			next_rock_idx = (next_rock_idx + 1) % rocks.size();
+			int max_y = stopped_rocks.rbegin()->y; // -1 when empty means we get +3 + rock height properly
+			heights.push_back(max_y); // record height after N stopped rocks
 
+			cur_rock = rocks[rock_count % rocks.size()];
+
+			rock_count++;
 			rock_pos = {2, max_y + 3 + (int)cur_rock.size()}; //starting point of top left
 		}
 
@@ -173,10 +177,67 @@ int main(int argc, char **argv)
 			stopped_rocks.insert(rock_coords.begin(), rock_coords.end());
 			rock_pos = {-1, -1};
 		}
-
 	}
-//			print(stopped_rocks, cur_rock, rock_pos);
-//			std::cout << "\n\n";
 
-	std::cout << "Maximum height after 2022 rocks: " << stopped_rocks.rbegin()->y + 1 << '\n';
+	const size_t P1_ROCK_COUNT = 2022;
+	const int64_t P2_ROCK_COUNT = 1'000'000'000'000;
+
+	// Go looking for a cycle
+	int cycle_length = 0;
+	int cycle_start = 0;
+	// cycle length must be a multiple of 5 - the number of rocks that are available
+	for (int run_length = rocks.size(); cycle_length == 0 && run_length < (int)heights.size() / 5; run_length += rocks.size()) {
+		// assumes cycle establishes itself within 1/5 of the total heights we've generated
+		// also allows us to more thoroughly check that we've got a cycle (i.e. at least 4 repeats)
+		for (auto it = heights.begin(); it != heights.begin() + (heights.size() / 5); ++it) {
+			// get the initial difference
+			const std::vector<int> initial_vec(it, it + run_length - 1);
+			const std::vector<int> next_vec(it + run_length, it + 2 * run_length - 1);
+			std::vector<int> initial_diffs;
+			std::transform(next_vec.begin(), next_vec.end(), initial_vec.begin(), std::back_inserter(initial_diffs), std::minus<>());
+
+			bool all_matches = true;
+			// looks for sub vectors with matching differences between elements
+			// could probably do this without the copies if you tried hard enough
+			for (auto jt = it + run_length; jt < heights.end() - run_length - 1; jt += run_length) {
+				const std::vector<int> base_vec(jt, jt + run_length - 1);
+				const std::vector<int> compare_vec(jt + run_length, jt + 2 * run_length - 1);
+				std::vector<int> diffs;
+				std::transform(compare_vec.begin(), compare_vec.end(), base_vec.begin(), std::back_inserter(diffs), std::minus<>());
+				if (diffs != initial_diffs) {
+					all_matches = false;
+					break;
+				}
+			}
+			if (all_matches) {
+//				std::cout << "Found a cycle?!\n";
+//				std::cout << "Starts at rock count: " << std::distance(heights.begin(), it) << " with a height value of " << *it << '\n';
+//				std::cout << "Cycle repeats every " << run_length << " rocks, with a change in height of " << *(it + run_length) - *it << '\n';
+//				for (auto jt = it; jt < heights.end(); jt += run_length) {
+//					std::cout << std::distance(heights.begin(), jt) << '(' << *jt << ") ";
+//				}
+//				std::cout << '\n';
+				cycle_start = std::distance(heights.begin(), it);
+				cycle_length = run_length;
+				break;
+			}
+		}
+	}
+
+	if (cycle_length == 0) {
+		// shuts the linter up about a potential divide by zero
+		throw "Could not find cycle after lots of iterations";
+	}
+
+	std::cout << "Maximum height after 2022 rocks: " << heights[P1_ROCK_COUNT] + 1 << '\n'; // +1 because units, not index
+
+	int64_t remaining_rocks = P2_ROCK_COUNT - (cycle_start + cycle_length);
+	int64_t multiplier = remaining_rocks / cycle_length;
+	int64_t offset = remaining_rocks % cycle_length;
+
+	int height_diff = heights[cycle_start + cycle_length] - heights[cycle_start];
+	int64_t total_height = heights[cycle_start + cycle_length];
+	total_height += height_diff * multiplier;
+	total_height += heights[cycle_start + offset] - heights[cycle_start];
+	std::cout << "Maximum height after 1 trillion rocks: " << total_height + 1 << '\n';
 }
