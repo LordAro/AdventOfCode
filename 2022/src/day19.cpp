@@ -57,8 +57,6 @@ std::ostream &operator<<(std::ostream &os, const State &state)
 	return os;
 }
 
-const int TIME_LIMIT = 24;
-
 enum CreateOption {
 	OreRobot,
 	ClayRobot,
@@ -69,6 +67,7 @@ enum CreateOption {
 
 using MemoiseType = std::map<State, int>;
 
+template <int TIME_LIMIT>
 int get_maximum_geodes(MemoiseType &memoising, const Blueprint &blueprint, const State &state)
 {
 	if (state.time > TIME_LIMIT) {
@@ -164,7 +163,7 @@ int get_maximum_geodes(MemoiseType &memoising, const Blueprint &blueprint, const
 		new_state.obsidian += state.obsidian_robots * time_step;
 		new_state.geodes += state.geode_robots * time_step;
 
-		int geode_count = get_maximum_geodes(memoising, blueprint, new_state);
+		int geode_count = get_maximum_geodes<TIME_LIMIT>(memoising, blueprint, new_state);
 		if (geode_count > max_geode_count) {
 			max_geode_count = geode_count;
 			new_state_max = new_state;
@@ -175,16 +174,15 @@ int get_maximum_geodes(MemoiseType &memoising, const Blueprint &blueprint, const
 	return max_geode_count;
 }
 
+template <int TIME_LIMIT>
 int run_blueprint(const Blueprint &blueprint)
 {
 	State starting_state{};
 	starting_state.time = 1;
 	starting_state.ore_robots = 1;
 	MemoiseType memo;
-	int maximum_geodes = get_maximum_geodes(memo, blueprint, starting_state);
-	int quality_level = blueprint.num * maximum_geodes;
-	std::cout << "Blueprint " << blueprint.num << ": " << maximum_geodes << " geodes. Quality level: " << quality_level << '\n';
-	return quality_level;
+	int maximum_geodes = get_maximum_geodes<TIME_LIMIT>(memo, blueprint, starting_state);
+	return maximum_geodes;
 }
 
 int main(int argc, char **argv)
@@ -214,8 +212,18 @@ int main(int argc, char **argv)
 
 	int total_quality_level = 0;
 	for (const auto &blueprint : blueprints) {
-		int quality_level = run_blueprint(blueprint);
-		total_quality_level += quality_level;
+		int max_geodes = run_blueprint<24>(blueprint);
+		std::cout << "Blueprint " << blueprint.num << ": " << max_geodes << " geodes. Quality level: " << max_geodes * blueprint.num << '\n';
+		total_quality_level += max_geodes * blueprint.num;
 	}
-	std::cout << "Total quality level of all blueprints: " << total_quality_level << '\n';
+	std::cout << "Total quality level of all blueprints after 24 minutes: " << total_quality_level << '\n';
+
+	int geode_multiply = 1;
+	for (size_t i = 0; i < 3; i++) {
+		const auto &blueprint = blueprints[i];
+		int max_geodes = run_blueprint<32>(blueprint);
+		std::cout << "Blueprint " << blueprint.num << ": " << max_geodes << " geodes. Quality level: " << max_geodes * blueprint.num << '\n';
+		geode_multiply *= max_geodes;
+	}
+	std::cout << "Total geode multiplication of first 3 blueprints after 32 minutes: " << geode_multiply << '\n';
 }
