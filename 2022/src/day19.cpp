@@ -1,7 +1,6 @@
-#include <cassert>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <map>
 #include <vector>
 
 struct Blueprint {
@@ -84,6 +83,11 @@ int get_maximum_geodes(const Blueprint &blueprint, const State &state)
 		if (co == ObsidianRobot && state.clay_robots == 0) continue;
 		if (co == GeodeRobot && state.obsidian_robots == 0) continue;
 
+		// don't try to create more robots than necessary (the maximum needed to build a robot in a single minute)
+		if (co == OreRobot && state.ore_robots >= std::max({blueprint.ore_cost, blueprint.clay_cost, blueprint.obsidian_cost.first, blueprint.geode_cost.first})) continue;
+		if (co == ClayRobot && state.clay_robots >= blueprint.obsidian_cost.second) continue;
+		if (co == ObsidianRobot && state.obsidian_robots >= blueprint.geode_cost.second) continue;
+
 		State new_state = state;
 		int turn_count = 0;
 		switch (co) {
@@ -96,7 +100,6 @@ int get_maximum_geodes(const Blueprint &blueprint, const State &state)
 					needed_ore -= state.ore_robots;
 					turn_count++;
 				}
-//				std::cout << "FOO1 " << time_step << '\n';
 				break;
 			}
 			case ClayRobot: {
@@ -107,7 +110,6 @@ int get_maximum_geodes(const Blueprint &blueprint, const State &state)
 					needed_ore -= state.ore_robots;
 					turn_count++;
 				}
-//				std::cout << "FOO2 " << time_step << '\n';
 				break;
 			}
 			case ObsidianRobot: {
@@ -121,7 +123,6 @@ int get_maximum_geodes(const Blueprint &blueprint, const State &state)
 					needed_clay -= state.clay_robots;
 					turn_count++;
 				}
-//				std::cout << "FOO3 " << time_step << '\n';
 				break;
 			}
 			case GeodeRobot: {
@@ -135,7 +136,6 @@ int get_maximum_geodes(const Blueprint &blueprint, const State &state)
 					needed_obsidian -= state.obsidian_robots;
 					turn_count++;
 				}
-//				std::cout << "FOO4 " << time_step << '\n';
 				break;
 			}
 			case CREATE_OPT_LIMIT:
@@ -198,19 +198,23 @@ int main(int argc, char **argv)
 		blueprints.emplace_back(line);
 	}
 
+	const int P1_TIME_LIMIT = 24;
+
 	int total_quality_level = 0;
 	for (const auto &blueprint : blueprints) {
-		int max_geodes = run_blueprint<24>(blueprint);
+		int max_geodes = run_blueprint<P1_TIME_LIMIT>(blueprint);
 		std::cout << "Blueprint " << blueprint.num << ": " << max_geodes << " geodes. Quality level: " << max_geodes * blueprint.num << '\n';
 		total_quality_level += max_geodes * blueprint.num;
 	}
 	std::cout << "Total quality level of all blueprints after 24 minutes: " << total_quality_level << '\n';
 
+	const int P2_TIME_LIMIT = 32;
+
 	int geode_multiply = 1;
 	for (size_t i = 0; i < 3; i++) {
 		const auto &blueprint = blueprints[i];
-		int max_geodes = run_blueprint<32>(blueprint);
-		std::cout << "Blueprint " << blueprint.num << ": " << max_geodes << " geodes. Quality level: " << max_geodes * blueprint.num << '\n';
+		int max_geodes = run_blueprint<P2_TIME_LIMIT>(blueprint);
+		std::cout << "Blueprint " << blueprint.num << ": " << max_geodes << " geodes.\n";
 		geode_multiply *= max_geodes;
 	}
 	std::cout << "Total geode multiplication of first 3 blueprints after 32 minutes: " << geode_multiply << '\n';
