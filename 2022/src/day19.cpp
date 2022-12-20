@@ -1,3 +1,4 @@
+#include <cassert>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -46,91 +47,144 @@ struct State {
 	}
 };
 
+std::ostream &operator<<(std::ostream &os, const State &state)
+{
+	std::cout << "T: " << state.time
+		<< " O: " << state.ore << " (" << state.ore_robots << ")"
+		<< " C: " << state.clay << " (" << state.clay_robots << ")"
+		<< " Ob: " << state.obsidian << " (" << state.obsidian_robots << ")"
+		<< " G: " << state.geodes << " (" << state.geode_robots << ")";
+	return os;
+}
+
 const int TIME_LIMIT = 24;
 
 enum CreateOption {
-	DoNothing,
 	OreRobot,
 	ClayRobot,
 	ObsidianRobot,
 	GeodeRobot,
+	CREATE_OPT_LIMIT,
 };
 
-using MemoiseType = std::map<std::pair<State, int>, int>;
+using MemoiseType = std::map<State, int>;
 
-int get_maximum_geodes(MemoiseType &memoising, const Blueprint &blueprint, const State &state, int time)
+int get_maximum_geodes(MemoiseType &memoising, const Blueprint &blueprint, const State &state)
 {
-	if (time > TIME_LIMIT) {
-		return state.geodes; // done.
+	if (state.time > TIME_LIMIT) {
+		// done.
+		// Need to remove some geodes if we've gone past the end of the time limit
+		// so that we get the number of geodes at TIME_LIMIT
+		// Last action should always be to create more geode robots, which we wouldn't have had
+		return state.geodes - ((state.time - TIME_LIMIT + 1) * (state.geode_robots - 1)); // +1 ?
 	}
 
-	auto memo = memoising.find({state, time});
+	auto memo = memoising.find(state);
 	if (memo != memoising.end()) {
 		return memo->second;
 	}
 
-	std::vector<CreateOption> create_options;
-	create_options.push_back(DoNothing);
-	if (state.ore >= blueprint.ore_cost) {
-		// costs ore
-		create_options.push_back(OreRobot);
-	}
-	if (state.ore >= blueprint.clay_cost) {
-		// costs ore
-		create_options.push_back(ClayRobot);
-	}
-	if (state.ore >= blueprint.obsidian_cost.first && state.clay >= blueprint.obsidian_cost.second) {
-		// costs ore and clay
-		create_options.push_back(ObsidianRobot);
-	}
-	if (state.ore >= blueprint.geode_cost.first && state.obsidian >= blueprint.geode_cost.second) {
-		// costs ore and obsidian
-		create_options.push_back(GeodeRobot);
-	}
-
 	int max_geode_count = 0;
-	State new_state_max;
-	// TODO: More than one thing at once?
-	for (CreateOption co : create_options) {
+	State new_state_max{};
+
+	for (int i = 0; i < CREATE_OPT_LIMIT; i++) {
+		CreateOption co = (CreateOption)i;
+		// can't always create obsidian/geode robots
+		if (co == ObsidianRobot && state.clay_robots == 0) continue;
+		if (co == GeodeRobot && state.obsidian_robots == 0) continue;
+
 		State new_state = state;
+		int turn_count = 0;
 		switch (co) {
-			case DoNothing:
-				break;
-			case OreRobot:
+			case OreRobot: {
 				new_state.ore_robots++;
 				new_state.ore -= blueprint.ore_cost;
+
+				int needed_ore = blueprint.ore_cost - state.ore; // TODO: This can be a sum!
+				while (needed_ore > 0) {
+					needed_ore -= state.ore_robots;
+					turn_count++;
+				}
+//				std::cout << "FOO1 " << time_step << '\n';
 				break;
-			case ClayRobot:
+			}
+			case ClayRobot: {
 				new_state.clay_robots++;
 				new_state.ore -= blueprint.clay_cost;
+				int needed_ore = blueprint.clay_cost - state.ore; // TODO: This can be a sum!
+				while (needed_ore > 0) {
+					needed_ore -= state.ore_robots;
+					turn_count++;
+				}
+//				std::cout << "FOO2 " << time_step << '\n';
 				break;
-			case ObsidianRobot:
+			}
+			case ObsidianRobot: {
 				new_state.obsidian_robots++;
 				new_state.ore -= blueprint.obsidian_cost.first;
 				new_state.clay -= blueprint.obsidian_cost.second;
+				int needed_ore = blueprint.obsidian_cost.first - state.ore; // TODO: This can be a sum!
+				int needed_clay = blueprint.obsidian_cost.second - state.clay;
+				while (needed_ore > 0 || needed_clay > 0) {
+					needed_ore -= state.ore_robots;
+					needed_clay -= state.clay_robots;
+					turn_count++;
+				}
+//				std::cout << "FOO3 " << time_step << '\n';
 				break;
-			case GeodeRobot:
+			}
+			case GeodeRobot: {
 				new_state.geode_robots++;
 				new_state.ore -= blueprint.geode_cost.first;
 				new_state.obsidian -= blueprint.geode_cost.second;
+				int needed_ore = blueprint.geode_cost.first - state.ore; // TODO: This can be a sum!
+				int needed_obsidian = blueprint.geode_cost.second - state.obsidian;
+				while (needed_ore > 0 || needed_obsidian > 0) {
+					needed_ore -= state.ore_robots;
+					needed_obsidian -= state.obsidian_robots;
+					turn_count++;
+				}
+//				std::cout << "FOO4 " << time_step << '\n';
+				break;
+			}
+			case CREATE_OPT_LIMIT:
+				__builtin_unreachable();
 				break;
 		}
+		// If we've already got enough resources and don't need to wait, we still need to wait 1 minute for the robot factory to complete its last order
+		int time_step = std::max(turn_count, 1);
+		// Only allow the last action to be creating a geode robot (no other action can have any effect, and makes the resulting calculation easier)
+		if (co != GeodeRobot && state.time + time_step > TIME_LIMIT) continue;
 
 		// Happens after we decide what we can create
 		// Uses old state number of robots as we haven't created the new robots yet!
-		new_state.ore += state.ore_robots;
-		new_state.clay += state.clay_robots;
-		new_state.obsidian += state.obsidian_robots;
-		new_state.geodes += state.geode_robots;
+		new_state.time += time_step;
+		new_state.ore += state.ore_robots * time_step;
+		new_state.clay += state.clay_robots * time_step;
+		new_state.obsidian += state.obsidian_robots * time_step;
+		new_state.geodes += state.geode_robots * time_step;
 
-		int geode_count = get_maximum_geodes(memoising, blueprint, new_state, time + 1);
+		int geode_count = get_maximum_geodes(memoising, blueprint, new_state);
 		if (geode_count > max_geode_count) {
 			max_geode_count = geode_count;
 			new_state_max = new_state;
 		}
 	}
-	memoising[{new_state_max, time + 1}] = max_geode_count;
+	memoising[new_state_max] = max_geode_count;
+//	std::cout << new_state_max << '\n';
 	return max_geode_count;
+}
+
+int run_blueprint(const Blueprint &blueprint)
+{
+	State starting_state{};
+	starting_state.ore_robots = 1;
+	starting_state.time = 1;
+	MemoiseType memo;
+	int maximum_geodes = get_maximum_geodes(memo, blueprint, starting_state);
+	int quality_level = blueprint.num * maximum_geodes;
+	std::cout << "Blueprint " << blueprint.num << ": " << maximum_geodes << " geodes. Quality level: " << quality_level << '\n';
+	return quality_level;
 }
 
 int main(int argc, char **argv)
@@ -145,32 +199,23 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-//	{
-//		Blueprint example1("Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.");
-//		Blueprint example2("Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.");
-//
-//		State starting_state{};
-//		starting_state.ore_robots = 1;
-//		MemoiseType memo;
-//		int maximum_geodes = get_maximum_geodes(memo, example1, starting_state, 1);
-//		int quality_level = example1.num * maximum_geodes;
-//		std::cout << "Blueprint " << example1.num << ": " << maximum_geodes << " geodes. Quality level: " << quality_level << '\n';
-//	}
+	{
+		Blueprint example1("Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.");
+		Blueprint example2("Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.");
+
+		run_blueprint(example1);
+		run_blueprint(example2);
+	}
 	std::vector<Blueprint> blueprints;
 
 	for (std::string line; std::getline(input, line); ) {
 		blueprints.emplace_back(line);
 	}
 
-	int total_quality_level = 0;
-	for (const auto &blueprint : blueprints) {
-		State starting_state{};
-		starting_state.ore_robots = 1;
-		MemoiseType memo;
-		int maximum_geodes = get_maximum_geodes(memo, blueprint, starting_state, 1);
-		int quality_level = blueprint.num * maximum_geodes;
-		std::cout << "Blueprint " << blueprint.num << ": " << maximum_geodes << " geodes. Quality level: " << quality_level << '\n';
-		total_quality_level += quality_level;
-	}
-	std::cout << "Total quality level of all blueprints: " << total_quality_level << '\n';
+//	int total_quality_level = 0;
+//	for (const auto &blueprint : blueprints) {
+//		int quality_level = run_blueprint(blueprint);
+//		total_quality_level += quality_level;
+//	}
+//	std::cout << "Total quality level of all blueprints: " << total_quality_level << '\n';
 }
