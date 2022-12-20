@@ -76,7 +76,7 @@ int get_maximum_geodes(MemoiseType &memoising, const Blueprint &blueprint, const
 		// Need to remove some geodes if we've gone past the end of the time limit
 		// so that we get the number of geodes at TIME_LIMIT
 		// Last action should always be to create more geode robots, which we wouldn't have had
-		return state.geodes - ((state.time - TIME_LIMIT + 1) * (state.geode_robots - 1)); // +1 ?
+		return state.geodes - ((state.time - TIME_LIMIT - 1) * (state.geode_robots - 1));
 	}
 
 	auto memo = memoising.find(state);
@@ -152,7 +152,7 @@ int get_maximum_geodes(MemoiseType &memoising, const Blueprint &blueprint, const
 				break;
 		}
 		// If we've already got enough resources and don't need to wait, we still need to wait 1 minute for the robot factory to complete its last order
-		int time_step = std::max(turn_count, 1);
+		int time_step = std::max(turn_count, 0) + 1;
 		// Only allow the last action to be creating a geode robot (no other action can have any effect, and makes the resulting calculation easier)
 		if (co != GeodeRobot && state.time + time_step > TIME_LIMIT) continue;
 
@@ -178,8 +178,8 @@ int get_maximum_geodes(MemoiseType &memoising, const Blueprint &blueprint, const
 int run_blueprint(const Blueprint &blueprint)
 {
 	State starting_state{};
-	starting_state.ore_robots = 1;
 	starting_state.time = 1;
+	starting_state.ore_robots = 1;
 	MemoiseType memo;
 	int maximum_geodes = get_maximum_geodes(memo, blueprint, starting_state);
 	int quality_level = blueprint.num * maximum_geodes;
@@ -199,23 +199,23 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	{
-		Blueprint example1("Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.");
-		Blueprint example2("Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.");
+//	{
+//		Blueprint example1("Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.");
+//		Blueprint example2("Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.");
+//
+//		run_blueprint(example1);
+//		run_blueprint(example2);
+//	}
 
-		run_blueprint(example1);
-		run_blueprint(example2);
-	}
 	std::vector<Blueprint> blueprints;
-
 	for (std::string line; std::getline(input, line); ) {
 		blueprints.emplace_back(line);
 	}
 
-//	int total_quality_level = 0;
-//	for (const auto &blueprint : blueprints) {
-//		int quality_level = run_blueprint(blueprint);
-//		total_quality_level += quality_level;
-//	}
-//	std::cout << "Total quality level of all blueprints: " << total_quality_level << '\n';
+	int total_quality_level = 0;
+	for (const auto &blueprint : blueprints) {
+		int quality_level = run_blueprint(blueprint);
+		total_quality_level += quality_level;
+	}
+	std::cout << "Total quality level of all blueprints: " << total_quality_level << '\n';
 }
