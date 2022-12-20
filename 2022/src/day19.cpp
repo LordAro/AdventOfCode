@@ -8,8 +8,8 @@ struct Blueprint {
 	int num;
 	int ore_cost;
 	int clay_cost;
-	std::pair<int, int> obsidian_cost;
-	std::pair<int, int> geode_cost;
+	std::pair<int, int> obsidian_cost; // ore, clay
+	std::pair<int, int> geode_cost; // ore, obsidian
 };
 
 Blueprint::Blueprint(const std::string &line)
@@ -31,19 +31,6 @@ struct State {
 	int clay;
 	int obsidian;
 	int geodes;
-
-	bool operator<(const State &other) const
-	{
-		if (this->geodes != other.geodes) return this->geodes < other.geodes;
-		if (this->geode_robots != other.geode_robots) return this->geode_robots < other.geode_robots;
-		if (this->obsidian != other.obsidian) return this->obsidian < other.obsidian;
-		if (this->obsidian_robots != other.obsidian_robots) return this->obsidian_robots < other.obsidian_robots;
-		if (this->clay != other.clay) return this->clay < other.clay;
-		if (this->clay_robots != other.clay_robots) return this->clay_robots < other.clay_robots;
-		if (this->ore != other.ore) return this->ore < other.ore;
-		if (this->ore_robots != other.ore_robots) return this->ore_robots < other.ore_robots;
-		return this->time < other.time;
-	}
 };
 
 std::ostream &operator<<(std::ostream &os, const State &state)
@@ -61,7 +48,6 @@ enum CreateOption {
 	ClayRobot,
 	ObsidianRobot,
 	GeodeRobot,
-	CREATE_OPT_LIMIT,
 };
 
 template <int TIME_LIMIT>
@@ -77,7 +63,7 @@ int get_maximum_geodes(const Blueprint &blueprint, const State &state)
 
 	int max_geode_count = 0;
 
-	for (int i = 0; i < CREATE_OPT_LIMIT; i++) {
+	for (int i = OreRobot; i <= GeodeRobot; i++) {
 		CreateOption co = (CreateOption)i;
 		// can't always create obsidian/geode robots
 		if (co == ObsidianRobot && state.clay_robots == 0) continue;
@@ -95,7 +81,8 @@ int get_maximum_geodes(const Blueprint &blueprint, const State &state)
 				new_state.ore_robots++;
 				new_state.ore -= blueprint.ore_cost;
 
-				int needed_ore = blueprint.ore_cost - state.ore; // TODO: This can be a sum!
+				// equivalent to std::max((need / rate) + (need % rate != 0), 0) but this is slower! (due to the std::max calls?)
+				int needed_ore = blueprint.ore_cost - state.ore;
 				while (needed_ore > 0) {
 					needed_ore -= state.ore_robots;
 					turn_count++;
@@ -105,7 +92,7 @@ int get_maximum_geodes(const Blueprint &blueprint, const State &state)
 			case ClayRobot: {
 				new_state.clay_robots++;
 				new_state.ore -= blueprint.clay_cost;
-				int needed_ore = blueprint.clay_cost - state.ore; // TODO: This can be a sum!
+				int needed_ore = blueprint.clay_cost - state.ore;
 				while (needed_ore > 0) {
 					needed_ore -= state.ore_robots;
 					turn_count++;
@@ -116,7 +103,7 @@ int get_maximum_geodes(const Blueprint &blueprint, const State &state)
 				new_state.obsidian_robots++;
 				new_state.ore -= blueprint.obsidian_cost.first;
 				new_state.clay -= blueprint.obsidian_cost.second;
-				int needed_ore = blueprint.obsidian_cost.first - state.ore; // TODO: This can be a sum!
+				int needed_ore = blueprint.obsidian_cost.first - state.ore;
 				int needed_clay = blueprint.obsidian_cost.second - state.clay;
 				while (needed_ore > 0 || needed_clay > 0) {
 					needed_ore -= state.ore_robots;
@@ -129,7 +116,7 @@ int get_maximum_geodes(const Blueprint &blueprint, const State &state)
 				new_state.geode_robots++;
 				new_state.ore -= blueprint.geode_cost.first;
 				new_state.obsidian -= blueprint.geode_cost.second;
-				int needed_ore = blueprint.geode_cost.first - state.ore; // TODO: This can be a sum!
+				int needed_ore = blueprint.geode_cost.first - state.ore;
 				int needed_obsidian = blueprint.geode_cost.second - state.obsidian;
 				while (needed_ore > 0 || needed_obsidian > 0) {
 					needed_ore -= state.ore_robots;
@@ -138,12 +125,9 @@ int get_maximum_geodes(const Blueprint &blueprint, const State &state)
 				}
 				break;
 			}
-			case CREATE_OPT_LIMIT:
-				__builtin_unreachable();
-				break;
 		}
 		// If we've already got enough resources and don't need to wait, we still need to wait 1 minute for the robot factory to complete its last order
-		int time_step = std::max(turn_count, 0) + 1;
+		int time_step = turn_count + 1;
 		// Only allow the last action to be creating a geode robot (no other action can have any effect, and makes the resulting calculation easier)
 		if (co != GeodeRobot && state.time + time_step > TIME_LIMIT) continue;
 
