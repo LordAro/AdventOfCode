@@ -65,10 +65,8 @@ enum CreateOption {
 	CREATE_OPT_LIMIT,
 };
 
-using MemoiseType = std::map<State, int>;
-
 template <int TIME_LIMIT>
-int get_maximum_geodes(MemoiseType &memoising, const Blueprint &blueprint, const State &state)
+int get_maximum_geodes(const Blueprint &blueprint, const State &state)
 {
 	if (state.time > TIME_LIMIT) {
 		// done.
@@ -78,13 +76,7 @@ int get_maximum_geodes(MemoiseType &memoising, const Blueprint &blueprint, const
 		return state.geodes - ((state.time - TIME_LIMIT - 1) * (state.geode_robots - 1));
 	}
 
-	auto memo = memoising.find(state);
-	if (memo != memoising.end()) {
-		return memo->second;
-	}
-
 	int max_geode_count = 0;
-	State new_state_max{};
 
 	for (int i = 0; i < CREATE_OPT_LIMIT; i++) {
 		CreateOption co = (CreateOption)i;
@@ -163,14 +155,11 @@ int get_maximum_geodes(MemoiseType &memoising, const Blueprint &blueprint, const
 		new_state.obsidian += state.obsidian_robots * time_step;
 		new_state.geodes += state.geode_robots * time_step;
 
-		int geode_count = get_maximum_geodes<TIME_LIMIT>(memoising, blueprint, new_state);
+		int geode_count = get_maximum_geodes<TIME_LIMIT>(blueprint, new_state);
 		if (geode_count > max_geode_count) {
 			max_geode_count = geode_count;
-			new_state_max = new_state;
 		}
 	}
-	memoising[new_state_max] = max_geode_count;
-//	std::cout << new_state_max << '\n';
 	return max_geode_count;
 }
 
@@ -180,8 +169,7 @@ int run_blueprint(const Blueprint &blueprint)
 	State starting_state{};
 	starting_state.time = 1;
 	starting_state.ore_robots = 1;
-	MemoiseType memo;
-	int maximum_geodes = get_maximum_geodes<TIME_LIMIT>(memo, blueprint, starting_state);
+	int maximum_geodes = get_maximum_geodes<TIME_LIMIT>(blueprint, starting_state);
 	return maximum_geodes;
 }
 
