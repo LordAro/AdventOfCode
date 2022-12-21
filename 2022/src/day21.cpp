@@ -1,9 +1,11 @@
 #include <algorithm>
+#include <cassert>
 #include <charconv>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <string_view>
+#include <sstream>
 #include <variant>
 
 using MonkeyName = uint32_t;
@@ -59,6 +61,69 @@ int64_t monkey_number(const std::map<MonkeyName, Monkey> &monkeys, const MonkeyN
 	}
 }
 
+bool tree_contains(const std::map<MonkeyName, Monkey> &monkeys, MonkeyName target, MonkeyName root)
+{
+	if (root == target) {
+		return true;
+	}
+
+	const auto &monkey = monkeys.at(root);
+	if (std::holds_alternative<int64_t>(monkey.v))
+	{
+		return false;
+	}
+
+	const auto [root_monkey1, _, root_monkey2] = std::get<Operation>(monkey.v);
+	return tree_contains(monkeys, target, root_monkey1) || tree_contains(monkeys, target, root_monkey2);
+}
+
+int64_t reverse_calc(const std::map<MonkeyName, Monkey> &monkeys, int64_t value, MonkeyName name)
+{
+	const MonkeyName HUMN = parse_name("humn");
+	if (name == HUMN) {
+		return value;
+	}
+
+	const auto [left_monkey, op, right_monkey] = std::get<Operation>(monkeys.at(name).v);
+	bool left_contains_human = tree_contains(monkeys, HUMN, left_monkey);
+	// we can just calculate the total from the side that doesn't include the number
+	int64_t constant = monkey_number(monkeys, left_contains_human ? right_monkey : left_monkey);
+	switch (op) {
+		case '+':
+			// V = X + C => X = V - C
+			// V = C + X => X = V - C
+			value -= constant;
+			break;
+		case '-':
+			if (left_contains_human) {
+				// V = X - C => X = V + C
+				value += constant;
+			} else {
+				// V = C - X => -X = V - C => X = C - V
+				value = constant - value;
+			}
+			break;
+		case '*':
+			// V = X * C => X = V / C
+			// V = C * X => X = V / C
+			value /= constant;
+			break;
+		case '/':
+			if (left_contains_human) {
+				// V = X / C => X = V * C
+				value *= constant;
+			} else {
+				// V = C / X => V * X = C => X = C / V
+				value = constant / value;
+			}
+			break;
+		default:
+			__builtin_unreachable();
+	}
+
+	return reverse_calc(monkeys, value, left_contains_human ? left_monkey : right_monkey);
+}
+
 int main(int argc, char **argv)
 {
 	if (argc != 2) {
@@ -71,6 +136,24 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	std::string example_input =
+"root: pppw + sjmn\n"
+"dbpl: 5\n"
+"cczh: sllz + lgvd\n"
+"zczc: 2\n"
+"ptdq: humn - dvpt\n"
+"dvpt: 3\n"
+"lfqf: 4\n"
+"humn: 5\n"
+"ljgn: 2\n"
+"sjmn: drzm * dbpl\n"
+"sllz: 4\n"
+"pppw: cczh / lfqf\n"
+"lgvd: ljgn * ptdq\n"
+"drzm: hmdt - zczc\n"
+"hmdt: 32\n";
+	std::stringstream ex_input(example_input);
+
 	std::map<MonkeyName, Monkey> monkeys;
 	for (std::string line; std::getline(input, line); ) {
 		std::string_view line_sv = line;
@@ -78,7 +161,7 @@ int main(int argc, char **argv)
 		std::string_view value = line.substr(6); // skips ': '
 		int64_t number;
 		const auto result = std::from_chars(value.data(), value.data() + value.size(), number);
-		if (result.ec == std::errc()) {
+		if (result.ec == std::errc()) { // no error
 			monkeys.try_emplace(name, name, number);
 		} else {
 			MonkeyName monkey1 = parse_name(value.substr(0, 4));
@@ -88,4 +171,15 @@ int main(int argc, char **argv)
 		}
 	}
 
-	std::cout << "Number yelled by monkey 'root': " << monkey_number(monkeys, parse_name("root")) << '\n';
+	const MonkeyName ROOT = parse_name("root");
+	const MonkeyName HUMN = parse_name("humn");
+	std::cout << "Number yelled by monkey 'root': " << monkey_number(monkeys, ROOT) << '\n';
+
+	const auto [root_monkey1, _, root_monkey2] = std::get<Operation>(monkeys.at(ROOT).v);
+	bool found_human_in_left = tree_contains(monkeys, HUMN, root_monkey1);
+	const MonkeyName target_monkey_subtree = found_human_in_left ? root_monkey2 : root_monkey1;
+	const MonkeyName equation_monkey_subtree = found_human_in_left ? root_monkey1 : root_monkey2;
+	const int64_t target_number = monkey_number(monkeys, target_monkey_subtree);
+
+	std::cout << "Number needed to be yelled: " << reverse_calc(monkeys, target_number, equation_monkey_subtree) << '\n';
+}
