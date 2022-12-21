@@ -1,11 +1,9 @@
 #include <algorithm>
-#include <cassert>
 #include <charconv>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <string_view>
-#include <sstream>
 #include <variant>
 
 using MonkeyName = uint32_t;
@@ -14,6 +12,7 @@ MonkeyName parse_name(const std::string_view n)
 	return n[0] << 24 | n[1] << 16 | n[2] << 8 | n[3];
 }
 
+// debugging
 std::string get_name(MonkeyName monkey)
 {
 	char c1 = (monkey >> 24) & 0xff;
@@ -24,27 +23,16 @@ std::string get_name(MonkeyName monkey)
 }
 
 using Operation = std::tuple<MonkeyName, char, MonkeyName>;
-
-struct Monkey {
-	Monkey(MonkeyName name, int64_t number) : name(name), v(number) {}
-	Monkey(MonkeyName name, Operation op) : name(name), v(op) {}
-	MonkeyName name;
-	std::variant<int64_t, Operation> v;
-};
-
-bool is_number(const std::string_view str)
-{
-	return std::all_of(str.begin(), str.end(), ::isdigit);
-}
+using Monkey = std::variant<int64_t, Operation>;
 
 int64_t monkey_number(const std::map<MonkeyName, Monkey> &monkeys, const MonkeyName monkey)
 {
 	const auto &value = monkeys.at(monkey);
-	if (std::holds_alternative<int64_t>(value.v)) {
-		return std::get<int64_t>(value.v);
+	if (std::holds_alternative<int64_t>(value)) {
+		return std::get<int64_t>(value);
 	}
 
-	auto [monkey1, op, monkey2] = std::get<Operation>(value.v);
+	auto [monkey1, op, monkey2] = std::get<Operation>(value);
 	auto monkey1_num = monkey_number(monkeys, monkey1);
 	auto monkey2_num = monkey_number(monkeys, monkey2);
 	switch (op) {
@@ -68,12 +56,12 @@ bool tree_contains(const std::map<MonkeyName, Monkey> &monkeys, MonkeyName targe
 	}
 
 	const auto &monkey = monkeys.at(root);
-	if (std::holds_alternative<int64_t>(monkey.v))
+	if (std::holds_alternative<int64_t>(monkey))
 	{
 		return false;
 	}
 
-	const auto [root_monkey1, _, root_monkey2] = std::get<Operation>(monkey.v);
+	const auto [root_monkey1, _, root_monkey2] = std::get<Operation>(monkey);
 	return tree_contains(monkeys, target, root_monkey1) || tree_contains(monkeys, target, root_monkey2);
 }
 
@@ -84,7 +72,7 @@ int64_t reverse_calc(const std::map<MonkeyName, Monkey> &monkeys, int64_t value,
 		return value;
 	}
 
-	const auto [left_monkey, op, right_monkey] = std::get<Operation>(monkeys.at(name).v);
+	const auto [left_monkey, op, right_monkey] = std::get<Operation>(monkeys.at(name));
 	bool left_contains_human = tree_contains(monkeys, HUMN, left_monkey);
 	// we can just calculate the total from the side that doesn't include the number
 	int64_t constant = monkey_number(monkeys, left_contains_human ? right_monkey : left_monkey);
@@ -136,24 +124,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	std::string example_input =
-"root: pppw + sjmn\n"
-"dbpl: 5\n"
-"cczh: sllz + lgvd\n"
-"zczc: 2\n"
-"ptdq: humn - dvpt\n"
-"dvpt: 3\n"
-"lfqf: 4\n"
-"humn: 5\n"
-"ljgn: 2\n"
-"sjmn: drzm * dbpl\n"
-"sllz: 4\n"
-"pppw: cczh / lfqf\n"
-"lgvd: ljgn * ptdq\n"
-"drzm: hmdt - zczc\n"
-"hmdt: 32\n";
-	std::stringstream ex_input(example_input);
-
 	std::map<MonkeyName, Monkey> monkeys;
 	for (std::string line; std::getline(input, line); ) {
 		std::string_view line_sv = line;
@@ -162,12 +132,12 @@ int main(int argc, char **argv)
 		int64_t number;
 		const auto result = std::from_chars(value.data(), value.data() + value.size(), number);
 		if (result.ec == std::errc()) { // no error
-			monkeys.try_emplace(name, name, number);
+			monkeys.try_emplace(name, number);
 		} else {
 			MonkeyName monkey1 = parse_name(value.substr(0, 4));
 			char op = value[5];
 			MonkeyName monkey2 = parse_name(value.substr(7));
-			monkeys.try_emplace(name, name, Operation{monkey1, op, monkey2});
+			monkeys.try_emplace(name, Operation{monkey1, op, monkey2});
 		}
 	}
 
@@ -175,7 +145,7 @@ int main(int argc, char **argv)
 	const MonkeyName HUMN = parse_name("humn");
 	std::cout << "Number yelled by monkey 'root': " << monkey_number(monkeys, ROOT) << '\n';
 
-	const auto [root_monkey1, _, root_monkey2] = std::get<Operation>(monkeys.at(ROOT).v);
+	const auto [root_monkey1, _, root_monkey2] = std::get<Operation>(monkeys.at(ROOT));
 	bool found_human_in_left = tree_contains(monkeys, HUMN, root_monkey1);
 	const MonkeyName target_monkey_subtree = found_human_in_left ? root_monkey2 : root_monkey1;
 	const MonkeyName equation_monkey_subtree = found_human_in_left ? root_monkey1 : root_monkey2;
