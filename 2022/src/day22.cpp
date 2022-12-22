@@ -1,4 +1,5 @@
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <variant>
@@ -33,6 +34,25 @@ enum class FacingDir {
 	West,
 	North,
 };
+
+std::ostream &operator<<(std::ostream &os, FacingDir fd)
+{
+	switch (fd) {
+		case FacingDir::East:
+			os << '>';
+			break;
+		case FacingDir::South:
+			os << 'v';
+			break;
+		case FacingDir::West:
+			os << '<';
+			break;
+		case FacingDir::North:
+			os << '^';
+			break;
+	}
+	return os;
+}
 
 enum class TurnDir {
 	Left = -1,
@@ -129,6 +149,27 @@ std::pair<Coord, FacingDir> basic_wrap(const Map &map, Coord pos, FacingDir fd)
 	return {new_pos, fd}; // no change in direction
 }
 
+constexpr int EDGE_LEN = 50;
+
+int get_face(Coord pos)
+{
+	if (EDGE_LEN <= pos.x && pos.x < 2*EDGE_LEN && 0 <= pos.y && pos.y < EDGE_LEN) {
+		return 0; // A
+	} else if (2*EDGE_LEN <= pos.x && pos.x < 3*EDGE_LEN && 0 <= pos.y && pos.y < EDGE_LEN) {
+		return 1; // B
+	} else if (EDGE_LEN <= pos.x && pos.x < 2*EDGE_LEN && EDGE_LEN <= pos.y && pos.y < 2*EDGE_LEN) {
+		return 2; // C
+	} else if (0 <= pos.x && pos.x < EDGE_LEN && 2*EDGE_LEN <= pos.y && pos.y < 3*EDGE_LEN) {
+		return 3; // D
+	} else if (EDGE_LEN <= pos.x && pos.x < 2*EDGE_LEN && 2*EDGE_LEN <= pos.y && pos.y < 3*EDGE_LEN) {
+		return 4; // E
+	} else if (0 <= pos.x && pos.x < EDGE_LEN && 3*EDGE_LEN <= pos.y && pos.y < 4*EDGE_LEN) {
+		return 5; // F
+	} else {
+		__builtin_unreachable();
+	}
+}
+
 // My cube:
 //  AB
 //  C
@@ -159,95 +200,55 @@ std::pair<Coord, FacingDir> basic_wrap(const Map &map, Coord pos, FacingDir fd)
 std::pair<Coord, FacingDir> cube_wrap(const Map &map, Coord pos, FacingDir fd)
 {
 	(void)map;
-	const int EDGE_LEN = 50;
+
 	// determine position on face
 	Coord relative_pos{pos.x % EDGE_LEN, pos.y % EDGE_LEN};
 
-	std::pair<Coord, FacingDir> new_pointdir;
 	// determine which face
+	int face = get_face(pos);
+
 	// map coord to corresponding face
-	if (EDGE_LEN <= pos.x && pos.x < 2*EDGE_LEN && 0 <= pos.y && pos.y < EDGE_LEN) {
-		// A
-		switch (fd) {
-			case FacingDir::North: // => F>
-				new_pointdir = {{0, 3*EDGE_LEN + relative_pos.x}, FacingDir::East};
-				break;
-			case FacingDir::West: // => D>
-				new_pointdir = {{0, 2*EDGE_LEN + (EDGE_LEN - relative_pos.x - 1)}, FacingDir::East};
-				break;
-			default:
-				__builtin_unreachable();
-		}
-	} else if (2*EDGE_LEN <= pos.x && pos.x < 3*EDGE_LEN && 0 <= pos.y && pos.y < EDGE_LEN) {
-		// B
-		switch (fd) {
-			case FacingDir::North: // => F^
-				new_pointdir = {{0 + relative_pos.x, 4*EDGE_LEN - 1}, FacingDir::North};
-				break;
-			case FacingDir::East: // => E<
-				new_pointdir = {{2*EDGE_LEN - 1, 2*EDGE_LEN + (EDGE_LEN - relative_pos.x - 1)}, FacingDir::West};
-				break;
-			case FacingDir::South: // => C<
-				new_pointdir = {{2*EDGE_LEN - 1, EDGE_LEN + relative_pos.x}, FacingDir::West};
-				break;
-			default:
-				__builtin_unreachable();
-		}
-	} else if (50 <= pos.x && pos.x < 100 && 50 <= pos.y && pos.y < 100) {
-		// C
-		switch (fd) {
-			case FacingDir::East: // => B^
-				new_pointdir = {{2*EDGE_LEN + relative_pos.y, EDGE_LEN - 1}, FacingDir::North};
-				break;
-			case FacingDir::West: // => Dv
-				new_pointdir = {{0 + relative_pos.y, 3*EDGE_LEN}, FacingDir::South};
-				break;
-			default:
-				__builtin_unreachable();
-		}
-	} else if (0 <= pos.x && pos.x < 50 && 100 <= pos.y && pos.y < 150) {
-		// D
-		switch (fd) {
-			case FacingDir::North: // => C>
-				new_pointdir = {{EDGE_LEN, EDGE_LEN + relative_pos.x}, FacingDir::East};
-				break;
-			case FacingDir::West: // => A>
-				new_pointdir = {{EDGE_LEN, 0 + (50 - relative_pos.y - 1)}, FacingDir::East};
-				break;
-			default:
-				__builtin_unreachable();
-		}
-	} else if (50 <= pos.x && pos.x < 100 && 100 <= pos.y && pos.y < 150) {
-		// E
-		switch (fd) {
-			case FacingDir::East: // => B<
-				new_pointdir = {{3*EDGE_LEN - 1, 0 + (EDGE_LEN - relative_pos.y - 1)}, FacingDir::West};
-				break;
-			case FacingDir::South: // => F<
-				new_pointdir = {{EDGE_LEN - 1, 3*EDGE_LEN + relative_pos.y}, FacingDir::West};
-				break;
-			default:
-				__builtin_unreachable();
-		}
-	} else if (0 <= pos.x && pos.x < 50 && 150 <= pos.y && pos.y < 200) {
-		// F
-		switch (fd) {
-			case FacingDir::East: // => E^
-				new_pointdir = {{EDGE_LEN + relative_pos.y, 3*EDGE_LEN - 1}, FacingDir::North};
-				break;
-			case FacingDir::South: // => Bv
-				new_pointdir = {{2*EDGE_LEN + relative_pos.y, 0}, FacingDir::South};
-				break;
-			case FacingDir::West: // => Av
-				new_pointdir = {{EDGE_LEN + relative_pos.y, 0}, FacingDir::South};
-				break;
-			default:
-				__builtin_unreachable();
-		}
-	} else {
-		__builtin_unreachable(); // hopefully.
-	}
+	std::map<std::pair<int, FacingDir>, std::function<std::pair<Coord, FacingDir>(Coord)>> face_mappings {
+		// A^ => F>
+		{{0, FacingDir::North}, [](Coord rp) { return std::make_pair(Coord{0, 3*EDGE_LEN + rp.x}, FacingDir::East); } },
+		// A< => D>
+		{{0, FacingDir::West}, [](Coord rp) { return std::make_pair(Coord{0, 2*EDGE_LEN + (EDGE_LEN - rp.x - 1)}, FacingDir::East); } },
+
+		// B^ => F^
+		{{1, FacingDir::North}, [](Coord rp) { return std::make_pair(Coord{0 + rp.x, 4*EDGE_LEN - 1}, FacingDir::North); } },
+		// B> => E<
+		{{1, FacingDir::East}, [](Coord rp) { return std::make_pair(Coord{2*EDGE_LEN - 1, 2*EDGE_LEN + (EDGE_LEN - rp.x - 1)}, FacingDir::West); } },
+		// Bv => C<
+		{{1, FacingDir::South}, [](Coord rp) { return std::make_pair(Coord{2*EDGE_LEN - 1, EDGE_LEN + rp.x}, FacingDir::West); } },
+
+		// C> => B^
+		{{2, FacingDir::East}, [](Coord rp) { return std::make_pair(Coord{2*EDGE_LEN + rp.y, EDGE_LEN - 1}, FacingDir::North); } },
+		// C< => Dv
+		{{2, FacingDir::West}, [](Coord rp) { return std::make_pair(Coord{0 + rp.y, 3*EDGE_LEN}, FacingDir::South); } },
+
+		// D^ => C>
+		{{3, FacingDir::North}, [](Coord rp) { return std::make_pair(Coord{EDGE_LEN, EDGE_LEN + rp.x}, FacingDir::East); } },
+		// D< => A>
+		{{3, FacingDir::West}, [](Coord rp) { return std::make_pair(Coord{EDGE_LEN, 0 + (50 - rp.y - 1)}, FacingDir::East); } },
+
+		// E> => B<
+		{{4, FacingDir::East}, [](Coord rp) { return std::make_pair(Coord{3*EDGE_LEN - 1, 0 + (EDGE_LEN - rp.y - 1)}, FacingDir::West); } },
+		// Ev => F<
+		{{4, FacingDir::South}, [](Coord rp) { return std::make_pair(Coord{EDGE_LEN - 1, 3*EDGE_LEN + rp.y}, FacingDir::West); } },
+
+		// F> => E^
+		{{5, FacingDir::East}, [](Coord rp) { return std::make_pair(Coord{EDGE_LEN + rp.y, 3*EDGE_LEN - 1}, FacingDir::North); } },
+		// Fv => Bv
+		{{5, FacingDir::South}, [](Coord rp) { return std::make_pair(Coord{2*EDGE_LEN + rp.y, 0}, FacingDir::South); } },
+		// F< => Av
+		{{5, FacingDir::West}, [](Coord rp) { return std::make_pair(Coord{EDGE_LEN + rp.y, 0}, FacingDir::South); } },
+	};
+
+	auto face_map = face_mappings.at({face, fd});
+	std::pair<Coord, FacingDir> new_pointdir = face_map(relative_pos);
+	std::cout << pos << ' ' << fd << " => " << new_pointdir.first << ' ' << new_pointdir.second << '\n';
 	return new_pointdir;
+
 }
 
 template <typename F>
