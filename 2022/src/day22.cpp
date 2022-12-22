@@ -1,11 +1,8 @@
 #include <fstream>
-#include <functional>
 #include <iostream>
 #include <map>
 #include <variant>
 #include <vector>
-
-#include <sstream>
 
 struct Coord {
 	int x, y;
@@ -149,8 +146,20 @@ std::pair<Coord, FacingDir> basic_wrap(const Map &map, Coord pos, FacingDir fd)
 	return {new_pos, fd}; // no change in direction
 }
 
+// My cube:
+//  AB
+//  C
+// DE
+// F
+
 constexpr int EDGE_LEN = 50;
 
+// A 50 <= x < 100, 0 <= y < 50
+// B 100 <= x < 150, 0 <= y < 50
+// C 50 <= x < 100, 50 <= y < 100
+// D 0 <= x < 50, 100 <= y < 150
+// E 50 <= x < 100, 100 <= y < 150
+// F 0 <= x < 50, 150 <= y < 200
 int get_face(Coord pos)
 {
 	if (EDGE_LEN <= pos.x && pos.x < 2*EDGE_LEN && 0 <= pos.y && pos.y < EDGE_LEN) {
@@ -170,84 +179,76 @@ int get_face(Coord pos)
 	}
 }
 
-// My cube:
-//  AB
-//  C
-// DE
-// F
-//
-// A 50 <= x < 100, 0 <= y < 50
-// B 100 <= x < 150, 0 <= y < 50
-// C 50 <= x < 100, 50 <= y < 100
-// D 0 <= x < 50, 100 <= y < 150
-// E 50 <= x < 100, 100 <= y < 150
-// F 0 <= x < 50, 150 <= y < 200
-//
-// A^ => F>
-// A< => D>
-// B^ => F^
-// B> => E<
-// Bv => C<
-// C< => Dv
-// C> => B^
-// D^ => C>
-// D< => A>
-// E> => B<
-// Ev => F<
-// F> => E^
-// Fv => Bv
-// F< => Av
 std::pair<Coord, FacingDir> cube_wrap(const Map &map, Coord pos, FacingDir fd)
 {
 	(void)map;
 
-	// determine position on face
-	Coord relative_pos{pos.x % EDGE_LEN, pos.y % EDGE_LEN};
+	// determine relative position on face
+	Coord rp{pos.x % EDGE_LEN, pos.y % EDGE_LEN};
 
 	// determine which face
 	int face = get_face(pos);
-
-	// map coord to corresponding face
-	std::map<std::pair<int, FacingDir>, std::function<std::pair<Coord, FacingDir>(Coord)>> face_mappings {
-		// A^ => F>
-		{{0, FacingDir::North}, [](Coord rp) { return std::make_pair(Coord{0, 3*EDGE_LEN + rp.x}, FacingDir::East); } },
-		// A< => D>
-		{{0, FacingDir::West}, [](Coord rp) { return std::make_pair(Coord{0, 2*EDGE_LEN + (EDGE_LEN - rp.x - 1)}, FacingDir::East); } },
-
-		// B^ => F^
-		{{1, FacingDir::North}, [](Coord rp) { return std::make_pair(Coord{0 + rp.x, 4*EDGE_LEN - 1}, FacingDir::North); } },
-		// B> => E<
-		{{1, FacingDir::East}, [](Coord rp) { return std::make_pair(Coord{2*EDGE_LEN - 1, 2*EDGE_LEN + (EDGE_LEN - rp.x - 1)}, FacingDir::West); } },
-		// Bv => C<
-		{{1, FacingDir::South}, [](Coord rp) { return std::make_pair(Coord{2*EDGE_LEN - 1, EDGE_LEN + rp.x}, FacingDir::West); } },
-
-		// C> => B^
-		{{2, FacingDir::East}, [](Coord rp) { return std::make_pair(Coord{2*EDGE_LEN + rp.y, EDGE_LEN - 1}, FacingDir::North); } },
-		// C< => Dv
-		{{2, FacingDir::West}, [](Coord rp) { return std::make_pair(Coord{0 + rp.y, 3*EDGE_LEN}, FacingDir::South); } },
-
-		// D^ => C>
-		{{3, FacingDir::North}, [](Coord rp) { return std::make_pair(Coord{EDGE_LEN, EDGE_LEN + rp.x}, FacingDir::East); } },
-		// D< => A>
-		{{3, FacingDir::West}, [](Coord rp) { return std::make_pair(Coord{EDGE_LEN, 0 + (50 - rp.y - 1)}, FacingDir::East); } },
-
-		// E> => B<
-		{{4, FacingDir::East}, [](Coord rp) { return std::make_pair(Coord{3*EDGE_LEN - 1, 0 + (EDGE_LEN - rp.y - 1)}, FacingDir::West); } },
-		// Ev => F<
-		{{4, FacingDir::South}, [](Coord rp) { return std::make_pair(Coord{EDGE_LEN - 1, 3*EDGE_LEN + rp.y}, FacingDir::West); } },
-
-		// F> => E^
-		{{5, FacingDir::East}, [](Coord rp) { return std::make_pair(Coord{EDGE_LEN + rp.y, 3*EDGE_LEN - 1}, FacingDir::North); } },
-		// Fv => Bv
-		{{5, FacingDir::South}, [](Coord rp) { return std::make_pair(Coord{2*EDGE_LEN + rp.y, 0}, FacingDir::South); } },
-		// F< => Av
-		{{5, FacingDir::West}, [](Coord rp) { return std::make_pair(Coord{EDGE_LEN + rp.y, 0}, FacingDir::South); } },
+	const std::vector<Coord> base_coords {
+		{  EDGE_LEN,          0}, // A
+		{2*EDGE_LEN,          0}, // B
+		{  EDGE_LEN,   EDGE_LEN}, // C
+		{  0,        2*EDGE_LEN}, // D
+		{  EDGE_LEN, 2*EDGE_LEN}, // E
+		{  0,        3*EDGE_LEN}, // F
 	};
 
-	auto face_map = face_mappings.at({face, fd});
-	std::pair<Coord, FacingDir> new_pointdir = face_map(relative_pos);
-	std::cout << pos << ' ' << fd << " => " << new_pointdir.first << ' ' << new_pointdir.second << '\n';
-	return new_pointdir;
+	// get resulting face and direction
+	const std::map<std::pair<int, FacingDir>, std::pair<int, FacingDir>> resulting_facedir {
+		{{0, FacingDir::North}, {5, FacingDir::East} }, // A^ => F>
+		{{0, FacingDir::West},  {3, FacingDir::East} }, // A< => D>
+
+		{{1, FacingDir::North}, {5, FacingDir::North} }, // B^ => F^
+		{{1, FacingDir::East},  {4, FacingDir::West} },  // B> => E<
+		{{1, FacingDir::South}, {2, FacingDir::West} },  // Bv => C<
+
+		{{2, FacingDir::East}, {1, FacingDir::North} }, // C> => B^
+		{{2, FacingDir::West}, {3, FacingDir::South} }, // C< => Dv
+
+		{{3, FacingDir::North}, {2, FacingDir::East} }, // D^ => C>
+		{{3, FacingDir::West},  {0, FacingDir::East} }, // D< => A>
+
+		{{4, FacingDir::East},  {1, FacingDir::West} }, // E> => B<
+		{{4, FacingDir::South}, {5, FacingDir::West} }, // Ev => F<
+
+		{{5, FacingDir::East},  {4, FacingDir::North} }, // F> => E^
+		{{5, FacingDir::South}, {1, FacingDir::South} }, // Fv => Bv
+		{{5, FacingDir::West},  {0, FacingDir::South} }, // F< => Av
+	};
+
+	// get relative transformation
+	// Obviously we only need a single one of these values, but this is easier.
+	const std::map<std::pair<int, FacingDir>, Coord> relative_translate {
+		{{0, FacingDir::North}, Coord{0, rp.x} }, // A^ => F>
+		{{0, FacingDir::West},  Coord{0, EDGE_LEN - rp.y - 1 } }, // A< => D>
+
+		{{1, FacingDir::North}, Coord{rp.x, EDGE_LEN - 1} }, // B^ => F^
+		{{1, FacingDir::East},  Coord{EDGE_LEN - 1, EDGE_LEN - rp.y - 1} },  // B> => E<
+		{{1, FacingDir::South}, Coord{EDGE_LEN - 1, rp.x} },  // Bv => C<
+
+		{{2, FacingDir::East}, Coord{rp.y, EDGE_LEN - 1} }, // C> => B^
+		{{2, FacingDir::West}, Coord{rp.y, 0} }, // C< => Dv
+
+		{{3, FacingDir::North}, Coord{0, rp.x} }, // D^ => C>
+		{{3, FacingDir::West},  Coord{0, EDGE_LEN - rp.y - 1} }, // D< => A>
+
+		{{4, FacingDir::East},  Coord{EDGE_LEN - 1, EDGE_LEN - rp.y - 1} }, // E> => B<
+		{{4, FacingDir::South}, Coord{EDGE_LEN - 1, rp.x} }, // Ev => F<
+
+		{{5, FacingDir::East},  Coord{rp.y, EDGE_LEN - 1} }, // F> => E^
+		{{5, FacingDir::South}, Coord{rp.x, 0} }, // Fv => Bv
+		{{5, FacingDir::West},  Coord{rp.y, 0} }, // F< => Av
+	};
+
+	// Put it all together
+	const auto &[new_face, new_dir] = resulting_facedir.at({face, fd});
+	const Coord new_pos = base_coords[new_face] + relative_translate.at({face, fd});
+	//std::cout << pos << ' ' << fd << " => " << new_pos << ' ' << new_dir << '\n';
+	return {new_pos, new_dir};
 
 }
 
@@ -304,30 +305,11 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	std::string example_input =
-"        ...#\n"
-"        .#..\n"
-"        #...\n"
-"        ....\n"
-"...#.......#\n"
-"........#...\n"
-"..#....#....\n"
-"..........#.\n"
-"        ...#....\n"
-"        .....#..\n"
-"        .#......\n"
-"        ......#.\n"
-"\n"
-"10R5L5R10L4R5L5\n";
-	std::stringstream ex_input(example_input);
-
 	const auto &[map, instructions] = parse_input(input);
 
-//	for (const auto &i : instructions) std::cout << i << ' ';
-//	std::cout << '\n';
-
+	// P1
 	{
-		Coord pos = map.begin()->first; // map ordering means that "top left" coord is first
+		Coord pos = map.begin()->first; // map ordering means that "top left" coord is the start point
 		FacingDir dir = FacingDir::East;
 		for (const auto &ins : instructions) {
 			if (std::holds_alternative<TurnDir>(ins)) {
@@ -342,9 +324,9 @@ int main(int argc, char **argv)
 		std::cout << "Password with basic wrapping: " << get_password(pos, dir) << '\n';
 	}
 
-
+	// P2
 	{
-		Coord pos = map.begin()->first; // map ordering means that "top left" coord is first
+		Coord pos = map.begin()->first; // map ordering means that "top left" coord is the start point
 		FacingDir dir = FacingDir::East;
 		for (const auto &ins : instructions) {
 			if (std::holds_alternative<TurnDir>(ins)) {
