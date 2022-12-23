@@ -17,6 +17,11 @@ struct Coord {
 		return this->x < other.x;
 	}
 
+	bool operator==(const Coord &other) const
+	{
+		return this->x == other.x && this->y == other.y;
+	}
+
 	Coord operator+(const Coord &other) const
 	{
 		return {this->x + other.x, this->y + other.y};
@@ -158,4 +163,13 @@ int main(int argc, char **argv)
 	int total_area = (max.x - min.x + 1) * (max.y - min.y + 1);
 	int num_free_spaces = total_area - elves.size();
 	std::cout << "Number of total free spaces after 10 rounds: " << num_free_spaces << '\n';
+
+	int round = 10;
+	for (; ; round++) {
+		std::set<Coord> new_elves = play_round(elves, round);
+		if (new_elves == elves) break;
+		elves = std::move(new_elves);
+	}
+
+	std::cout << "Number of rounds needed until the elves stop moving: " << round + 1 << '\n';
 }
