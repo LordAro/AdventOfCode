@@ -11,7 +11,7 @@ Some complete, some (mostly) not
 * 2019 - Rust
 * 2020 - Nim*
 * 2021 - Zig
-* 2022 - C++(17)
+* 2022 - C++(17)*
 
 \* Complete
 
