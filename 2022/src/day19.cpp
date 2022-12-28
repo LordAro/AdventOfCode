@@ -187,7 +187,7 @@ int main(int argc, char **argv)
 	int total_quality_level = 0;
 	for (const auto &blueprint : blueprints) {
 		int max_geodes = run_blueprint<P1_TIME_LIMIT>(blueprint);
-		std::cout << "Blueprint " << blueprint.num << ": " << max_geodes << " geodes. Quality level: " << max_geodes * blueprint.num << '\n';
+//		std::cout << "Blueprint " << blueprint.num << ": " << max_geodes << " geodes. Quality level: " << max_geodes * blueprint.num << '\n';
 		total_quality_level += max_geodes * blueprint.num;
 	}
 	std::cout << "Total quality level of all blueprints after 24 minutes: " << total_quality_level << '\n';
@@ -198,7 +198,7 @@ int main(int argc, char **argv)
 	for (size_t i = 0; i < 3; i++) {
 		const auto &blueprint = blueprints[i];
 		int max_geodes = run_blueprint<P2_TIME_LIMIT>(blueprint);
-		std::cout << "Blueprint " << blueprint.num << ": " << max_geodes << " geodes.\n";
+//		std::cout << "Blueprint " << blueprint.num << ": " << max_geodes << " geodes.\n";
 		geode_multiply *= max_geodes;
 	}
 	std::cout << "Total geode multiplication of first 3 blueprints after 32 minutes: " << geode_multiply << '\n';
