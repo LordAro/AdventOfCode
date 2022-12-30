@@ -36,7 +36,7 @@ fn main() {
     if env::args().len() != 2 {
         panic!("Incorrect number of arguments provided\n");
     }
-    let mut input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap());
+    let mut input = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap());
 
     let mut initial = "".to_string();
     let _ = input.read_to_string(&mut initial);

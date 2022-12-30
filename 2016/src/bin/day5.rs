@@ -12,7 +12,7 @@ fn main() {
         panic!("Incorrect number of arguments provided\n");
     }
 
-    let mut input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap());
+    let mut input = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap());
 
     let mut keystr = String::new();
     let _ = input.read_line(&mut keystr);
@@ -29,7 +29,7 @@ fn main() {
         hasher.result(&mut output);
         let first_five = output[0] as i32 + output[1] as i32 + (output[2] >> 4) as i32;
         if first_five == 0 {
-            let sixth = output[2] & 0xFF;
+            let sixth = output[2];
             // 1st password
             if password.len() < 8 {
                 password.push(char::from_digit(sixth as u32, 16).unwrap());

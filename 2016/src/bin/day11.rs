@@ -123,7 +123,7 @@ fn main() {
     if env::args().len() != 2 {
         panic!("Incorrect number of arguments provided\n");
     }
-    let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap());
+    let input = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap());
 
     // take first 2 characters
     let generator_re = Regex::new(r"([a-z]{2})[a-z]+ generator").unwrap();

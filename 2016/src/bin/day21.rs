@@ -23,7 +23,7 @@ fn scramble(operations: &[String], input: String) -> String {
         } else if operation.starts_with("rotate") {
             if operation.starts_with("rotate based") {
                 let chr = operation.chars().last().unwrap();
-                let chr_ix = input.find(chr).unwrap() as usize;
+                let chr_ix = input.find(chr).unwrap();
                 let rotate_n = (chr_ix + 1 + usize::from(chr_ix >= 4)) % chars.len();
                 chars.rotate_right(rotate_n);
             } else if operation.starts_with("rotate left") {
@@ -81,7 +81,7 @@ fn unscramble(operations: &[String], input: String) -> String {
             if operation.starts_with("rotate based") {
                 // TODO
                 let chr = operation.chars().last().unwrap();
-                let chr_ix = input.find(chr).unwrap() as usize;
+                let chr_ix = input.find(chr).unwrap();
                 // XXX big ol' hack, assumes string length of 8.
                 // There's definitely a better way to do this, but I can't figure it out
                 // mapping:
@@ -146,7 +146,7 @@ fn main() {
     }
 
     // One liner heyo
-    let operations = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+    let operations = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
         .map(|l| l.unwrap())
         .collect::<Vec<_>>();

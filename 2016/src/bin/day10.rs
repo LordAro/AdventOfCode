@@ -16,7 +16,7 @@ fn main() {
         panic!("Incorrect number of arguments provided\n");
     }
 
-    let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap());
+    let input = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap());
 
     let initial_re = Regex::new(r"value ([0-9]+) goes to bot ([0-9]+)").unwrap();
     let give_re = Regex::new(

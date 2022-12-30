@@ -13,7 +13,7 @@ fn main() {
     //    .filter(|t| t[0] + t[1] > t[2] && t[0] + t[2] > t[1] && t[1] + t[2] > t[0])
     //    .count();
 
-    let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap());
+    let input = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap());
 
     let triangles = input.lines().map(|l| {
         l.unwrap()

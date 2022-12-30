@@ -57,7 +57,7 @@ fn main() {
     if env::args().len() != 2 {
         panic!("Incorrect number of arguments provided\n");
     }
-    let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+    let input = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
         .next()
         .unwrap()

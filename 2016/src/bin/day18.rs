@@ -15,7 +15,6 @@ fn build_next_line(line: &str) -> String {
             [_, _, _] => '.',
             _ => unreachable!(),
         })
-        .map(|b| b as char)
         .collect();
 }
 
@@ -24,7 +23,7 @@ fn main() {
         panic!("Incorrect number of arguments provided\n");
     }
 
-    let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+    let input = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
         .next()
         .unwrap()

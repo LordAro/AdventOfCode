@@ -15,7 +15,7 @@ fn main() {
     if env::args().len() != 2 {
         panic!("Incorrect number of arguments provided\n");
     }
-    let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap());
+    let input = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap());
 
     let mut grid = vec![vec![' '; 50]; 6]; // 50x6
 

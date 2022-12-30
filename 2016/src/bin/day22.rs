@@ -115,7 +115,7 @@ fn main() {
         Regex::new(r".*-x([0-9]+)-y([0-9]+)\s+([0-9]+)T\s+([0-9]+)T\s+([0-9]+)T\s+([0-9]+)%")
             .unwrap();
 
-    let initial_filesystem = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+    let initial_filesystem = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
         .filter_map(|li| {
             let l = li.unwrap();

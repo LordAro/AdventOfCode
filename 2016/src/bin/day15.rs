@@ -50,7 +50,7 @@ fn main() {
     if env::args().len() != 2 {
         panic!("Incorrect number of arguments provided\n");
     }
-    let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap());
+    let input = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap());
 
     let disc_re =
         Regex::new(r"Disc #[0-9]+ has ([0-9]+) positions; at time=0, it is at position ([0-9]+).")

@@ -34,7 +34,7 @@ fn main() {
         panic!("Incorrect number of arguments provided\n");
     }
 
-    let num_elves = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+    let num_elves = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
         .next()
         .unwrap()
