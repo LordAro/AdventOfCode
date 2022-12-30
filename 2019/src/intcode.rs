@@ -4,6 +4,7 @@ use std::convert::{TryFrom, TryInto};
 type Word = isize;
 
 #[derive(PartialEq, Debug)]
+#[allow(clippy::upper_case_acronyms)]
 enum Op {
     Add = 1,
     Mul,
@@ -77,7 +78,7 @@ impl TryFrom<Word> for Mode {
 fn get_op_mode(op: Word, offset: usize) -> Mode {
     ((op / (10_isize.pow(offset as u32 + 1))) % 10)
         .try_into()
-        .expect(&format!("Invalid op mode: {}", op))
+        .unwrap_or_else(|_| panic!("Invalid op mode: {}", op))
 }
 
 pub struct Machine {
@@ -106,9 +107,9 @@ impl Machine {
 
     pub fn run(&mut self) -> RunRetVal {
         loop {
-            let res = self.step();
-            if res.is_some() {
-                return res.unwrap();
+            let maybe_result = self.step();
+            if let Some(result) = maybe_result {
+                return result;
             }
         }
     }
@@ -126,7 +127,7 @@ impl Machine {
         let cur_op = self.program[self.ptr];
         let opcode: Op = (cur_op % 100)
             .try_into()
-            .expect(&format!("Invalid opcode {}@{}", cur_op, self.ptr));
+            .unwrap_or_else(|_| panic!("Invalid opcode {}@{}", cur_op, self.ptr));
         let mut jumped = false;
         let mut output = None;
         //println!(
@@ -167,11 +168,11 @@ impl Machine {
             }
             Op::LessThan => {
                 let lt = self.get_value(cur_op, 1) < self.get_value(cur_op, 2);
-                self.set_value(cur_op, 3, if lt { 1 } else { 0 });
+                self.set_value(cur_op, 3, isize::from(lt));
             }
             Op::Equal => {
                 let eq = self.get_value(cur_op, 1) == self.get_value(cur_op, 2);
-                self.set_value(cur_op, 3, if eq { 1 } else { 0 });
+                self.set_value(cur_op, 3, isize::from(eq));
             }
             Op::SetRel => {
                 self.relative_base += self.get_value(cur_op, 1);
@@ -183,11 +184,7 @@ impl Machine {
         if !jumped {
             self.ptr += opcode.size();
         }
-        if output.is_some() {
-            return Some(RunRetVal::Output(output.unwrap()));
-        } else {
-            return None;
-        }
+        output.map(RunRetVal::Output)
     }
 
     fn set_value(&mut self, cur_op: Word, offset: usize, value: Word) {

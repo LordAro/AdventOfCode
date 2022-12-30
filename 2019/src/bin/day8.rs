@@ -11,7 +11,7 @@ const WIDTH: usize = 25;
 fn main() {
     let image_data: Vec<_> = BufReader::new(
         File::open(
-            &env::args()
+            env::args()
                 .nth(1)
                 .expect("Incorrect number of arguments provided"),
         )
@@ -31,11 +31,8 @@ fn main() {
         .min_by_key(|l| l.iter().filter(|&&c| c == BLACK).count())
         .unwrap();
 
-    let checksum = min_zero_layer.into_iter().filter(|&&c| c == WHITE).count()
-        * min_zero_layer
-            .into_iter()
-            .filter(|&&c| c == TRANSPARENT)
-            .count();
+    let checksum = min_zero_layer.iter().filter(|&&c| c == WHITE).count()
+        * min_zero_layer.iter().filter(|&&c| c == TRANSPARENT).count();
     println!("Image checksum: {}", checksum);
 
     let output_image = image_layers

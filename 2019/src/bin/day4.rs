@@ -33,7 +33,7 @@ fn has_max_two_adjacent(ds: &(u32, u32, u32, u32, u32, u32)) -> bool {
 fn main() -> io::Result<()> {
     let input_str: Vec<u32> = BufReader::new(
         File::open(
-            &env::args()
+            env::args()
                 .nth(1)
                 .expect("Incorrect number of arguments provided"),
         )

@@ -33,12 +33,7 @@ fn get_route<T: BufRead>(reader: &mut std::io::Lines<T>) -> Vec<(char, i32)> {
         .unwrap()
         .unwrap()
         .split(',')
-        .map(|s| {
-            (
-                s.chars().next().unwrap(),
-                i32::from_str_radix(&s[1..], 10).unwrap(),
-            )
-        })
+        .map(|s| (s.chars().next().unwrap(), s[1..].parse::<i32>().unwrap()))
         .collect()
 }
 
@@ -55,7 +50,7 @@ fn get_change_dir(dir: char) -> Option<(i32, i32)> {
 fn main() -> io::Result<()> {
     let mut reader = BufReader::new(
         File::open(
-            &env::args()
+            env::args()
                 .nth(1)
                 .expect("Incorrect number of arguments provided"),
         )

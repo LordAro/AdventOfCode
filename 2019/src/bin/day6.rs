@@ -20,9 +20,9 @@ fn get_orbits<'a>(map: &'a HashMap<String, String>, key: &'a str) -> Vec<&'a str
 }
 
 fn main() {
-    let orbits: Vec<(String, String)> = BufReader::new(
+    let orbit_map: HashMap<String, String> = BufReader::new(
         File::open(
-            &env::args()
+            env::args()
                 .nth(1)
                 .expect("Incorrect number of arguments provided"),
         )
@@ -35,7 +35,6 @@ fn main() {
     })
     .collect();
 
-    let orbit_map: HashMap<_, _> = orbits.into_iter().collect();
     let number_of_orbits: usize = orbit_map.keys().map(|k| count_orbits(&orbit_map, k)).sum();
     println!("Number of orbits: {}", number_of_orbits);
 

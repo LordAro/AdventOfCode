@@ -8,7 +8,7 @@ use advent_of_code::intcode;
 fn main() {
     let program_str = BufReader::new(
         File::open(
-            &env::args()
+            env::args()
                 .nth(1)
                 .expect("Incorrect number of arguments provided"),
         )
@@ -33,13 +33,7 @@ fn main() {
             intcode::RunRetVal::Halted => break,
             intcode::RunRetVal::NeedsInput => {
                 p1 = true;
-                if ball_x < paddle_x {
-                    mach.push_input(-1);
-                } else if ball_x > paddle_x {
-                    mach.push_input(1);
-                } else {
-                    mach.push_input(0);
-                }
+                mach.push_input(ball_x.cmp(&paddle_x) as isize);
             }
             intcode::RunRetVal::Output(x) => {
                 let y = mach.run_until_output().unwrap();

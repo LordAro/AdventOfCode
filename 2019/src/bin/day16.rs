@@ -35,8 +35,7 @@ fn next_phase(signal: &Vec<i32>) -> Vec<i32> {
 // Thanks Alan
 fn next_phase_n2(signal: &Vec<i32>, message_offset: usize) -> Vec<i32> {
     assert!(message_offset >= signal.len() / 2);
-    let mut new_signal = Vec::with_capacity(signal.len());
-    new_signal.resize(signal.len(), 0);
+    let mut new_signal = vec![0; signal.len()];
     let mut sum = 0;
     for i in (message_offset..signal.len()).rev() {
         sum += signal[i];
@@ -53,7 +52,7 @@ fn repeat_10000(signal: Vec<i32>) -> Vec<i32> {
 fn main() {
     let input_signal: Vec<_> = BufReader::new(
         File::open(
-            &env::args()
+            env::args()
                 .nth(1)
                 .expect("Incorrect number of arguments provided"),
         )
@@ -80,12 +79,12 @@ fn main() {
 
     let message_offset = input_signal.iter().take(7).fold(0, |acc, x| acc * 10 + x) as usize;
     let repeated_signal: Vec<i32> = repeat_10000(input_signal);
-    let phase_100 = (0..100).fold(repeated_signal.clone(), |signal, _| {
+    let phase_100 = (0..100).fold(repeated_signal, |signal, _| {
         next_phase_n2(&signal, message_offset)
     });
     let phase_100_message: String = phase_100
         .iter()
-        .skip(message_offset as usize)
+        .skip(message_offset)
         .take(8)
         .map(|d| char::from_digit(*d as u32, 10).unwrap())
         .collect();
@@ -123,7 +122,7 @@ mod tests {
         ];
         let message_offset = input_signal.iter().take(7).fold(0, |acc, x| acc * 10 + x) as usize;
         let repeated_signal = repeat_10000(input_signal);
-        let phase_100 = (0..100).fold(repeated_signal.clone(), |signal, _| {
+        let phase_100 = (0..100).fold(repeated_signal, |signal, _| {
             next_phase_n2(&signal, message_offset)
         });
         assert_eq!(

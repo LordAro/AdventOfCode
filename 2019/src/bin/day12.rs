@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -41,26 +42,20 @@ fn lcm(a: isize, b: isize) -> isize {
 
 fn get_new_velocity(m1: Moon, m2: Moon) -> Coord {
     Coord {
-        x: if m1.pos.x > m2.pos.x {
-            m1.velo.x - 1
-        } else if m1.pos.x < m2.pos.x {
-            m1.velo.x + 1
-        } else {
-            m1.velo.x
+        x: match m1.pos.x.cmp(&m2.pos.x) {
+            Ordering::Greater => m1.velo.x - 1,
+            Ordering::Less => m1.velo.x + 1,
+            Ordering::Equal => m1.velo.x,
         },
-        y: if m1.pos.y > m2.pos.y {
-            m1.velo.y - 1
-        } else if m1.pos.y < m2.pos.y {
-            m1.velo.y + 1
-        } else {
-            m1.velo.y
+        y: match m1.pos.y.cmp(&m2.pos.y) {
+            Ordering::Greater => m1.velo.y - 1,
+            Ordering::Less => m1.velo.y + 1,
+            Ordering::Equal => m1.velo.y,
         },
-        z: if m1.pos.z > m2.pos.z {
-            m1.velo.z - 1
-        } else if m1.pos.z < m2.pos.z {
-            m1.velo.z + 1
-        } else {
-            m1.velo.z
+        z: match m1.pos.z.cmp(&m2.pos.z) {
+            Ordering::Greater => m1.velo.z - 1,
+            Ordering::Less => m1.velo.z + 1,
+            Ordering::Equal => m1.velo.z,
         },
     }
 }
@@ -83,8 +78,8 @@ impl Moon {
     }
 }
 
-fn get_next_state(previous: &Vec<Moon>) -> Vec<Moon> {
-    let mut moons = previous.clone();
+fn get_next_state(previous: &[Moon]) -> Vec<Moon> {
+    let mut moons = previous.to_owned();
     for moon_idxs in (0..moons.len()).combinations(2) {
         // Ick. Improve this?
         let mut m1 = moons[moon_idxs[0]];
@@ -103,7 +98,7 @@ fn get_next_state(previous: &Vec<Moon>) -> Vec<Moon> {
 fn main() {
     let initial_state: Vec<_> = BufReader::new(
         File::open(
-            &env::args()
+            env::args()
                 .nth(1)
                 .expect("Incorrect number of arguments provided"),
         )
@@ -118,7 +113,7 @@ fn main() {
         let y = caps.get(2).unwrap().as_str().parse().unwrap();
         let z = caps.get(3).unwrap().as_str().parse().unwrap();
         Moon {
-            pos: Coord { x: x, y: y, z: z },
+            pos: Coord { x, y, z },
             velo: Coord { x: 0, y: 0, z: 0 },
         }
     })
@@ -144,7 +139,7 @@ fn main() {
         .flat_map(|m| vec![m.pos.z, m.velo.z])
         .collect();
 
-    let mut moons = initial_state.clone();
+    let mut moons = initial_state;
     let mut i = 0;
     loop {
         let xs: Vec<_> = moons.iter().flat_map(|m| vec![m.pos.x, m.velo.x]).collect();

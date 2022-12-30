@@ -22,7 +22,7 @@ const SCAFFOLD: isize = '#' as isize;
 const SPACE: isize = '.' as isize;
 const ROBOT: isize = '^' as isize;
 
-fn is_intersection(pos: Coord, scaffolds: &Vec<Vec<isize>>) -> bool {
+fn is_intersection(pos: Coord, scaffolds: &[Vec<isize>]) -> bool {
     get_adjacents(pos)
         .iter()
         .all(|&(x, y)| scaffolds[y][x] == SCAFFOLD)
@@ -81,8 +81,7 @@ fn get_next_pos(pos: Coord, dir: usize, scaffolds: &Vec<Vec<isize>>) -> Option<C
 
 fn next_left(pos: Coord, dir: usize, scaffolds: &Vec<Vec<isize>>) -> isize {
     let left_pos = get_next_pos(pos, (dir + 3) % 4, scaffolds);
-    if left_pos.is_some() {
-        let left_pos = left_pos.unwrap();
+    if let Some(left_pos) = left_pos {
         scaffolds[left_pos.1][left_pos.0]
     } else {
         SPACE
@@ -91,8 +90,7 @@ fn next_left(pos: Coord, dir: usize, scaffolds: &Vec<Vec<isize>>) -> isize {
 
 fn next_right(pos: Coord, dir: usize, scaffolds: &Vec<Vec<isize>>) -> isize {
     let right_pos = get_next_pos(pos, (dir + 1) % 4, scaffolds);
-    if right_pos.is_some() {
-        let right_pos = right_pos.unwrap();
+    if let Some(right_pos) = right_pos {
         scaffolds[right_pos.1][right_pos.0]
     } else {
         SPACE
@@ -124,7 +122,7 @@ fn compress(sequence: &Vec<String>) -> (Vec<String>, Vec<String>, Vec<String>, V
 fn main() {
     let program_str = BufReader::new(
         File::open(
-            &env::args()
+            env::args()
                 .nth(1)
                 .expect("Incorrect number of arguments provided"),
         )

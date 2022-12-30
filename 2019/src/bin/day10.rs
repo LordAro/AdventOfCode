@@ -14,7 +14,7 @@ fn gcd(a: isize, b: isize) -> isize {
 fn main() {
     let asteroids: HashSet<_> = BufReader::new(
         File::open(
-            &env::args()
+            env::args()
                 .nth(1)
                 .expect("Incorrect number of arguments provided"),
         )
@@ -72,10 +72,7 @@ fn main() {
         let normalised = (target.0 - source.0, target.1 - source.1);
         let gcd = gcd(normalised.0, normalised.1);
         let angle = (normalised.0 / gcd, normalised.1 / gcd);
-        asteroid_angles
-            .entry(angle)
-            .or_insert(Vec::new())
-            .push(target);
+        asteroid_angles.entry(angle).or_default().push(target);
     });
 
     asteroid_angles.iter_mut().for_each(|(_, val)| {

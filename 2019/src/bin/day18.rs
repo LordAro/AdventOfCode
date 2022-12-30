@@ -75,9 +75,9 @@ fn open_adjacents(pos: Coord, map: &Vec<Vec<State>>) -> Vec<Coord> {
 }
 
 fn print_map(positions: &Vec<Vec<State>>) {
-    for j in 0..positions.len() {
-        for i in 0..positions[j].len() {
-            match positions[j][i] {
+    for row in positions {
+        for cell in row {
+            match cell {
                 State::Clear => print!("."),
                 State::Wall => print!("#"),
                 State::Me => print!("@"),
@@ -127,7 +127,6 @@ fn tsp(
     remaining_keys: &HashMap<Coord, char>,
     keys_so_far: &HashSet<char>,
     doors: &HashMap<Coord, char>,
-    map: &Vec<Vec<State>>,
     route_cache: &HashMap<(Coord, Coord), Vec<Coord>>,
 ) -> impl Iterator<Item = Coord> {
     let mut shortest_route = vec![];
@@ -137,7 +136,7 @@ fn tsp(
         if route
             .iter()
             .filter_map(|c| {
-                if doors.contains_key(&c) {
+                if doors.contains_key(c) {
                     Some(doors[c])
                 } else {
                     None
@@ -157,7 +156,6 @@ fn tsp(
             &new_remaining_keys,
             &new_keys_so_far,
             doors,
-            map,
             route_cache,
         );
         route.extend(recurse);
@@ -177,13 +175,13 @@ fn build_route_cache(
 ) -> HashMap<(Coord, Coord), Vec<Coord>> {
     let mut route_cache: HashMap<(Coord, Coord), Vec<Coord>> = HashMap::new();
     for &key1 in keys.keys() {
-        let route = get_route(start, key1, &map);
+        let route = get_route(start, key1, map);
         route_cache.insert((start, key1), route);
         for &key2 in keys.keys() {
             if key1 == key2 {
                 continue;
             }
-            let route = get_route(key1, key2, &map);
+            let route = get_route(key1, key2, map);
             route_cache.insert((key1, key2), route);
         }
     }
@@ -193,7 +191,7 @@ fn build_route_cache(
 fn main() {
     let input_lines: Vec<_> = BufReader::new(
         File::open(
-            &env::args()
+            env::args()
                 .nth(1)
                 .expect("Incorrect number of arguments provided"),
         )
@@ -208,7 +206,7 @@ fn main() {
 
     let route_cache = build_route_cache(&keys, me, &map);
 
-    let final_route: Vec<_> = tsp(me, &keys, &HashSet::new(), &doors, &map, &route_cache).collect();
+    let final_route: Vec<_> = tsp(me, &keys, &HashSet::new(), &doors, &route_cache).collect();
     println!("Route length: {} {:?}", final_route.len(), final_route);
 }
 

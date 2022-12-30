@@ -5,7 +5,7 @@ use std::io::{BufRead, BufReader};
 
 type ReactionMap<'a> = HashMap<&'a str, (u64, Vec<(&'a str, u64)>)>;
 
-fn parse_reactions<'a, T: AsRef<str>>(input_str: &'a [T]) -> ReactionMap {
+fn parse_reactions<T: AsRef<str>>(input_str: &[T]) -> ReactionMap {
     input_str
         .iter()
         .map(|s| {
@@ -15,14 +15,14 @@ fn parse_reactions<'a, T: AsRef<str>>(input_str: &'a [T]) -> ReactionMap {
                 .unwrap()
                 .split(", ")
                 .map(|s| {
-                    let mut ins = s.split(" ");
+                    let mut ins = s.split(' ');
                     let in_n = ins.next().unwrap().parse::<u64>().unwrap();
                     let in_name = ins.next().unwrap();
                     (in_name, in_n)
                 })
                 .collect::<Vec<_>>();
 
-            let mut out = in_out.next().unwrap().split(" ");
+            let mut out = in_out.next().unwrap().split(' ');
             let output_n = out.next().unwrap().parse::<u64>().unwrap();
             let output_name = out.next().unwrap();
             (output_name, (output_n, inputs))
@@ -91,7 +91,7 @@ fn get_fuel_count(reactions: &ReactionMap) -> u64 {
 fn main() {
     let input_str: Vec<_> = BufReader::new(
         File::open(
-            &env::args()
+            env::args()
                 .nth(1)
                 .expect("Incorrect number of arguments provided"),
         )

@@ -76,14 +76,14 @@ fn get_route(source: Coord, target: Coord, known_positions: &HashMap<Coord, Stat
 
         for adj in get_adjacents(current).iter() {
             let dist = g_score[&current] + 1;
-            if &dist < g_score.get(&adj).unwrap_or(&isize::max_value()) {
+            if &dist < g_score.get(adj).unwrap_or(&isize::max_value()) {
                 came_from.insert(*adj, current);
                 g_score.insert(*adj, dist);
                 open_set.push_back(*adj);
             }
         }
     }
-    print_positions(&known_positions);
+    print_positions(known_positions);
     panic!("Unable to find route between {:?} and {:?}", source, target);
 }
 
@@ -108,7 +108,7 @@ fn get_dir(a: Coord, b: Coord) -> usize {
 fn main() {
     let program_str = BufReader::new(
         File::open(
-            &env::args()
+            env::args()
                 .nth(1)
                 .expect("Incorrect number of arguments provided"),
         )

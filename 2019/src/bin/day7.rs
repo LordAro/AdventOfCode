@@ -13,7 +13,7 @@ use advent_of_code::intcode;
 fn main() -> io::Result<()> {
     let program_str = BufReader::new(
         File::open(
-            &env::args()
+            env::args()
                 .nth(1)
                 .expect("Incorrect number of arguments provided"),
         )

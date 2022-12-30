@@ -24,13 +24,13 @@ fn paint(program: &[isize], start_tile: isize) -> HashMap<(isize, isize), isize>
         };
         mach.push_input(*painted_tiles.get(&cur_pos).unwrap_or(&0));
     }
-    return painted_tiles;
+    painted_tiles
 }
 
 fn main() {
     let program_str = BufReader::new(
         File::open(
-            &env::args()
+            env::args()
                 .nth(1)
                 .expect("Incorrect number of arguments provided"),
         )
