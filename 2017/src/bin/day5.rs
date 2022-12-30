@@ -6,7 +6,7 @@ fn main() {
     if env::args().len() != 2 {
         panic!("Incorrect number of arguments provided");
     }
-    let mut input: Vec<i32> = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+    let mut input: Vec<i32> = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
         .map(|l| l.unwrap().parse().unwrap())
         .collect();

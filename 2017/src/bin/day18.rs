@@ -22,10 +22,10 @@ impl<'a> Machine<'a> {
     ) -> Machine<'a> {
         Machine {
             pc: 0,
-            program: program,
+            program,
             regs: HashMap::new(),
-            sender: sender,
-            receiver: receiver,
+            sender,
+            receiver,
         }
     }
 
@@ -35,7 +35,7 @@ impl<'a> Machine<'a> {
     }
 
     fn get_val_c(&mut self, val: char) -> i64 {
-        if val.is_digit(10) {
+        if val.is_ascii_digit() {
             val.to_digit(10).unwrap() as i64
         } else {
             *self.regs.entry(val).or_insert(0)
@@ -66,9 +66,8 @@ impl<'a> Machine<'a> {
                 "mul" => *self.regs.entry(ins.1).or_insert(0) *= val,
                 "mod" => *self.regs.entry(ins.1).or_insert(0) %= val,
                 "rcv" => {
-                    let res = self.receiver.recv_timeout(Duration::from_millis(1));
-                    if res.is_ok() {
-                        *self.regs.entry(ins.1).or_insert(0) = res.unwrap();
+                    if let Ok(res) = self.receiver.recv_timeout(Duration::from_millis(1)) {
+                        *self.regs.entry(ins.1).or_insert(0) = res;
                     } else {
                         return send_count;
                     }
@@ -82,7 +81,7 @@ impl<'a> Machine<'a> {
             }
             self.pc += 1;
         }
-        return send_count;
+        send_count
     }
 }
 
@@ -92,7 +91,7 @@ fn main() {
     }
 
     let input: Vec<(String, char, String)> =
-        BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+        BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
             .lines()
             .map(|l| {
                 let v: Vec<_> = l
@@ -122,14 +121,11 @@ fn main() {
             machine.run();
         });
     }
-    loop {
-        let mut last_val = 0;
-        while let Ok(val) = receiver1.recv_timeout(Duration::from_millis(1)) {
-            last_val = val;
-        }
-        println!("Recovered sound: {}", last_val);
-        break;
+    let mut last_val = 0;
+    while let Ok(val) = receiver1.recv_timeout(Duration::from_millis(1)) {
+        last_val = val;
     }
+    println!("Recovered sound: {}", last_val);
 
     let (sender3, receiver3) = mpsc::channel();
     let (sender4, receiver4) = mpsc::channel();

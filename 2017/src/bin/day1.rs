@@ -6,7 +6,7 @@ fn main() {
     if env::args().len() != 2 {
         panic!("Incorrect number of arguments provided");
     }
-    let mut input = match File::open(&env::args().nth(1).unwrap()) {
+    let mut input = match File::open(env::args().nth(1).unwrap()) {
         Err(why) => panic!("Could not open input file: {}\n", why),
         Ok(fh) => fh,
     };

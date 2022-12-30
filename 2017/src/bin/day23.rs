@@ -13,7 +13,7 @@ impl<'a> Machine<'a> {
     fn new(program: &'a Vec<(String, char, String)>) -> Machine<'a> {
         Machine {
             pc: 0,
-            program: program,
+            program,
             regs: HashMap::new(),
         }
     }
@@ -24,7 +24,7 @@ impl<'a> Machine<'a> {
     }
 
     fn get_val_c(&mut self, val: char) -> i64 {
-        if val.is_digit(10) {
+        if val.is_ascii_digit() {
             val.to_digit(10).unwrap() as i64
         } else {
             *self.regs.entry(val).or_insert(0)
@@ -57,7 +57,7 @@ impl<'a> Machine<'a> {
             }
             self.pc += 1;
         }
-        return mul_count;
+        mul_count
     }
 }
 
@@ -67,7 +67,7 @@ fn main() {
     }
 
     let input: Vec<(String, char, String)> =
-        BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+        BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
             .lines()
             .map(|l| {
                 let v: Vec<_> = l

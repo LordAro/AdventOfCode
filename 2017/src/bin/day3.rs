@@ -6,7 +6,7 @@ fn main() {
     if env::args().len() != 2 {
         panic!("Incorrect number of arguments provided");
     }
-    let input: usize = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+    let input: usize = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
         .next()
         .unwrap()
@@ -15,16 +15,14 @@ fn main() {
         .unwrap();
 
     let abslimit = (1usize..)
-        .skip_while(|x| x % 2 == 0 || x.pow(2) < input) // Corner powers are odd
-        .next()
+        .find(|x| !(x % 2 == 0 || x.pow(2) < input)) // Corner powers are odd
         .unwrap();
     let limit = (abslimit - 1) / 2;
 
     // OEIS A039823 a(n) = ceiling( (n^2 + n + 2)/4 )
     let centralpoint = (1usize..)
         .map(|n| ((n.pow(2) + n + 2) as f64 / 4.0).ceil() as usize)
-        .skip_while(|n| *n < input - limit)
-        .next()
+        .find(|n| *n >= input - limit)
         .unwrap();
 
     println!("Manhattan distance: {}", limit + input - centralpoint);

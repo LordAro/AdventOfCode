@@ -51,7 +51,7 @@ fn main() {
         panic!("Incorrect number of arguments provided\n");
     }
 
-    let input: Vec<Vec<_>> = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+    let input: Vec<Vec<_>> = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
         .map(|l| l.unwrap().chars().collect())
         .collect();
@@ -59,9 +59,9 @@ fn main() {
     // Initial setup
     let middle = ((input.len() as isize + 1) / 2) - 1;
     let mut grid = HashMap::new();
-    for y in 0..input.len() {
-        for x in 0..input[y].len() {
-            grid.insert((x as isize - middle, middle - y as isize), input[y][x]);
+    for (y, row) in input.iter().enumerate() {
+        for (x, cell) in row.iter().enumerate() {
+            grid.insert((x as isize - middle, middle - y as isize), *cell);
         }
     }
     let mut grid2 = grid.clone();

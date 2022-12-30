@@ -7,7 +7,7 @@ fn knot_hash(input: &[u8]) -> Vec<u8> {
     let mut pos: usize = 0;
 
     let additional = vec![17, 31, 73, 47, 23];
-    let input2 = [input.clone(), &additional[..]].concat();
+    let input2 = [input, &additional[..]].concat();
 
     for r in 0..64 {
         for (skip, &ins) in input2.iter().enumerate() {
@@ -37,7 +37,7 @@ fn flood_fill(grid: &Vec<Vec<u8>>, x: usize, y: usize, filled: &mut Vec<(usize, 
     if grid[x][y] != 1 {
         return;
     }
-    if filled.iter().find(|&&t| t == (x, y)).is_some() {
+    if filled.iter().any(|&t| t == (x, y)) {
         return;
     }
     filled.push((x, y));
@@ -65,7 +65,7 @@ fn main() {
     if env::args().len() != 2 {
         panic!("Incorrect number of arguments provided\n");
     }
-    let input: String = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+    let input: String = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
         .next()
         .unwrap()
@@ -92,12 +92,7 @@ fn main() {
     let mut groups: Vec<Vec<(usize, usize)>> = Vec::new();
     for i in 0..grid.len() {
         for j in 0..grid[i].len() {
-            if groups
-                .iter()
-                .flat_map(|v| v.iter())
-                .find(|&&t| t == (i, j))
-                .is_some()
-            {
+            if groups.iter().flat_map(|v| v.iter()).any(|&t| t == (i, j)) {
                 continue;
             }
             if grid[i][j] != 1 {

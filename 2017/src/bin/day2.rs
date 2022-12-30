@@ -9,7 +9,7 @@ fn main() {
     if env::args().len() != 2 {
         panic!("Incorrect number of arguments provided");
     }
-    let input = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+    let input = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
         .map(|l| {
             l.unwrap()
@@ -28,12 +28,13 @@ fn main() {
     let sum2: i32 = input
         .iter()
         .map(|l| {
-            l.iter()
-                .combinations(2)
-                .filter(|v| *v.iter().max().unwrap() % *v.iter().min().unwrap() == 0)
-                .flat_map(|v| v) // flatten
-                .cloned()
-                .collect::<Vec<_>>()
+            itertools::Itertools::flatten(
+                l.iter()
+                    .combinations(2)
+                    .filter(|v| *v.iter().max().unwrap() % *v.iter().min().unwrap() == 0),
+            )
+            .cloned()
+            .collect::<Vec<_>>()
         })
         .map(|v| *v.iter().max().unwrap() / *v.iter().min().unwrap())
         .sum();

@@ -71,32 +71,31 @@ fn main() {
     ))
     .unwrap();
 
-    let mut input: Vec<Particle> =
-        BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
-            .lines()
-            .map(|l| {
-                let line = l.unwrap();
-                let caps = particle_re.captures(&line).unwrap();
+    let mut input: Vec<Particle> = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
+        .lines()
+        .map(|l| {
+            let line = l.unwrap();
+            let caps = particle_re.captures(&line).unwrap();
 
-                Particle {
-                    pos: Point {
-                        x: caps.get(1).unwrap().as_str().parse().unwrap(),
-                        y: caps.get(2).unwrap().as_str().parse().unwrap(),
-                        z: caps.get(3).unwrap().as_str().parse().unwrap(),
-                    },
-                    vel: Point {
-                        x: caps.get(4).unwrap().as_str().parse().unwrap(),
-                        y: caps.get(5).unwrap().as_str().parse().unwrap(),
-                        z: caps.get(6).unwrap().as_str().parse().unwrap(),
-                    },
-                    acc: Point {
-                        x: caps.get(7).unwrap().as_str().parse().unwrap(),
-                        y: caps.get(8).unwrap().as_str().parse().unwrap(),
-                        z: caps.get(9).unwrap().as_str().parse().unwrap(),
-                    },
-                }
-            })
-            .collect();
+            Particle {
+                pos: Point {
+                    x: caps.get(1).unwrap().as_str().parse().unwrap(),
+                    y: caps.get(2).unwrap().as_str().parse().unwrap(),
+                    z: caps.get(3).unwrap().as_str().parse().unwrap(),
+                },
+                vel: Point {
+                    x: caps.get(4).unwrap().as_str().parse().unwrap(),
+                    y: caps.get(5).unwrap().as_str().parse().unwrap(),
+                    z: caps.get(6).unwrap().as_str().parse().unwrap(),
+                },
+                acc: Point {
+                    x: caps.get(7).unwrap().as_str().parse().unwrap(),
+                    y: caps.get(8).unwrap().as_str().parse().unwrap(),
+                    z: caps.get(9).unwrap().as_str().parse().unwrap(),
+                },
+            }
+        })
+        .collect();
 
     let max_acc_pos = input
         .iter()
@@ -120,10 +119,7 @@ fn main() {
             .collect();
 
         // Get rid of particles in collision points
-        input = input
-            .into_iter()
-            .filter(|&part| !collisions.contains(&part.pos))
-            .collect();
+        input.retain(|part| !collisions.contains(&part.pos));
 
         // Update particles
         input = input

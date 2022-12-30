@@ -14,7 +14,7 @@ fn main() {
     if env::args().len() != 2 {
         panic!("Incorrect number of arguments provided");
     }
-    let input: Vec<Vec<_>> = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+    let input: Vec<Vec<_>> = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
         .map(|l| {
             l.unwrap()
@@ -29,16 +29,11 @@ fn main() {
 
     let mut groups: HashMap<_, HashSet<_>> = HashMap::new();
     for n in 0..input.len() {
-        if groups
-            .iter()
-            .flat_map(|(_, v)| v.iter())
-            .find(|&&x| x == n)
-            .is_some()
-        {
+        if groups.iter().flat_map(|(_, v)| v.iter()).any(|&x| x == n) {
             continue;
         }
         groups.insert(n, HashSet::new());
-        get_linked(&input, n, &mut groups.get_mut(&n).unwrap());
+        get_linked(&input, n, groups.get_mut(&n).unwrap());
     }
 
     println!("Group 0 size: {}", groups.get(&0).unwrap().len());

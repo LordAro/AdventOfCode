@@ -6,7 +6,7 @@ fn main() {
     if env::args().len() != 2 {
         panic!("Incorrect number of arguments provided\n");
     }
-    let input_str: String = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+    let input_str: String = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
         .next()
         .unwrap()
@@ -30,7 +30,7 @@ fn main() {
     let num_rounds = 64;
     let additional = vec![17, 31, 73, 47, 23];
 
-    let input2 = [&input_str.as_bytes(), &additional[..]].concat();
+    let input2 = [input_str.as_bytes(), &additional[..]].concat();
     rope = (0..256).collect(); // reset
     pos = 0;
 

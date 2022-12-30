@@ -7,7 +7,7 @@ fn main() {
         panic!("Incorrect number of arguments provided\n");
     }
 
-    let input: Vec<Vec<char>> = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+    let input: Vec<Vec<char>> = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
         .map(|l| l.unwrap().chars().collect())
         .collect();

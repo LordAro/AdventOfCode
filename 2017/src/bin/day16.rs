@@ -8,10 +8,10 @@ fn spin_transform<T: Clone>(input: &Vec<T>, idx: usize) -> Vec<T> {
     [&input[(input.len() - idx)..], &input[..(input.len() - idx)]].concat()
 }
 
-fn swap_transform<T: Clone>(input: &Vec<T>, a: usize, b: usize) -> Vec<T> {
-    let mut output = input.clone();
+fn swap_transform<T: Clone>(input: &[T], a: usize, b: usize) -> Vec<T> {
+    let mut output = input.to_owned();
     output.swap(a, b);
-    return output;
+    output
 }
 
 fn main() {
@@ -22,7 +22,7 @@ fn main() {
     let mut programs: Vec<_> = "abcdefghijklmnop".chars().collect();
 
     let input: Vec<(char, u8, u8)> =
-        BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+        BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
             .lines()
             .next()
             .unwrap()
@@ -47,7 +47,7 @@ fn main() {
                     }
                     'p' => {
                         let ps: Vec<_> = ins_it.collect();
-                        op1 = *ps.get(0).unwrap() as u8;
+                        op1 = *ps.first().unwrap() as u8;
                         op2 = *ps.get(2).unwrap() as u8;
                     }
                     _ => panic!("Unrecognised instruction"),

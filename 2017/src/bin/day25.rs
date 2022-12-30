@@ -11,7 +11,7 @@ fn main() {
         panic!("Incorrect number of arguments provided\n");
     }
 
-    let mut input_buf = File::open(&env::args().nth(1).unwrap()).unwrap();
+    let mut input_buf = File::open(env::args().nth(1).unwrap()).unwrap();
     let mut input = String::new();
     let _ = input_buf.read_to_string(&mut input).unwrap();
 
@@ -38,7 +38,7 @@ fn main() {
         .unwrap()
         .as_str()
         .chars()
-        .nth(0)
+        .next()
         .unwrap();
 
     let checksum_length: usize = checksum_re
@@ -52,13 +52,13 @@ fn main() {
 
     let mut state_mach = HashMap::new();
     for cap in state_re.captures_iter(&input) {
-        let key = cap.get(1).unwrap().as_str().chars().nth(0).unwrap();
+        let key = cap.get(1).unwrap().as_str().chars().next().unwrap();
         let val0: usize = cap.get(2).unwrap().as_str().parse().unwrap();
         let dir0 = cap.get(3).unwrap().as_str();
-        let next0 = cap.get(4).unwrap().as_str().chars().nth(0).unwrap();
+        let next0 = cap.get(4).unwrap().as_str().chars().next().unwrap();
         let val1: usize = cap.get(5).unwrap().as_str().parse().unwrap();
         let dir1 = cap.get(6).unwrap().as_str();
-        let next1 = cap.get(7).unwrap().as_str().chars().nth(0).unwrap();
+        let next1 = cap.get(7).unwrap().as_str().chars().next().unwrap();
         state_mach.insert(key, [(val0, dir0, next0), (val1, dir1, next1)]);
     }
 

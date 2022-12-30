@@ -7,7 +7,7 @@ fn main() {
         panic!("Incorrect number of arguments provided");
     }
     let input: Vec<(usize, usize)> =
-        BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+        BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
             .lines()
             .map(|l| {
                 let v: Vec<_> = l.unwrap().split(": ").map(|e| e.parse().unwrap()).collect();

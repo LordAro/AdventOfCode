@@ -24,7 +24,7 @@ fn get_child_weights(map: &HashMap<String, (i32, Vec<String>)>, item: &str) -> V
         .unwrap()
         .1
         .iter()
-        .map(|c| (c.clone(), get_total_weight(&map, c)))
+        .map(|c| (c.clone(), get_total_weight(map, c)))
         .collect()
 }
 
@@ -32,7 +32,7 @@ fn main() {
     if env::args().len() != 2 {
         panic!("Incorrect number of arguments provided");
     }
-    let input: Vec<_> = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+    let input: Vec<_> = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
         .map(|l| l.unwrap())
         .collect();
@@ -66,10 +66,10 @@ fn main() {
     }
 
     let mut root = "";
-    for (key, _) in &map {
+    for key in map.keys() {
         let mut has_parents = false;
-        for (_, val) in &map {
-            if val.1.iter().find(|s| s.as_str() == key) != None {
+        for val in map.values() {
+            if val.1.iter().any(|s| s.as_str() == key) {
                 has_parents = true;
                 break;
             }
@@ -109,15 +109,13 @@ fn main() {
     // find parent
     let p_node = map
         .iter()
-        .filter(|&(_, v)| v.1.iter().find(|s| s.as_str() == node) != None)
-        .next()
-        .unwrap()
-        .clone();
+        .find(|&(_, v)| v.1.iter().any(|s| s.as_str() == node))
+        .unwrap();
     let other_weight = (p_node.1)
         .1
         .iter()
-        .filter(|&ref c| c.as_str() != node.as_str())
-        .map(|c| get_total_weight(&map, &c))
+        .filter(|c| c.as_str() != node.as_str())
+        .map(|c| get_total_weight(&map, c))
         .next()
         .unwrap();
 

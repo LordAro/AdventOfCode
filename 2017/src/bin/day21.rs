@@ -45,24 +45,24 @@ fn flip_h(input: &Pattern) -> Pattern {
 fn variants(input: &Pattern) -> Vec<Pattern> {
     let base = input.clone();
     let rot90 = if input.len() == 2 {
-        rot2_ccw(&rot2_ccw(&rot2_ccw(&input)))
+        rot2_ccw(&rot2_ccw(&rot2_ccw(input)))
     } else {
-        rot3_ccw(&rot3_ccw(&rot3_ccw(&input)))
+        rot3_ccw(&rot3_ccw(&rot3_ccw(input)))
     };
     let rot180 = if input.len() == 2 {
-        rot2_ccw(&rot2_ccw(&input))
+        rot2_ccw(&rot2_ccw(input))
     } else {
-        rot3_ccw(&rot3_ccw(&input))
+        rot3_ccw(&rot3_ccw(input))
     };
     let rot270 = if input.len() == 2 {
-        rot2_ccw(&input)
+        rot2_ccw(input)
     } else {
-        rot3_ccw(&input)
+        rot3_ccw(input)
     };
     let rots = [base, rot90, rot180, rot270];
     itertools::Itertools::flatten(
-        rots.into_iter()
-            .map(|&ref r| vec![r.clone(), flip_h(r), flip_v(&r), flip_v(&flip_h(&r))]),
+        rots.iter()
+            .map(|r| vec![r.clone(), flip_h(r), flip_v(r), flip_v(&flip_h(r))]),
     )
     .unique()
     .collect()
@@ -73,7 +73,7 @@ fn main() {
         panic!("Incorrect number of arguments provided\n");
     }
 
-    let input: Vec<(_, _)> = BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+    let input: Vec<(_, _)> = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
         .map(|l| {
             let line = l.unwrap();
@@ -112,9 +112,9 @@ fn main() {
                 let new_val = input
                     .iter()
                     .filter(|&&(ref k, _)| {
-                        k.len() == subgrid.len() && light_total(&k) == light_total(&subgrid)
+                        k.len() == subgrid.len() && light_total(k) == light_total(&subgrid)
                     })
-                    .find(|&&(ref k, _)| variants(&k).iter().any(|p| *p == subgrid))
+                    .find(|&&(ref k, _)| variants(k).iter().any(|p| *p == subgrid))
                     .unwrap()
                     .1
                     .clone();

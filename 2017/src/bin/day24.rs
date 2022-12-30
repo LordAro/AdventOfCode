@@ -2,17 +2,17 @@ use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-fn score(input: &Vec<(usize, usize)>) -> usize {
+fn score(input: &[(usize, usize)]) -> usize {
     input.iter().fold(0, |acc, &(a, b)| acc + a + b)
 }
 
-fn find_longest(input: &Vec<(usize, usize)>, n: usize) -> Vec<(usize, usize)> {
+fn find_longest(input: &[(usize, usize)], n: usize) -> Vec<(usize, usize)> {
     input
         .iter()
         .enumerate()
         .filter(|&(_, &(a, b))| a == n || b == n)
         .map(|(i, &p)| {
-            let mut input_cl = input.clone();
+            let mut input_cl = input.to_owned();
             input_cl.swap_remove(i);
             let other = if p.0 == n { p.1 } else { p.0 };
             let mut v = find_longest(&input_cl, other);
@@ -20,16 +20,16 @@ fn find_longest(input: &Vec<(usize, usize)>, n: usize) -> Vec<(usize, usize)> {
             v
         })
         .max_by(|a, b| a.len().cmp(&b.len()).then(score(a).cmp(&score(b))))
-        .unwrap_or(Vec::new())
+        .unwrap_or_default()
 }
 
-fn find_strongest(input: &Vec<(usize, usize)>, n: usize) -> Vec<(usize, usize)> {
+fn find_strongest(input: &[(usize, usize)], n: usize) -> Vec<(usize, usize)> {
     input
         .iter()
         .enumerate()
         .filter(|&(_, &(a, b))| a == n || b == n)
         .map(|(i, &p)| {
-            let mut input_cl = input.clone();
+            let mut input_cl = input.to_owned();
             input_cl.swap_remove(i);
             let other = if p.0 == n { p.1 } else { p.0 };
             let mut v = find_strongest(&input_cl, other);
@@ -37,7 +37,7 @@ fn find_strongest(input: &Vec<(usize, usize)>, n: usize) -> Vec<(usize, usize)> 
             v
         })
         .max_by_key(|v| score(v))
-        .unwrap_or(Vec::new())
+        .unwrap_or_default()
 }
 
 fn main() {
@@ -46,7 +46,7 @@ fn main() {
     }
 
     let input: Vec<(usize, usize)> =
-        BufReader::new(File::open(&env::args().nth(1).unwrap()).unwrap())
+        BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
             .lines()
             .map(|l| {
                 let v: Vec<_> = l.unwrap().split('/').map(|n| n.parse().unwrap()).collect();

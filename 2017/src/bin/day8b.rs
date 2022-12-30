@@ -45,7 +45,7 @@ fn process(input: Vec<Vec<String>>) -> (i32, i32) {
     });
 
     let largest = map.iter().max_by(|&(_, v1), &(_, v2)| v1.cmp(v2)).unwrap();
-    return (*largest.1, abs_largest);
+    (*largest.1, abs_largest)
 }
 
 fn main() {
