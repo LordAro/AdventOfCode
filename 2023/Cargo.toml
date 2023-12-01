@@ -1,0 +1,6 @@
+[package]
+name = "advent_of_code"
+version = "2023.1.0"
+authors = ["Charles Pigott <charlespigott@googlemail.com>"]
+
+[dependencies]
