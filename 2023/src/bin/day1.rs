@@ -13,38 +13,24 @@ fn main() -> io::Result<()> {
             .map(|l| l.unwrap().parse().unwrap())
             .collect();
 
-    let raw_calibration_values: Vec<&str> = vec![
-        //        "1abc2",
-        //        "pqr3stu8vwx",
-        //        "a1b2c3d4e5f",
-        //        "treb7uchet",
-        "two1nine",
-        "eightwothree",
-        "abcone2threexyz",
-        "xtwone3four",
-        "4nineeightseven2",
-        "zoneight234",
-        "7pqrstsixteen",
-    ];
-
-    //let calibration_values: Vec<_> = raw_calibration_values
-    //    .iter()
-    //    .map(|r| {
-    //        r.chars()
-    //            .find(|c| c.is_digit(10))
-    //            .unwrap()
-    //            .to_digit(10)
-    //            .unwrap()
-    //            * 10
-    //            + r.chars()
-    //                .rfind(|c| c.is_digit(10))
-    //                .unwrap()
-    //                .to_digit(10)
-    //                .unwrap()
-    //    })
-    //    .collect();
-    //let calibration_sum: u32 = calibration_values.iter().sum();
-    //println!("Calibration value sum: {}", calibration_sum);
+    let calibration_values: Vec<_> = raw_calibration_values
+        .iter()
+        .map(|r| {
+            r.chars()
+                .find(|c| c.is_digit(10))
+                .unwrap()
+                .to_digit(10)
+                .unwrap()
+                * 10
+                + r.chars()
+                    .rfind(|c| c.is_digit(10))
+                    .unwrap()
+                    .to_digit(10)
+                    .unwrap()
+        })
+        .collect();
+    let calibration_sum: u32 = calibration_values.iter().sum();
+    println!("Calibration value sum: {}", calibration_sum);
 
     let calibration_values_with_words: Vec<_> = raw_calibration_values
         .iter()
@@ -57,19 +43,18 @@ fn main() -> io::Result<()> {
             let digit_matches: Vec<_> = digits
                 .iter()
                 .chain(words.iter())
-                .filter_map(|digit| r.find(digit).map(|idx| (idx, digit)))
-                .map(|(idx, digit)| {
+                .map(|digit| r.match_indices(digit)).flatten()
+                .map(|(idx, digit_str)| {
                     let integer = digits
                         .iter()
-                        .position(|d| d == digit)
-                        .or(words.iter().position(|d| d == digit))
+                        .position(|&d| d == digit_str)
+                        .or(words.iter().position(|&d| d == digit_str))
                         .unwrap()
                         + 1; // array index to number
                     (idx, integer)
                 })
                 .collect();
 
-            println!("{:?} {:?}", r, digit_matches);
 
             let first_digit = digit_matches.iter().min_by_key(|&(idx, _)| idx).unwrap().1;
             let last_digit = digit_matches.iter().max_by_key(|&(idx, _)| idx).unwrap().1;
