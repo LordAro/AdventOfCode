@@ -20,14 +20,17 @@ fn get_calibration_value(digits: &[&str], line: &str) -> u32 {
 }
 
 fn main() -> io::Result<()> {
-    if env::args().len() != 2 {
-        panic!("Incorrect number of arguments provided");
-    }
-    let raw_calibration_values: Vec<String> =
-        BufReader::new(File::open(env::args().nth(1).unwrap()).expect("Could not open input file"))
-            .lines()
-            .map(|l| l.unwrap().parse().unwrap())
-            .collect();
+    let raw_calibration_values: Vec<String> = BufReader::new(
+        File::open(
+            env::args()
+                .nth(1)
+                .expect("Incorrect number of arguments provided"),
+        )
+        .expect("Could not open input file"),
+    )
+    .lines()
+    .map(|l| l.unwrap().parse().unwrap())
+    .collect();
 
     let p1_digits: &[_] = &["1", "2", "3", "4", "5", "6", "7", "8", "9"];
     let calibration_sum: u32 = raw_calibration_values
