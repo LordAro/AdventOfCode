@@ -10,7 +10,7 @@ struct Coord {
     y: usize,
 }
 
-fn get_adjacent_coords(c: Coord, num: u32) -> Vec<Coord> {
+fn get_adjacent_coords(c: &Coord, num: &u32) -> Vec<Coord> {
     let num_digits = num.ilog10() as usize + 1;
     let mut ret = vec![];
 
@@ -66,7 +66,7 @@ fn get_adjacent_coords(c: Coord, num: u32) -> Vec<Coord> {
 }
 
 fn main() -> io::Result<()> {
-    let input_data: Vec<String> = BufReader::new(
+    let input_data: Vec<Vec<u8>> = BufReader::new(
         File::open(
             env::args()
                 .nth(1)
@@ -75,7 +75,7 @@ fn main() -> io::Result<()> {
         .expect("Could not open input file"),
     )
     .lines()
-    .map(|l| l.unwrap().parse().unwrap())
+    .map(|l| l.unwrap().bytes().collect())
     .collect();
 
     let numbers: Vec<(Coord, u32)> = input_data
@@ -85,7 +85,7 @@ fn main() -> io::Result<()> {
             // Convert the line into an enumerated (idx, char) vector
             // Then split on digit boundaries (and throw away all the empties)
             // Then reparse the digits into a number along with the coord of the first digit
-            let enumerated_line = line.chars().enumerate().collect::<Vec<_>>();
+            let enumerated_line = line.iter().enumerate().collect::<Vec<_>>();
             enumerated_line
                 .split(|(_, c)| !c.is_ascii_digit())
                 .filter(|&arr| !arr.is_empty())
@@ -93,31 +93,28 @@ fn main() -> io::Result<()> {
                     (
                         Coord { x: arr[0].0, y },
                         arr.iter()
-                            .map(|(_, c)| c)
-                            .collect::<String>()
-                            .parse::<u32>()
-                            .unwrap(),
+                            .fold(0u32, |acc, &(_, c)| acc * 10 + (c - b'0') as u32),
                     )
                 })
                 .collect::<Vec<_>>()
         })
         .collect();
 
-    let symbols: HashMap<Coord, char> = input_data
+    let symbols: HashMap<Coord, u8> = input_data
         .iter()
         .enumerate()
         .flat_map(|(y, line)| {
-            line.chars()
+            line.iter()
                 .enumerate()
-                .filter(|(_, c)| *c != '.' && !c.is_ascii_digit())
-                .map(move |(x, c)| (Coord { x, y }, c))
+                .filter(|(_, &c)| c != b'.' && !c.is_ascii_digit())
+                .map(move |(x, &c)| (Coord { x, y }, c))
         })
         .collect();
 
     let engine_id_sum: u32 = numbers
         .iter()
-        .filter(|(c, num)| {
-            get_adjacent_coords(*c, *num)
+        .filter(|&(c, num)| {
+            get_adjacent_coords(c, num)
                 .iter()
                 .any(|coord| symbols.contains_key(coord))
         })
@@ -129,11 +126,11 @@ fn main() -> io::Result<()> {
     let potential_gear_coords: Vec<_> = numbers
         .iter()
         .flat_map(|(c, num)| {
-            get_adjacent_coords(*c, *num)
+            get_adjacent_coords(c, num)
                 .iter()
-                .filter(|coord| symbols.get(coord).is_some_and(|&s| s == '*'))
+                .filter(|coord| symbols.get(coord).is_some_and(|&s| s == b'*'))
                 .map(|coord| (*coord, *num))
-                .collect::<Vec<(Coord, u32)>>()
+                .collect::<Vec<_>>()
         })
         .collect();
 
