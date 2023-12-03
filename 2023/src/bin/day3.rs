@@ -10,9 +10,12 @@ struct Coord {
     y: usize,
 }
 
-fn get_adjacent_coords(c: Coord, num: u32, max_size: Coord) -> Vec<Coord> {
+fn get_adjacent_coords(c: Coord, num: u32) -> Vec<Coord> {
     let num_digits = num.ilog10() as usize + 1;
     let mut ret = vec![];
+
+    // don't need to worry about exceeding the maximum size of the grid, coordinates are all in hashmaps
+
     // before
     if c.x > 0 {
         if c.y > 0 {
@@ -22,13 +25,12 @@ fn get_adjacent_coords(c: Coord, num: u32, max_size: Coord) -> Vec<Coord> {
             });
         }
         ret.push(Coord { x: c.x - 1, y: c.y });
-        if c.y < max_size.y {
-            ret.push(Coord {
-                x: c.x - 1,
-                y: c.y + 1,
-            });
-        }
+        ret.push(Coord {
+            x: c.x - 1,
+            y: c.y + 1,
+        });
     }
+
     // during
     for n in 0..num_digits {
         if c.y > 0 {
@@ -38,33 +40,28 @@ fn get_adjacent_coords(c: Coord, num: u32, max_size: Coord) -> Vec<Coord> {
             });
         }
         // don't need to include the coordinates of the number itself
-        //ret.push(Coord { x: c.x + n, y: c.y });
-        if c.y < max_size.y {
-            ret.push(Coord {
-                x: c.x + n,
-                y: c.y + 1,
-            });
-        }
+        ret.push(Coord {
+            x: c.x + n,
+            y: c.y + 1,
+        });
     }
+
     // after
-    if c.x + num_digits - 1 < max_size.x {
-        if c.y > 0 {
-            ret.push(Coord {
-                x: c.x + num_digits,
-                y: c.y - 1,
-            });
-        }
+    if c.y > 0 {
         ret.push(Coord {
             x: c.x + num_digits,
-            y: c.y,
+            y: c.y - 1,
         });
-        if c.y < max_size.y {
-            ret.push(Coord {
-                x: c.x + num_digits,
-                y: c.y + 1,
-            });
-        }
     }
+    ret.push(Coord {
+        x: c.x + num_digits,
+        y: c.y,
+    });
+    ret.push(Coord {
+        x: c.x + num_digits,
+        y: c.y + 1,
+    });
+
     ret
 }
 
@@ -117,15 +114,10 @@ fn main() -> io::Result<()> {
         })
         .collect();
 
-    let max_coord = Coord {
-        x: input_data[0].len(),
-        y: input_data.len(),
-    };
-
     let engine_id_sum: u32 = numbers
         .iter()
         .filter(|(c, num)| {
-            get_adjacent_coords(*c, *num, max_coord)
+            get_adjacent_coords(*c, *num)
                 .iter()
                 .any(|coord| symbols.contains_key(coord))
         })
@@ -137,7 +129,7 @@ fn main() -> io::Result<()> {
     let potential_gear_coords: Vec<_> = numbers
         .iter()
         .flat_map(|(c, num)| {
-            get_adjacent_coords(*c, *num, max_coord)
+            get_adjacent_coords(*c, *num)
                 .iter()
                 .filter(|coord| symbols.get(coord).is_some_and(|&s| s == '*'))
                 .map(|coord| (*coord, *num))
