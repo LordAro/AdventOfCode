@@ -20,8 +20,8 @@ fn main() -> io::Result<()> {
     let cards: Vec<(HashSet<u32>, HashSet<u32>)> = input_data
         .iter()
         .map(|l| {
-            let without_prefix = l.split(":").skip(1).next().unwrap();
-            let mut it = without_prefix.split("|");
+            let without_prefix = l.split(':').nth(1).unwrap();
+            let mut it = without_prefix.split('|');
             let winning_numbers_str = it.next().unwrap();
             let my_numbers_str = it.next().unwrap();
             let winning_numbers = winning_numbers_str
@@ -55,8 +55,6 @@ fn main() -> io::Result<()> {
             card_counts[jdx] += card_counts[idx];
         }
     }
-
-    println!("{:?}", card_counts);
 
     println!("Total scratch cards: {}", card_counts.iter().sum::<usize>());
 
