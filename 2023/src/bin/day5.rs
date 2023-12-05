@@ -1,5 +1,4 @@
-el  2m50.892s
-se std::env;
+use std::env;
 use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
