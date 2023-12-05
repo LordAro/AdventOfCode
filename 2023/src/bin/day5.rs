@@ -8,7 +8,7 @@ struct RangeMapping {
     range: std::ops::Range<i64>,
 }
 
-fn do_mapping(mappings: &Vec<RangeMapping>, r: std::ops::Range<i64>) -> std::ops::Range<i64> {
+fn do_mapping(mappings: &[RangeMapping], r: std::ops::Range<i64>) -> std::ops::Range<i64> {
     let enclosing_range = mappings
         .iter()
         .find(|m| m.range.contains(&r.start) && m.range.contains(&(r.end - 1)));
@@ -23,7 +23,7 @@ fn do_mapping(mappings: &Vec<RangeMapping>, r: std::ops::Range<i64>) -> std::ops
     }
 }
 
-fn split_range(mappings: &Vec<RangeMapping>, r: std::ops::Range<i64>) -> Vec<std::ops::Range<i64>> {
+fn split_range(mappings: &[RangeMapping], r: std::ops::Range<i64>) -> Vec<std::ops::Range<i64>> {
     let intersecting_mappings: Vec<_> = mappings
         .iter()
         .filter(|m| {
@@ -58,7 +58,7 @@ fn split_range(mappings: &Vec<RangeMapping>, r: std::ops::Range<i64>) -> Vec<std
 }
 
 fn get_location_numbers(
-    almanac: &Vec<Vec<RangeMapping>>,
+    almanac: &[Vec<RangeMapping>],
     start_range: std::ops::Range<i64>,
 ) -> Vec<std::ops::Range<i64>> {
     almanac.iter().fold(vec![start_range], |ranges, mappings| {
@@ -128,7 +128,7 @@ fn main() -> io::Result<()> {
         .chunks_exact(2)
         .map(|arr| match arr {
             &[s, l] => s..s + l,
-            _ => panic!("Unmatched"),
+            _ => unreachable!(),
         })
         .collect();
 
