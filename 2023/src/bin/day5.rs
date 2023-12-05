@@ -3,23 +3,75 @@ use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
 
-#[derive(Debug)]
-struct Range {
-    dest_start: u64,
-    src_start: u64,
-    length: u64,
+struct RangeMapping {
+    dest_start: i64,
+    range: std::ops::Range<i64>,
 }
 
-fn get_location_number(almanac: &Vec<Vec<Range>>, n: u64) -> u64 {
-    almanac.iter().fold(n, |n, mappings| {
-        let matched_mapping = mappings
-            .iter()
-            .filter(|m| n >= m.src_start && n < m.src_start + m.length)
-            .next();
-        match matched_mapping {
-            Some(m) => m.dest_start + (n - m.src_start),
-            None => n,
+fn do_mapping(mappings: &Vec<RangeMapping>, r: std::ops::Range<i64>) -> std::ops::Range<i64> {
+    let enclosing_range = mappings
+        .iter()
+        .find(|m| m.range.contains(&r.start) && m.range.contains(&(r.end - 1)));
+    // we already know that all the ranges we find are fully enclosed, due to usage of split_range
+    // (and p1 ranges are all 1-length)
+    match enclosing_range {
+        Some(m) => {
+            let offset = m.dest_start - m.range.start;
+            r.start + offset..r.end + offset
         }
+        None => r.clone(),
+    }
+}
+
+fn split_range(mappings: &Vec<RangeMapping>, r: std::ops::Range<i64>) -> Vec<std::ops::Range<i64>> {
+    let intersecting_mappings: Vec<_> = mappings
+        .iter()
+        .filter(|m| {
+            m.range.contains(&r.start)
+                || m.range.contains(&(r.end - 1))
+                || r.contains(&m.range.start)
+                || r.contains(&(m.range.end - 1))
+        })
+        .collect();
+
+    let mut points = vec![r.start, r.end];
+    for m in &intersecting_mappings {
+        // covers both the case where a range is entirely enclosed, and also partially enclosed
+        if r.contains(&(m.range.end - 1)) {
+            points.push(m.range.end);
+        }
+        if r.contains(&m.range.start) {
+            points.push(m.range.start);
+        }
+    }
+    points.sort();
+    points.dedup(); // avoids constructing 0-length ranges
+
+    // reconstruct split ranges
+    points
+        .windows(2)
+        .map(|w| match w {
+            &[s, e] => s..e,
+            _ => unreachable!(),
+        })
+        .collect()
+}
+
+fn get_location_numbers(
+    almanac: &Vec<Vec<RangeMapping>>,
+    start_range: std::ops::Range<i64>,
+) -> Vec<std::ops::Range<i64>> {
+    almanac.iter().fold(vec![start_range], |ranges, mappings| {
+        ranges
+            .iter()
+            .flat_map(|r| {
+                let split_ranges = split_range(mappings, r.clone());
+                split_ranges
+                    .iter()
+                    .map(|r2| do_mapping(mappings, r2.clone()))
+                    .collect::<Vec<_>>()
+            })
+            .collect()
     })
 }
 
@@ -36,49 +88,14 @@ fn main() -> io::Result<()> {
     .map(|l| l.unwrap())
     .collect();
 
-    //    let input_data: Vec<&str> = vec![
-    //        "seeds: 79 14 55 13",
-    //        "",
-    //        "seed-to-soil map:",
-    //        "50 98 2",
-    //        "52 50 48",
-    //        "",
-    //        "soil-to-fertilizer map:",
-    //        "0 15 37",
-    //        "37 52 2",
-    //        "39 0 15",
-    //        "",
-    //        "fertilizer-to-water map:",
-    //        "49 53 8",
-    //        "0 11 42",
-    //        "42 0 7",
-    //        "57 7 4",
-    //        "",
-    //        "water-to-light map:",
-    //        "88 18 7",
-    //        "18 25 70",
-    //        "",
-    //        "light-to-temperature map:",
-    //        "45 77 23",
-    //        "81 45 19",
-    //        "68 64 13",
-    //        "",
-    //        "temperature-to-humidity map:",
-    //        "0 69 1",
-    //        "1 0 69",
-    //        "",
-    //        "humidity-to-location map:",
-    //        "60 56 37",
-    //        "56 93 4",
-    //    ];
-
-    let mut input_seeds: Vec<u64> = vec![];
-    let mut almanac: Vec<Vec<Range>> = vec![];
+    // parse, mini state machine type thing
+    let mut input_seeds: Vec<i64> = vec![];
+    let mut almanac: Vec<Vec<RangeMapping>> = vec![];
     for line in input_data {
         if input_seeds.is_empty() {
             input_seeds = line
                 .split_ascii_whitespace()
-                .filter_map(|n| n.parse::<u64>().ok())
+                .filter_map(|n| n.parse::<i64>().ok())
                 .collect();
         } else if line.is_empty() {
             // nothing
@@ -87,40 +104,46 @@ fn main() -> io::Result<()> {
         } else {
             let parsed_numbers: Vec<_> = line
                 .split_ascii_whitespace()
-                .map(|n| n.parse::<u64>().unwrap())
+                .map(|n| n.parse::<i64>().unwrap())
                 .collect();
-            almanac.last_mut().unwrap().push(Range {
+            almanac.last_mut().unwrap().push(RangeMapping {
                 dest_start: parsed_numbers[0],
-                src_start: parsed_numbers[1],
-                length: parsed_numbers[2],
+                range: parsed_numbers[1]..parsed_numbers[1] + parsed_numbers[2],
             });
         }
     }
 
-    let locations: Vec<_> = input_seeds
+    // part 1, use 1-length ranges so we can reuse the solution easily
+    let minimum_location = input_seeds
         .iter()
-        .map(|&s| get_location_number(&almanac, s))
-        .collect();
+        .flat_map(|&s| get_location_numbers(&almanac, s..s + 1))
+        .map(|r| r.start)
+        .min()
+        .unwrap();
 
-    println!(
-        "Lowest location number: {}",
-        locations.iter().min().unwrap()
-    );
+    println!("Lowest location number: {}", minimum_location);
 
+    // part 2, convert seeds to their range form
     let ranged_seeds: Vec<_> = input_seeds
         .chunks_exact(2)
-        .flat_map(|arr| match arr {
+        .map(|arr| match arr {
             &[s, l] => s..s + l,
             _ => panic!("Unmatched"),
         })
         .collect();
 
-    let minimum_ranged_location = ranged_seeds
+    let ranged_locations: Vec<_> = ranged_seeds
         .iter()
-        .map(|&s| get_location_number(&almanac, s))
-        .min()
-        .unwrap();
-    println!("{}", minimum_ranged_location);
+        .flat_map(|s| get_location_numbers(&almanac, s.clone()))
+        .collect();
+
+    println!("{:?}", ranged_locations);
+
+    let minimum_ranged_location = ranged_locations.iter().map(|r| r.start).min().unwrap();
+    println!(
+        "Lowest location number using ranges: {}",
+        minimum_ranged_location
+    );
 
     Ok(())
 }
