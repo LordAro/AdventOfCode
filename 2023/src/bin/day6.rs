@@ -56,7 +56,6 @@ fn main() -> io::Result<()> {
     let concat_distance = distances_to_beat
         .iter()
         .fold(0, |acc, n| acc * (10u64.pow(n.ilog10() + 1)) + n);
-    println!("{} {}", concat_time, concat_distance);
     let number_of_concat_win_combinations = run_race_possibilities(concat_time)
         .iter()
         .filter(|&&d| d > concat_distance)
