@@ -106,19 +106,19 @@ impl Hand {
 
     fn rank(&self) -> Rank {
         if self.is_five_of_kind() {
-            return Rank::FiveOfKind;
+            Rank::FiveOfKind
         } else if self.is_four_of_kind() {
-            return Rank::FourOfKind;
+            Rank::FourOfKind
         } else if self.is_full_house() {
-            return Rank::FullHouse;
+            Rank::FullHouse
         } else if self.is_three_of_kind() {
-            return Rank::ThreeOfKind;
+            Rank::ThreeOfKind
         } else if self.is_two_pair() {
-            return Rank::TwoPair;
+            Rank::TwoPair
         } else if self.is_one_pair() {
-            return Rank::OnePair;
+            Rank::OnePair
         } else {
-            return Rank::HighCard;
+            Rank::HighCard
         }
     }
 
@@ -129,7 +129,7 @@ impl Hand {
             .iter()
             .map(|&c| {
                 if c == Card(11) {
-                    (2..=14).map(|n| Card(n)).collect()
+                    (2..=14).map(Card).collect()
                 } else {
                     vec![c]
                 }
@@ -162,7 +162,7 @@ impl From<Vec<Card>> for Hand {
 
 impl From<&str> for Hand {
     fn from(s: &str) -> Self {
-        let v: Vec<_> = s.chars().map(|c| Card::from(c)).collect();
+        let v: Vec<_> = s.chars().map(Card::from).collect();
         Hand::from(v)
     }
 }
