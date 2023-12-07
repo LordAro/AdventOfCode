@@ -7,6 +7,7 @@ use std::io::{BufRead, BufReader};
 
 extern crate itertools;
 use itertools::iproduct;
+use itertools::Itertools;
 
 #[derive(Ord, Eq, PartialEq, PartialOrd)]
 enum Rank {
@@ -129,7 +130,9 @@ impl Hand {
             .iter()
             .map(|&c| {
                 if c == Card(11) {
-                    (2..=14).map(Card).collect()
+                    // Only way jokers can improve the rank is by taking the value of one of the
+                    // existing cards
+                    self.sorted.iter().dedup().copied().collect()
                 } else {
                     vec![c]
                 }
