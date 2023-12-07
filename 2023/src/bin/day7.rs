@@ -1,10 +1,12 @@
-use std::cmp::Ordering;
 use std::convert::TryInto;
 use std::env;
 use std::fmt;
 use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
+
+extern crate itertools;
+use itertools::iproduct;
 
 #[derive(Ord, Eq, PartialEq, PartialOrd)]
 enum Rank {
@@ -17,7 +19,7 @@ enum Rank {
     FiveOfKind,
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 struct Card(u8);
 
 impl From<char> for Card {
@@ -47,7 +49,6 @@ impl fmt::Debug for Card {
     }
 }
 
-#[derive(Eq, PartialOrd)]
 struct Hand {
     orig: [Card; 5],
     sorted: [Card; 5],
@@ -120,11 +121,36 @@ impl Hand {
             return Rank::HighCard;
         }
     }
+
+    fn joker_rank(&self) -> Rank {
+        // Construct every possible card that could be formed from a joker, and get the rank from that
+        let card_possibilities: Vec<_> = self
+            .orig
+            .iter()
+            .map(|&c| {
+                if c == Card(11) {
+                    (2..=14).map(|n| Card(n)).collect()
+                } else {
+                    vec![c]
+                }
+            })
+            .collect();
+        iproduct!(
+            &card_possibilities[0],
+            &card_possibilities[1],
+            &card_possibilities[2],
+            &card_possibilities[3],
+            &card_possibilities[4]
+        )
+        .map(|(&a, &b, &c, &d, &e)| Hand::from(vec![a, b, c, d, e]))
+        .map(|h| h.rank())
+        .max()
+        .unwrap()
+    }
 }
 
-impl From<&str> for Hand {
-    fn from(s: &str) -> Self {
-        let v: Vec<_> = s.chars().map(|c| Card::from(c)).collect();
+impl From<Vec<Card>> for Hand {
+    fn from(v: Vec<Card>) -> Self {
         let mut s = v.clone();
         s.sort();
         Hand {
@@ -134,24 +160,31 @@ impl From<&str> for Hand {
     }
 }
 
+impl From<&str> for Hand {
+    fn from(s: &str) -> Self {
+        let v: Vec<_> = s.chars().map(|c| Card::from(c)).collect();
+        Hand::from(v)
+    }
+}
+
 impl fmt::Debug for Hand {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.orig)
     }
 }
 
-impl Ord for Hand {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.rank()
-            .cmp(&other.rank())
-            .then(self.orig.cmp(&other.orig))
-    }
+fn standard_sort(a: &Hand, b: &Hand) -> std::cmp::Ordering {
+    a.rank().cmp(&b.rank()).then(a.orig.cmp(&b.orig))
 }
 
-impl PartialEq for Hand {
-    fn eq(&self, other: &Self) -> bool {
-        self.orig == other.orig
-    }
+fn joker_sort(a: &Hand, b: &Hand) -> std::cmp::Ordering {
+    a.joker_rank().cmp(&b.joker_rank()).then(
+        // jokers now worth less than anything else
+        a.orig
+            .iter()
+            .map(|x| if x.0 == 11 { 1 } else { x.0 })
+            .cmp(b.orig.iter().map(|x| if x.0 == 11 { 1 } else { x.0 })),
+    )
 }
 
 fn main() -> io::Result<()> {
@@ -178,8 +211,7 @@ fn main() -> io::Result<()> {
         })
         .collect();
 
-    hand_bids.sort_by(|a, b| a.0.cmp(&b.0));
-    println!("{:?}", hand_bids);
+    hand_bids.sort_by(|a, b| standard_sort(&a.0, &b.0));
 
     let winnings: usize = hand_bids
         .iter()
@@ -189,5 +221,14 @@ fn main() -> io::Result<()> {
 
     println!("Total winnings: {}", winnings);
 
+    hand_bids.sort_by(|a, b| joker_sort(&a.0, &b.0));
+
+    let joker_winnings: usize = hand_bids
+        .iter()
+        .enumerate()
+        .map(|(idx, &(_, bid))| (idx + 1) * bid as usize)
+        .sum();
+
+    println!("Total winnings with jokers: {}", joker_winnings);
     Ok(())
 }
