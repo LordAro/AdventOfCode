@@ -1,0 +1,193 @@
+use std::cmp::Ordering;
+use std::convert::TryInto;
+use std::env;
+use std::fmt;
+use std::fs::File;
+use std::io;
+use std::io::{BufRead, BufReader};
+
+#[derive(Ord, Eq, PartialEq, PartialOrd)]
+enum Rank {
+    HighCard = 0,
+    OnePair,
+    TwoPair,
+    ThreeOfKind,
+    FullHouse,
+    FourOfKind,
+    FiveOfKind,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
+struct Card(u8);
+
+impl From<char> for Card {
+    fn from(c: char) -> Self {
+        Card(match c {
+            'A' => 14,
+            'K' => 13,
+            'Q' => 12,
+            'J' => 11,
+            'T' => 10,
+            _ => char::to_digit(c, 10).unwrap() as u8,
+        })
+    }
+}
+
+impl fmt::Debug for Card {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let char_form = match self.0 {
+            14 => 'A',
+            13 => 'K',
+            12 => 'Q',
+            11 => 'J',
+            10 => 'T',
+            _ => char::from_digit(self.0 as u32, 10).unwrap(),
+        };
+        write!(f, "{}", char_form)
+    }
+}
+
+#[derive(Eq, PartialOrd)]
+struct Hand {
+    orig: [Card; 5],
+    sorted: [Card; 5],
+}
+
+impl Hand {
+    fn is_five_of_kind(&self) -> bool {
+        self.sorted[0] == self.sorted[1]
+            && self.sorted[1] == self.sorted[2]
+            && self.sorted[2] == self.sorted[3]
+            && self.sorted[3] == self.sorted[4]
+    }
+
+    fn is_four_of_kind(&self) -> bool {
+        let t1 = self.sorted[0] == self.sorted[1]
+            && self.sorted[1] == self.sorted[2]
+            && self.sorted[2] == self.sorted[3];
+        let t2 = self.sorted[1] == self.sorted[2]
+            && self.sorted[2] == self.sorted[3]
+            && self.sorted[3] == self.sorted[4];
+        t1 || t2
+    }
+
+    fn is_full_house(&self) -> bool {
+        let t1 = self.sorted[0] == self.sorted[1]
+            && self.sorted[1] == self.sorted[2]
+            && self.sorted[3] == self.sorted[4]; // xxxyy
+        let t2 = self.sorted[0] == self.sorted[1]
+            && self.sorted[2] == self.sorted[3]
+            && self.sorted[3] == self.sorted[4]; // yyxxx
+        t1 || t2
+    }
+
+    fn is_three_of_kind(&self) -> bool {
+        let t1 = self.sorted[0] == self.sorted[1] && self.sorted[1] == self.sorted[2]; // xxxab
+        let t2 = self.sorted[1] == self.sorted[2] && self.sorted[2] == self.sorted[3]; // axxxb
+        let t3 = self.sorted[2] == self.sorted[3] && self.sorted[3] == self.sorted[4]; // abxxx
+        t1 || t2 || t3
+    }
+
+    fn is_two_pair(&self) -> bool {
+        let t1 = self.sorted[0] == self.sorted[1] && self.sorted[2] == self.sorted[3]; // aabbx
+        let t2 = self.sorted[0] == self.sorted[1] && self.sorted[3] == self.sorted[4]; // aaxbb
+        let t3 = self.sorted[1] == self.sorted[2] && self.sorted[3] == self.sorted[4]; // xaabb
+        t1 || t2 || t3
+    }
+
+    fn is_one_pair(&self) -> bool {
+        let t1 = self.sorted[0] == self.sorted[1];
+        let t2 = self.sorted[1] == self.sorted[2];
+        let t3 = self.sorted[2] == self.sorted[3];
+        let t4 = self.sorted[3] == self.sorted[4];
+        t1 || t2 || t3 || t4
+    }
+
+    fn rank(&self) -> Rank {
+        if self.is_five_of_kind() {
+            return Rank::FiveOfKind;
+        } else if self.is_four_of_kind() {
+            return Rank::FourOfKind;
+        } else if self.is_full_house() {
+            return Rank::FullHouse;
+        } else if self.is_three_of_kind() {
+            return Rank::ThreeOfKind;
+        } else if self.is_two_pair() {
+            return Rank::TwoPair;
+        } else if self.is_one_pair() {
+            return Rank::OnePair;
+        } else {
+            return Rank::HighCard;
+        }
+    }
+}
+
+impl From<&str> for Hand {
+    fn from(s: &str) -> Self {
+        let v: Vec<_> = s.chars().map(|c| Card::from(c)).collect();
+        let mut s = v.clone();
+        s.sort();
+        Hand {
+            orig: v.try_into().unwrap(),
+            sorted: s.try_into().unwrap(),
+        }
+    }
+}
+
+impl fmt::Debug for Hand {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.orig)
+    }
+}
+
+impl Ord for Hand {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.rank()
+            .cmp(&other.rank())
+            .then(self.orig.cmp(&other.orig))
+    }
+}
+
+impl PartialEq for Hand {
+    fn eq(&self, other: &Self) -> bool {
+        self.orig == other.orig
+    }
+}
+
+fn main() -> io::Result<()> {
+    let input_data: Vec<String> = BufReader::new(
+        File::open(
+            env::args()
+                .nth(1)
+                .expect("Incorrect number of arguments provided"),
+        )
+        .expect("Could not open input file"),
+    )
+    .lines()
+    .map(|l| l.unwrap())
+    .collect();
+
+    let mut hand_bids: Vec<_> = input_data
+        .iter()
+        .map(|l| {
+            let mut it = l.split_ascii_whitespace();
+            (
+                Hand::from(it.next().unwrap()),
+                it.next().unwrap().parse::<u32>().unwrap(),
+            )
+        })
+        .collect();
+
+    hand_bids.sort_by(|a, b| a.0.cmp(&b.0));
+    println!("{:?}", hand_bids);
+
+    let winnings: usize = hand_bids
+        .iter()
+        .enumerate()
+        .map(|(idx, &(_, bid))| (idx + 1) * bid as usize)
+        .sum();
+
+    println!("Total winnings: {}", winnings);
+
+    Ok(())
+}
