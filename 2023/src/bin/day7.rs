@@ -6,7 +6,6 @@ use std::io;
 use std::io::{BufRead, BufReader};
 
 extern crate itertools;
-use itertools::iproduct;
 use itertools::Itertools;
 
 #[derive(Ord, Eq, PartialEq, PartialOrd)]
@@ -124,31 +123,26 @@ impl Hand {
     }
 
     fn joker_rank(&self) -> Rank {
-        // Construct every possible card that could be formed from a joker, and get the rank from that
-        let card_possibilities: Vec<_> = self
-            .orig
+        // Only way jokers can improve the rank is by taking the value of one of the existing cards
+        // Additionally, maximal way jokers can improve hand is by them all being the same value
+        self.sorted
             .iter()
-            .map(|&c| {
-                if c == Card(11) {
-                    // Only way jokers can improve the rank is by taking the value of one of the
-                    // existing cards
-                    self.sorted.iter().dedup().copied().collect()
-                } else {
-                    vec![c]
-                }
+            .dedup()
+            .map(|replacement_card| {
+                // replace all jokers with a certain replacment
+                Hand::from(
+                    self.orig
+                        .iter()
+                        .filter(|&&c| c != Card(11))
+                        .chain(std::iter::repeat(replacement_card))
+                        .take(5)
+                        .copied()
+                        .collect::<Vec<_>>(),
+                )
             })
-            .collect();
-        iproduct!(
-            &card_possibilities[0],
-            &card_possibilities[1],
-            &card_possibilities[2],
-            &card_possibilities[3],
-            &card_possibilities[4]
-        )
-        .map(|(&a, &b, &c, &d, &e)| Hand::from(vec![a, b, c, d, e]))
-        .map(|h| h.rank())
-        .max()
-        .unwrap()
+            .map(|h| h.rank())
+            .max()
+            .unwrap()
     }
 }
 
