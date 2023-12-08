@@ -6,3 +6,4 @@ authors = ["Charles Pigott <charlespigott@googlemail.com>"]
 [dependencies]
 regex = "^1.10"
 itertools = "^0.12"
+num = "^0.4.1"
