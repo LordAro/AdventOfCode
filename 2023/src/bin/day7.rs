@@ -1,6 +1,5 @@
 use std::convert::TryInto;
 use std::env;
-use std::fmt;
 use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
@@ -32,20 +31,6 @@ impl From<char> for Card {
             'T' => 10,
             _ => char::to_digit(c, 10).unwrap() as u8,
         })
-    }
-}
-
-impl fmt::Debug for Card {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let char_form = match self.0 {
-            14 => 'A',
-            13 => 'K',
-            12 => 'Q',
-            11 => 'J',
-            10 => 'T',
-            _ => char::from_digit(self.0 as u32, 10).unwrap(),
-        };
-        write!(f, "{}", char_form)
     }
 }
 
@@ -148,11 +133,13 @@ impl Hand {
 
 impl From<Vec<Card>> for Hand {
     fn from(v: Vec<Card>) -> Self {
-        let mut s = v.clone();
+        let arr: [Card; 5] = v.try_into().unwrap_or_else(|_| unreachable!());
+        let mut s = arr;
         s.sort();
+
         Hand {
-            orig: v.try_into().unwrap(),
-            sorted: s.try_into().unwrap(),
+            orig: arr,
+            sorted: s,
         }
     }
 }
@@ -161,12 +148,6 @@ impl From<&str> for Hand {
     fn from(s: &str) -> Self {
         let v: Vec<_> = s.chars().map(Card::from).collect();
         Hand::from(v)
-    }
-}
-
-impl fmt::Debug for Hand {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self.orig)
     }
 }
 
