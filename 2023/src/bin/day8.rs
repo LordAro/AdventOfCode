@@ -3,6 +3,7 @@ use std::env;
 use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
+use std::iter;
 
 extern crate num;
 
@@ -15,22 +16,18 @@ fn find_exit<F>(
 where
     F: Fn(&str) -> bool,
 {
-    let mut cur_loc = start_pos;
-    let mut steps = 0;
-    while !exit_pred(cur_loc) {
-        let next_loc = map.get(cur_loc).unwrap();
-        let next_move = instructions
-            .chars()
-            .nth(steps % instructions.len())
-            .unwrap();
-        cur_loc = match next_move {
-            'L' => next_loc.0,
-            'R' => next_loc.1,
+    iter::successors(Some((start_pos, 0)), |(cur_loc, idx)| {
+        let next_loc_pair = map.get(cur_loc).unwrap();
+        let next_move = instructions.chars().nth(idx % instructions.len()).unwrap();
+        let next_loc = match next_move {
+            'L' => next_loc_pair.0,
+            'R' => next_loc_pair.1,
             _ => unreachable!(),
         };
-        steps += 1;
-    }
-    steps
+        Some((next_loc, idx + 1))
+    })
+    .take_while(|(loc, _)| !exit_pred(loc))
+    .count()
 }
 
 fn main() -> io::Result<()> {
@@ -46,7 +43,7 @@ fn main() -> io::Result<()> {
     .map(|l| l.unwrap())
     .collect();
 
-    let instr = input_data[0].clone();
+    let instr = &input_data[0];
     let map: HashMap<&str, (&str, &str)> = input_data
         .iter()
         .skip(2)
@@ -58,7 +55,6 @@ fn main() -> io::Result<()> {
         })
         .collect();
 
-    //instr.chars().cycle().take_while(|x| x != "ZZZ").count()
     let p1_steps = find_exit(&instr, &map, "AAA", |p| p == "ZZZ");
     println!("Number of steps to reach ZZZ: {}", p1_steps);
 
