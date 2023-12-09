@@ -3,8 +3,11 @@ use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
 
+extern crate itertools;
+use itertools::Itertools;
+
 fn get_calibration_value(digits: &[&str], line: &str) -> usize {
-    let digit_matches: Vec<_> = digits
+    let minmax_digits = digits
         .iter()
         .enumerate()
         .flat_map(|(digit_idx, digit_str)| {
@@ -12,23 +15,22 @@ fn get_calibration_value(digits: &[&str], line: &str) -> usize {
             line.match_indices(digit_str)
                 .map(move |(line_idx, _)| (line_idx, digit_idx % 9 + 1))
         })
-        .collect();
-    let first_digit = digit_matches.iter().min_by_key(|&(idx, _)| idx).unwrap().1;
-    let last_digit = digit_matches.iter().max_by_key(|&(idx, _)| idx).unwrap().1;
+        .minmax_by_key(|&(idx, _)| idx)
+        .into_option()
+        .unwrap();
+
+    // min, max of idx pairs
+    let first_digit = minmax_digits.0 .1;
+    let last_digit = minmax_digits.1 .1;
     first_digit * 10 + last_digit
 }
 
 fn main() -> io::Result<()> {
-    let raw_calibration_values: Vec<String> = BufReader::new(
-        File::open(
-            env::args()
-                .nth(1)
-                .expect("Incorrect number of arguments provided"),
-        )
-        .expect("Could not open input file"),
-    )
+    let raw_calibration_values: Vec<_> = BufReader::new(File::open(
+        env::args().nth(1).expect("Incorrect number of arguments"),
+    )?)
     .lines()
-    .map(|l| l.unwrap().parse().unwrap())
+    .map(|l| l.unwrap())
     .collect();
 
     let p1_digits: &[_] = &["1", "2", "3", "4", "5", "6", "7", "8", "9"];
