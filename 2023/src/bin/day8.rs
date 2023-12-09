@@ -55,13 +55,13 @@ fn main() -> io::Result<()> {
         })
         .collect();
 
-    let p1_steps = find_exit(&instr, &map, "AAA", |p| p == "ZZZ");
+    let p1_steps = find_exit(instr, &map, "AAA", |p| p == "ZZZ");
     println!("Number of steps to reach ZZZ: {}", p1_steps);
 
     let start_locs: Vec<_> = map.keys().filter(|&&k| k.ends_with('A')).copied().collect();
     let step_counts: Vec<usize> = start_locs
         .iter()
-        .map(|pos| find_exit(&instr, &map, pos, |p| p.ends_with('Z')))
+        .map(|pos| find_exit(instr, &map, pos, |p| p.ends_with('Z')))
         .collect();
 
     let steps_needed: usize = step_counts.iter().fold(1, |a, b| num::integer::lcm(a, *b));
