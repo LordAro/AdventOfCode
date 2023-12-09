@@ -5,8 +5,8 @@ use std::io::{BufRead, BufReader};
 
 fn extrapolate_next(list: &[i64]) -> i64 {
     let mut diffs = list.to_vec();
-    let mut last_vals = vec![];
-    while !diffs.iter().all(|&n| n == 0) {
+    let mut last_val_sum = 0;
+    while diffs.iter().any(|&n| n != 0) {
         diffs = diffs
             .windows(2)
             .map(|arr| match arr {
@@ -14,9 +14,9 @@ fn extrapolate_next(list: &[i64]) -> i64 {
                 _ => unreachable!(),
             })
             .collect();
-        last_vals.push(*diffs.last().unwrap());
+        last_val_sum += diffs.last().unwrap();
     }
-    list.last().unwrap() + last_vals.iter().sum::<i64>()
+    list.last().unwrap() + last_val_sum
 }
 
 fn main() -> io::Result<()> {
@@ -40,6 +40,7 @@ fn main() -> io::Result<()> {
     let extrapolated_sum: i64 = input_data.iter().map(|list| extrapolate_next(list)).sum();
     println!("Sum of extrapolated values: {}", extrapolated_sum);
 
+    // Just reverse the lists
     let rev_extrapolated_sum: i64 = input_data
         .iter()
         .map(|list| extrapolate_next(&list.iter().rev().copied().collect::<Vec<_>>()))
