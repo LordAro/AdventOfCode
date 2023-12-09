@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 use std::env;
-use std::fs::File;
+use std::fs;
 use std::io;
-use std::io::{BufRead, BufReader};
 
 extern crate num;
 
@@ -38,17 +37,8 @@ where
 }
 
 fn main() -> io::Result<()> {
-    let input_data: Vec<String> = BufReader::new(
-        File::open(
-            env::args()
-                .nth(1)
-                .expect("Incorrect number of arguments provided"),
-        )
-        .expect("Could not open input file"),
-    )
-    .lines()
-    .map(|l| l.unwrap())
-    .collect();
+    let input_str = fs::read_to_string(env::args().nth(1).expect("Incorrect number of arguments"))?;
+    let input_data: Vec<_> = input_str.lines().collect();
 
     let instr = &input_data[0];
     let map: HashMap<&str, (&str, &str)> = input_data
