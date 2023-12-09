@@ -3,7 +3,6 @@ use std::env;
 use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
-use std::iter;
 
 extern crate num;
 
@@ -16,18 +15,26 @@ fn find_exit<F>(
 where
     F: Fn(&str) -> bool,
 {
-    iter::successors(Some((start_pos, 0)), |(cur_loc, idx)| {
-        let next_loc_pair = map.get(cur_loc).unwrap();
-        let next_move = instructions.chars().nth(idx % instructions.len()).unwrap();
-        let next_loc = match next_move {
-            'L' => next_loc_pair.0,
-            'R' => next_loc_pair.1,
-            _ => unreachable!(),
-        };
-        Some((next_loc, idx + 1))
-    })
-    .take_while(|(loc, _)| !exit_pred(loc))
-    .count()
+    instructions
+        .chars()
+        .cycle()
+        .scan(start_pos, |cur_loc, next_move| {
+            // stop when we get to the end
+            if exit_pred(cur_loc) {
+                return None;
+            }
+            // update state to next location
+            let next_loc_pair = map.get(cur_loc).unwrap();
+            *cur_loc = match next_move {
+                'L' => next_loc_pair.0,
+                'R' => next_loc_pair.1,
+                _ => unreachable!(),
+            };
+
+            // don't actually care about the iterator, everything is stored in cur_loc state var
+            Some(1)
+        })
+        .count()
 }
 
 fn main() -> io::Result<()> {
