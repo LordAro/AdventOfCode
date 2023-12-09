@@ -3,25 +3,22 @@ use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
 
-extern crate itertools;
-use itertools::Itertools;
-
-fn get_calibration_value(digits: &[&str], line: &str) -> usize {
-    let minmax_digits = digits
+fn find_any_digit(digits: &[&str], slice: &str) -> Option<usize> {
+    digits
         .iter()
         .enumerate()
-        .flat_map(|(digit_idx, digit_str)| {
-            // We only need the specific digit index (which we convert to the actual number), so drop the string
-            line.match_indices(digit_str)
-                .map(move |(line_idx, _)| (line_idx, digit_idx % 9 + 1))
-        })
-        .minmax_by_key(|&(idx, _)| idx)
-        .into_option()
-        .unwrap();
+        .find(|(_, &digit_str)| slice.starts_with(digit_str))
+        .map(|(idx, _)| idx % 9 + 1)
+}
 
-    // min, max of idx pairs
-    let first_digit = minmax_digits.0 .1;
-    let last_digit = minmax_digits.1 .1;
+fn get_calibration_value(digits: &[&str], line: &str) -> usize {
+    let first_digit = (0..line.len())
+        .find_map(|idx| find_any_digit(digits, &line[idx..]))
+        .unwrap();
+    let last_digit = (0..line.len())
+        .rev()
+        .find_map(|idx| find_any_digit(digits, &line[idx..]))
+        .unwrap();
     first_digit * 10 + last_digit
 }
 
