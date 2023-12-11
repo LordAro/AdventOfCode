@@ -119,30 +119,13 @@ fn flood_fill(
             // already searched
             continue;
         }
-        if next.y > 0 {
-            to_search.push(Coord {
-                x: next.x,
-                y: next.y - 1,
-            });
-        }
-        if next.x < map[0].len() - 1 {
-            to_search.push(Coord {
-                x: next.x + 1,
-                y: next.y,
-            });
-        }
-        if next.y < map.len() - 1 {
-            to_search.push(Coord {
-                x: next.x,
-                y: next.y + 1,
-            });
-        }
-        if next.x > 0 {
-            to_search.push(Coord {
-                x: next.x - 1,
-                y: next.y,
-            });
-        }
+
+        to_search.extend(
+            [Dir::North, Dir::East, Dir::South, Dir::West]
+                .iter()
+                .filter_map(|d| get_next_coord(&map, &next, d))
+                .filter(|c| !route_set.contains(c)),
+        );
     }
 
     searched
