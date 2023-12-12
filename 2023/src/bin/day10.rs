@@ -123,7 +123,7 @@ fn flood_fill(
         to_search.extend(
             [Dir::North, Dir::East, Dir::South, Dir::West]
                 .iter()
-                .filter_map(|d| get_next_coord(&map, &next, d))
+                .filter_map(|d| get_next_coord(map, &next, d))
                 .filter(|c| !route_set.contains(c)),
         );
     }

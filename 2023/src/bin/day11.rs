@@ -10,7 +10,7 @@ struct Coord {
     y: usize,
 }
 
-fn expand_universe(universes: &[Coord], factor: usize) -> Vec<Coord> {
+fn expand_universe<const N: usize>(universes: &[Coord]) -> Vec<Coord> {
     let mut seen_xs = vec![];
     let mut seen_ys = vec![];
     for c in universes {
@@ -30,8 +30,8 @@ fn expand_universe(universes: &[Coord], factor: usize) -> Vec<Coord> {
             let x_diff = seen_xs[x_idx] - x_idx;
             let y_diff = seen_ys[y_idx] - y_idx;
             Coord {
-                x: c.x + x_diff * (factor - 1),
-                y: c.y + y_diff * (factor - 1),
+                x: c.x + x_diff * (N - 1),
+                y: c.y + y_diff * (N - 1),
             }
         })
         .collect()
@@ -54,7 +54,7 @@ fn main() -> io::Result<()> {
         })
         .collect();
 
-    let expanded_galaxies = expand_universe(&galaxies, 2);
+    let expanded_galaxies = expand_universe::<2>(&galaxies);
 
     let galaxy_distance_sum: usize = expanded_galaxies
         .iter()
@@ -67,7 +67,7 @@ fn main() -> io::Result<()> {
         galaxy_distance_sum
     );
 
-    let expanded_galaxies_bigger = expand_universe(&galaxies, 1_000_000);
+    let expanded_galaxies_bigger = expand_universe::<1_000_000>(&galaxies);
 
     let bigger_galaxy_distance_sum: usize = expanded_galaxies_bigger
         .iter()
