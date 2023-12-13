@@ -9,10 +9,8 @@ fn find_mirror_vert(map: &Grid, target_difference: usize) -> Option<usize> {
     for pivot in 0..map[0].len() - 1 {
         let mut count_diffs = 0;
         for x in 0..cmp::min(map[0].len() - 1 - (pivot + 1), pivot) + 1 {
-            let x_col: Vec<_> = map.iter().map(|l| l[pivot - x]).collect();
-            let x2_col: Vec<_> = map.iter().map(|l| l[pivot + 1 + x]).collect();
-            for idx in 0..x_col.len() {
-                if x_col[idx] != x2_col[idx] {
+            for y in 0..map.len() {
+                if map[y][pivot - x] != map[y][pivot + 1 + x] {
                     count_diffs += 1;
                 }
             }
@@ -31,10 +29,8 @@ fn find_mirror_horz(map: &Grid, target_difference: usize) -> Option<usize> {
     for pivot in 0..map.len() - 1 {
         let mut count_diffs = 0;
         for y in 0..cmp::min(map.len() - 1 - (pivot + 1), pivot) + 1 {
-            let y_row = &map[pivot - y];
-            let y2_row = &map[pivot + 1 + y];
-            for idx in 0..y_row.len() {
-                if y_row[idx] != y2_row[idx] {
+            for x in 0..map[0].len() {
+                if map[pivot - y][x] != map[pivot + 1 + y][x] {
                     count_diffs += 1;
                 }
             }
@@ -61,29 +57,25 @@ fn main() -> io::Result<()> {
         })
         .collect();
 
-    let mut sum: usize = 0;
-    for b in &blocks {
-        if let Some(y) = find_mirror_vert(b, 0) {
-            sum += y;
-        } else if let Some(x) = find_mirror_horz(b, 0) {
-            sum += x * 100;
-        } else {
-            panic!("No match!");
-        }
-    }
+    let sum: usize = blocks
+        .iter()
+        .map(|b| {
+            find_mirror_vert(b, 0)
+                .or_else(|| find_mirror_horz(b, 0).map(|n| n * 100))
+                .unwrap()
+        })
+        .sum();
 
     println!("Mirror line summary: {}", sum);
 
-    let mut smudge_sum: usize = 0;
-    for b in &blocks {
-        if let Some(y) = find_mirror_vert(b, 1) {
-            smudge_sum += y;
-        } else if let Some(x) = find_mirror_horz(b, 1) {
-            smudge_sum += x * 100;
-        } else {
-            panic!("No match!");
-        }
-    }
+    let smudge_sum: usize = blocks
+        .iter()
+        .map(|b| {
+            find_mirror_vert(b, 1)
+                .or_else(|| find_mirror_horz(b, 1).map(|n| n * 100))
+                .unwrap()
+        })
+        .sum();
     println!(
         "Mirror line summary, accounting for smudges: {}",
         smudge_sum
