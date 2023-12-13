@@ -1,4 +1,3 @@
-use std::cmp;
 use std::env;
 use std::fs;
 use std::io;
@@ -6,11 +5,12 @@ use std::io;
 type Grid = Vec<Vec<bool>>;
 
 fn find_mirror_vert(map: &Grid, target_difference: usize) -> Option<usize> {
-    for pivot in 0..map[0].len() - 1 {
+    for pivot in 1..map[0].len() {
         let mut count_diffs = 0;
-        for x in 0..cmp::min(map[0].len() - 1 - (pivot + 1), pivot) + 1 {
+        let x_height = pivot.min(map[0].len() - pivot);
+        for x in 0..x_height {
             for y in 0..map.len() {
-                if map[y][pivot - x] != map[y][pivot + 1 + x] {
+                if map[y][pivot + x] != map[y][pivot - (x + 1)] {
                     count_diffs += 1;
                 }
             }
@@ -19,18 +19,19 @@ fn find_mirror_vert(map: &Grid, target_difference: usize) -> Option<usize> {
             }
         }
         if count_diffs == target_difference {
-            return Some(pivot + 1); // 1-based
+            return Some(pivot);
         }
     }
     None
 }
 
 fn find_mirror_horz(map: &Grid, target_difference: usize) -> Option<usize> {
-    for pivot in 0..map.len() - 1 {
+    for pivot in 1..map.len() {
         let mut count_diffs = 0;
-        for y in 0..cmp::min(map.len() - 1 - (pivot + 1), pivot) + 1 {
+        let y_height = pivot.min(map.len() - pivot);
+        for y in 0..y_height {
             for x in 0..map[0].len() {
-                if map[pivot - y][x] != map[pivot + 1 + y][x] {
+                if map[pivot + y][x] != map[pivot - (y + 1)][x] {
                     count_diffs += 1;
                 }
             }
@@ -39,7 +40,7 @@ fn find_mirror_horz(map: &Grid, target_difference: usize) -> Option<usize> {
             }
         }
         if count_diffs == target_difference {
-            return Some(pivot + 1); // 1-based
+            return Some(pivot);
         }
     }
     None
