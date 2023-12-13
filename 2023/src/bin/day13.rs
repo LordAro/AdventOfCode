@@ -13,6 +13,7 @@ fn find_mirror_vert<const N: usize>(map: &Grid) -> Option<usize> {
         (0..map.len())
             .cartesian_product(0..x_height)
             .filter(|&(y, x)| map[y][pivot + x] != map[y][pivot - (x + 1)])
+            .take(N + 1) // short circuit
             .count()
             == N
     })
@@ -24,6 +25,7 @@ fn find_mirror_horz<const N: usize>(map: &Grid) -> Option<usize> {
         (0..y_height)
             .cartesian_product(0..map[0].len())
             .filter(|&(y, x)| map[pivot + y][x] != map[pivot - (y + 1)][x])
+            .take(N + 1) // short circuit
             .count()
             == N
     })
