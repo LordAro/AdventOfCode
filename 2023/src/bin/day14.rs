@@ -1,11 +1,9 @@
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::io;
 
-extern crate itertools;
-use itertools::Itertools;
-
-#[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Hash)]
 struct Coord {
     x: usize,
     y: usize,
@@ -17,147 +15,94 @@ struct Rock {
     is_cube: bool,
 }
 
-fn move_rocks_north(rocks: &[Rock]) -> Vec<Rock> {
-    let sorted_rocks = rocks
-        .iter()
-        .sorted_by(|a, b| a.c.y.cmp(&b.c.y).then(a.c.x.cmp(&b.c.y)))
-        .collect_vec();
+fn move_rocks_north(rocks: &mut [Rock]) {
+    rocks.sort_by(|a, b| a.c.y.cmp(&b.c.y).then(a.c.x.cmp(&b.c.y)));
 
-    let mut new_rocks: Vec<Rock> = vec![];
-    for r in sorted_rocks {
+    for i in 0..rocks.len() {
         // cubes don't move
-        if r.is_cube {
-            new_rocks.push(r.clone());
-        } else if let Some(blocking_rock) = new_rocks
+        if rocks[i].is_cube {
+            continue;
+        } else if let Some(blocking_rock) = rocks
             .iter()
-            .filter(|&o| o.c.x == r.c.x)
+            .take(i) // sorted, so only need to look at previous items
+            .filter(|&o| o.c.x == rocks[i].c.x) // also means that we don't need to filter on y
             .max_by_key(|&o| o.c.y)
         {
-            new_rocks.push(Rock {
-                c: Coord {
-                    x: r.c.x,
-                    y: blocking_rock.c.y + 1,
-                },
-                is_cube: false,
-            });
+            rocks[i].c.y = blocking_rock.c.y + 1;
         } else {
-            new_rocks.push(Rock {
-                c: Coord { x: r.c.x, y: 0 },
-                is_cube: false,
-            });
+            rocks[i].c.y = 0;
         }
     }
-    new_rocks
 }
 
-fn move_rocks_south(rocks: &[Rock]) -> Vec<Rock> {
-    let max_y = rocks.iter().max_by_key(|r| r.c.y).unwrap().c.y;
-    let sorted_rocks = rocks
-        .iter()
-        .sorted_by(|a, b| b.c.y.cmp(&a.c.y).then(a.c.x.cmp(&b.c.y)))
-        .collect_vec();
+fn move_rocks_south(rocks: &mut [Rock], max_y: usize) {
+    rocks.sort_by(|a, b| b.c.y.cmp(&a.c.y).then(a.c.x.cmp(&b.c.y)));
 
-    let mut new_rocks: Vec<Rock> = vec![];
-    for r in sorted_rocks {
+    for i in 0..rocks.len() {
         // cubes don't move
-        if r.is_cube {
-            new_rocks.push(r.clone());
-        } else if let Some(blocking_rock) = new_rocks
+        if rocks[i].is_cube {
+            continue;
+        } else if let Some(blocking_rock) = rocks
             .iter()
-            .filter(|&o| o.c.x == r.c.x)
+            .take(i)
+            .filter(|&o| o.c.x == rocks[i].c.x)
             .min_by_key(|&o| o.c.y)
         {
-            new_rocks.push(Rock {
-                c: Coord {
-                    x: r.c.x,
-                    y: blocking_rock.c.y - 1,
-                },
-                is_cube: false,
-            });
+            rocks[i].c.y = blocking_rock.c.y - 1;
         } else {
-            new_rocks.push(Rock {
-                c: Coord { x: r.c.x, y: max_y },
-                is_cube: false,
-            });
+            rocks[i].c.y = max_y;
         }
     }
-    new_rocks
 }
 
-fn move_rocks_west(rocks: &[Rock]) -> Vec<Rock> {
-    let sorted_rocks = rocks
-        .iter()
-        .sorted_by(|a, b| a.c.x.cmp(&b.c.x).then(a.c.y.cmp(&b.c.y)))
-        .collect_vec();
+fn move_rocks_west(rocks: &mut [Rock]) {
+    rocks.sort_by(|a, b| a.c.x.cmp(&b.c.x).then(a.c.y.cmp(&b.c.y)));
 
-    let mut new_rocks: Vec<Rock> = vec![];
-    for r in sorted_rocks {
+    for i in 0..rocks.len() {
         // cubes don't move
-        if r.is_cube {
-            new_rocks.push(r.clone());
-        } else if let Some(blocking_rock) = new_rocks
+        if rocks[i].is_cube {
+            continue;
+        } else if let Some(blocking_rock) = rocks
             .iter()
-            .filter(|&o| o.c.y == r.c.y)
+            .take(i)
+            .filter(|&o| o.c.y == rocks[i].c.y)
             .max_by_key(|&o| o.c.x)
         {
-            new_rocks.push(Rock {
-                c: Coord {
-                    x: blocking_rock.c.x + 1,
-                    y: r.c.y,
-                },
-                is_cube: false,
-            });
+            rocks[i].c.x = blocking_rock.c.x + 1;
         } else {
-            new_rocks.push(Rock {
-                c: Coord { x: 0, y: r.c.y },
-                is_cube: false,
-            });
+            rocks[i].c.x = 0;
         }
     }
-    new_rocks
 }
 
-fn move_rocks_east(rocks: &[Rock]) -> Vec<Rock> {
-    let max_x = rocks.iter().max_by_key(|r| r.c.x).unwrap().c.x;
-    let sorted_rocks = rocks
-        .iter()
-        .sorted_by(|a, b| b.c.x.cmp(&a.c.x).then(a.c.y.cmp(&b.c.y)))
-        .collect_vec();
+fn move_rocks_east(rocks: &mut [Rock], max_x: usize) {
+    rocks.sort_by(|a, b| b.c.x.cmp(&a.c.x).then(a.c.y.cmp(&b.c.y)));
 
-    let mut new_rocks: Vec<Rock> = vec![];
-    for r in sorted_rocks {
+    for i in 0..rocks.len() {
         // cubes don't move
-        if r.is_cube {
-            new_rocks.push(r.clone());
-        } else if let Some(blocking_rock) = new_rocks
+        if rocks[i].is_cube {
+            continue;
+        } else if let Some(blocking_rock) = rocks
             .iter()
-            .filter(|&o| o.c.y == r.c.y)
+            .take(i)
+            .filter(|&o| o.c.y == rocks[i].c.y)
             .min_by_key(|&o| o.c.x)
         {
-            new_rocks.push(Rock {
-                c: Coord {
-                    x: blocking_rock.c.x - 1,
-                    y: r.c.y,
-                },
-                is_cube: false,
-            });
+            rocks[i].c.x = blocking_rock.c.x - 1;
         } else {
-            new_rocks.push(Rock {
-                c: Coord { x: max_x, y: r.c.y },
-                is_cube: false,
-            });
+            rocks[i].c.x = max_x;
         }
     }
-    new_rocks
 }
 
-fn move_rocks_cycle(rocks: &[Rock]) -> Vec<Rock> {
-    move_rocks_east(&move_rocks_south(&move_rocks_west(&move_rocks_north(
-        rocks,
-    ))))
+fn move_rocks_cycle(rocks: &mut [Rock], max_coord: &Coord) {
+    move_rocks_north(rocks);
+    move_rocks_west(rocks);
+    move_rocks_south(rocks, max_coord.y);
+    move_rocks_east(rocks, max_coord.x);
 }
 
-fn calc_north_load(rocks: &[Rock], max_coord: Coord) -> usize {
+fn calc_north_load(rocks: &[Rock], max_coord: &Coord) -> usize {
     rocks
         .iter()
         .filter(|&r| !r.is_cube)
@@ -193,34 +138,39 @@ fn main() -> io::Result<()> {
         y: rocks.iter().max_by_key(|r| r.c.y).unwrap().c.y,
     };
 
-    println!(
-        "Total load: {}",
-        calc_north_load(&move_rocks_north(&rocks), max_coord)
-    );
+    let mut north_rocks = rocks.clone();
+    move_rocks_north(&mut north_rocks);
+    println!("Total load: {}", calc_north_load(&north_rocks, &max_coord));
 
-    let mut cache_cycle: Vec<Vec<Rock>> = vec![];
-    cache_cycle.push(rocks.clone());
+    let mut cycle_cache: HashMap<Vec<Rock>, usize> = HashMap::new();
+    cycle_cache.insert(rocks.clone(), 0);
 
     let mut cycle_start = 0;
     let mut cycle_length = 0;
     let mut cur_rocks = rocks;
     // look for cycle in cycles
     for cycle_number in 1..1_000_000_000 {
-        cur_rocks = move_rocks_cycle(&cur_rocks);
-        if let Some(idx) = cache_cycle.iter().position(|r| r == &cur_rocks) {
-            cycle_start = idx;
+        move_rocks_cycle(&mut cur_rocks, &max_coord);
+        if let Some(idx) = cycle_cache.get(&cur_rocks) {
+            cycle_start = *idx;
             cycle_length = cycle_number - cycle_start;
             break;
         }
-        cache_cycle.push(cur_rocks.clone());
+        cycle_cache.insert(cur_rocks.clone(), cycle_number);
     }
 
     let remaining_cycles = 1_000_000_000 - (cycle_start + cycle_length);
     let offset = remaining_cycles % cycle_length;
 
+    // Don't have a good way of finding cycle_start + offset in the hashmap,
+    // so just run offset more cycles to get to where we want to be
+    for _ in 0..offset {
+        move_rocks_cycle(&mut cur_rocks, &max_coord);
+    }
+
     println!(
         "Total load after N cycles: {}",
-        calc_north_load(&cache_cycle[cycle_start + offset], max_coord)
+        calc_north_load(&cur_rocks, &max_coord)
     );
 
     Ok(())
