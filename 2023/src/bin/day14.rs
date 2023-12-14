@@ -3,6 +3,9 @@ use std::env;
 use std::fs;
 use std::io;
 
+extern crate itertools;
+use itertools::Itertools;
+
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Hash)]
 struct Coord {
     x: usize,
@@ -16,81 +19,57 @@ struct Rock {
 }
 
 fn move_rocks_north(rocks: &mut [Rock]) {
-    rocks.sort_by(|a, b| a.c.y.cmp(&b.c.y).then(a.c.x.cmp(&b.c.y)));
+    rocks.sort_by(|a, b| a.c.x.cmp(&b.c.x).then(a.c.y.cmp(&b.c.y)));
 
-    for i in 0..rocks.len() {
-        // cubes don't move
-        if rocks[i].is_cube {
-            continue;
-        } else if let Some(blocking_rock) = rocks
-            .iter()
-            .take(i) // sorted, so only need to look at previous items
-            .filter(|&o| o.c.x == rocks[i].c.x) // also means that we don't need to filter on y
-            .max_by_key(|&o| o.c.y)
-        {
-            rocks[i].c.y = blocking_rock.c.y + 1;
-        } else {
-            rocks[i].c.y = 0;
+    for (_, group) in &rocks.iter_mut().group_by(|r| r.c.x) {
+        let mut previous: Option<&Rock> = None;
+        for r in group {
+            if !r.is_cube {
+                r.c.y = previous.map(|p| p.c.y + 1).unwrap_or(0);
+            }
+            previous = Some(r);
         }
     }
 }
 
 fn move_rocks_south(rocks: &mut [Rock], max_y: usize) {
-    rocks.sort_by(|a, b| b.c.y.cmp(&a.c.y).then(a.c.x.cmp(&b.c.y)));
+    rocks.sort_by(|a, b| a.c.x.cmp(&b.c.x).then(b.c.y.cmp(&a.c.y)));
 
-    for i in 0..rocks.len() {
-        // cubes don't move
-        if rocks[i].is_cube {
-            continue;
-        } else if let Some(blocking_rock) = rocks
-            .iter()
-            .take(i)
-            .filter(|&o| o.c.x == rocks[i].c.x)
-            .min_by_key(|&o| o.c.y)
-        {
-            rocks[i].c.y = blocking_rock.c.y - 1;
-        } else {
-            rocks[i].c.y = max_y;
+    for (_, group) in &rocks.iter_mut().group_by(|r| r.c.x) {
+        let mut previous: Option<&Rock> = None;
+        for r in group {
+            if !r.is_cube {
+                r.c.y = previous.map(|p| p.c.y - 1).unwrap_or(max_y);
+            }
+            previous = Some(r);
         }
     }
 }
 
 fn move_rocks_west(rocks: &mut [Rock]) {
-    rocks.sort_by(|a, b| a.c.x.cmp(&b.c.x).then(a.c.y.cmp(&b.c.y)));
+    rocks.sort_by(|a, b| a.c.y.cmp(&b.c.y).then(a.c.x.cmp(&b.c.x)));
 
-    for i in 0..rocks.len() {
-        // cubes don't move
-        if rocks[i].is_cube {
-            continue;
-        } else if let Some(blocking_rock) = rocks
-            .iter()
-            .take(i)
-            .filter(|&o| o.c.y == rocks[i].c.y)
-            .max_by_key(|&o| o.c.x)
-        {
-            rocks[i].c.x = blocking_rock.c.x + 1;
-        } else {
-            rocks[i].c.x = 0;
+    for (_, group) in &rocks.iter_mut().group_by(|r| r.c.y) {
+        let mut previous: Option<&Rock> = None;
+        for r in group {
+            if !r.is_cube {
+                r.c.x = previous.map(|p| p.c.x + 1).unwrap_or(0);
+            }
+            previous = Some(r);
         }
     }
 }
 
 fn move_rocks_east(rocks: &mut [Rock], max_x: usize) {
-    rocks.sort_by(|a, b| b.c.x.cmp(&a.c.x).then(a.c.y.cmp(&b.c.y)));
+    rocks.sort_by(|a, b| a.c.y.cmp(&b.c.y).then(b.c.x.cmp(&a.c.x)));
 
-    for i in 0..rocks.len() {
-        // cubes don't move
-        if rocks[i].is_cube {
-            continue;
-        } else if let Some(blocking_rock) = rocks
-            .iter()
-            .take(i)
-            .filter(|&o| o.c.y == rocks[i].c.y)
-            .min_by_key(|&o| o.c.x)
-        {
-            rocks[i].c.x = blocking_rock.c.x - 1;
-        } else {
-            rocks[i].c.x = max_x;
+    for (_, group) in &rocks.iter_mut().group_by(|r| r.c.y) {
+        let mut previous: Option<&Rock> = None;
+        for r in group {
+            if !r.is_cube {
+                r.c.x = previous.map(|p| p.c.x - 1).unwrap_or(max_x);
+            }
+            previous = Some(r);
         }
     }
 }
