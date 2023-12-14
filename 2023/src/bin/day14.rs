@@ -6,13 +6,13 @@ use std::io;
 extern crate itertools;
 use itertools::Itertools;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord, Hash)]
 struct Coord {
     x: usize,
     y: usize,
 }
 
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Clone, Hash, Eq, PartialEq)]
 struct Rock {
     c: Coord,
     is_cube: bool,
@@ -29,25 +29,23 @@ fn move_rocks_north(rocks: &[Rock]) -> Vec<Rock> {
         // cubes don't move
         if r.is_cube {
             new_rocks.push(r.clone());
+        } else if let Some(blocking_rock) = new_rocks
+            .iter()
+            .filter(|&o| o.c.x == r.c.x)
+            .max_by_key(|&o| o.c.y)
+        {
+            new_rocks.push(Rock {
+                c: Coord {
+                    x: r.c.x,
+                    y: blocking_rock.c.y + 1,
+                },
+                is_cube: false,
+            });
         } else {
-            if let Some(blocking_rock) = new_rocks
-                .iter()
-                .filter(|&o| o.c.x == r.c.x)
-                .max_by_key(|&o| o.c.y)
-            {
-                new_rocks.push(Rock {
-                    c: Coord {
-                        x: r.c.x,
-                        y: blocking_rock.c.y + 1,
-                    },
-                    is_cube: false,
-                });
-            } else {
-                new_rocks.push(Rock {
-                    c: Coord { x: r.c.x, y: 0 },
-                    is_cube: false,
-                });
-            }
+            new_rocks.push(Rock {
+                c: Coord { x: r.c.x, y: 0 },
+                is_cube: false,
+            });
         }
     }
     new_rocks
@@ -65,25 +63,23 @@ fn move_rocks_south(rocks: &[Rock]) -> Vec<Rock> {
         // cubes don't move
         if r.is_cube {
             new_rocks.push(r.clone());
+        } else if let Some(blocking_rock) = new_rocks
+            .iter()
+            .filter(|&o| o.c.x == r.c.x)
+            .min_by_key(|&o| o.c.y)
+        {
+            new_rocks.push(Rock {
+                c: Coord {
+                    x: r.c.x,
+                    y: blocking_rock.c.y - 1,
+                },
+                is_cube: false,
+            });
         } else {
-            if let Some(blocking_rock) = new_rocks
-                .iter()
-                .filter(|&o| o.c.x == r.c.x)
-                .min_by_key(|&o| o.c.y)
-            {
-                new_rocks.push(Rock {
-                    c: Coord {
-                        x: r.c.x,
-                        y: blocking_rock.c.y - 1,
-                    },
-                    is_cube: false,
-                });
-            } else {
-                new_rocks.push(Rock {
-                    c: Coord { x: r.c.x, y: max_y },
-                    is_cube: false,
-                });
-            }
+            new_rocks.push(Rock {
+                c: Coord { x: r.c.x, y: max_y },
+                is_cube: false,
+            });
         }
     }
     new_rocks
@@ -100,25 +96,23 @@ fn move_rocks_west(rocks: &[Rock]) -> Vec<Rock> {
         // cubes don't move
         if r.is_cube {
             new_rocks.push(r.clone());
+        } else if let Some(blocking_rock) = new_rocks
+            .iter()
+            .filter(|&o| o.c.y == r.c.y)
+            .max_by_key(|&o| o.c.x)
+        {
+            new_rocks.push(Rock {
+                c: Coord {
+                    x: blocking_rock.c.x + 1,
+                    y: r.c.y,
+                },
+                is_cube: false,
+            });
         } else {
-            if let Some(blocking_rock) = new_rocks
-                .iter()
-                .filter(|&o| o.c.y == r.c.y)
-                .max_by_key(|&o| o.c.x)
-            {
-                new_rocks.push(Rock {
-                    c: Coord {
-                        x: blocking_rock.c.x + 1,
-                        y: r.c.y,
-                    },
-                    is_cube: false,
-                });
-            } else {
-                new_rocks.push(Rock {
-                    c: Coord { x: 0, y: r.c.y },
-                    is_cube: false,
-                });
-            }
+            new_rocks.push(Rock {
+                c: Coord { x: 0, y: r.c.y },
+                is_cube: false,
+            });
         }
     }
     new_rocks
@@ -136,46 +130,31 @@ fn move_rocks_east(rocks: &[Rock]) -> Vec<Rock> {
         // cubes don't move
         if r.is_cube {
             new_rocks.push(r.clone());
+        } else if let Some(blocking_rock) = new_rocks
+            .iter()
+            .filter(|&o| o.c.y == r.c.y)
+            .min_by_key(|&o| o.c.x)
+        {
+            new_rocks.push(Rock {
+                c: Coord {
+                    x: blocking_rock.c.x - 1,
+                    y: r.c.y,
+                },
+                is_cube: false,
+            });
         } else {
-            if let Some(blocking_rock) = new_rocks
-                .iter()
-                .filter(|&o| o.c.y == r.c.y)
-                .min_by_key(|&o| o.c.x)
-            {
-                new_rocks.push(Rock {
-                    c: Coord {
-                        x: blocking_rock.c.x - 1,
-                        y: r.c.y,
-                    },
-                    is_cube: false,
-                });
-            } else {
-                new_rocks.push(Rock {
-                    c: Coord { x: max_x, y: r.c.y },
-                    is_cube: false,
-                });
-            }
+            new_rocks.push(Rock {
+                c: Coord { x: max_x, y: r.c.y },
+                is_cube: false,
+            });
         }
     }
     new_rocks
 }
 
-fn print_rocks(rocks: &[Rock], max: Coord) {
-    for y in 0..=max.y {
-        for x in 0..=max.x {
-            if let Some(r) = rocks.iter().find(|o| o.c == Coord { x, y }) {
-                print!("{}", if r.is_cube { '#' } else { 'O' });
-            } else {
-                print!(".");
-            }
-        }
-        println!();
-    }
-}
-
 fn move_rocks_cycle(rocks: &[Rock]) -> Vec<Rock> {
     move_rocks_east(&move_rocks_south(&move_rocks_west(&move_rocks_north(
-        &rocks,
+        rocks,
     ))))
 }
 
