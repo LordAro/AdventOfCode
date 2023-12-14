@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::io;
@@ -199,8 +198,6 @@ fn main() -> io::Result<()> {
         calc_north_load(&move_rocks_north(&rocks), max_coord)
     );
 
-    let mut cycle_cache: HashMap<Vec<Rock>, usize> = HashMap::new();
-    cycle_cache.insert(rocks.clone(), 0);
     let mut cache_cycle: Vec<Vec<Rock>> = vec![];
     cache_cycle.push(rocks.clone());
 
@@ -210,12 +207,11 @@ fn main() -> io::Result<()> {
     // look for cycle in cycles
     for cycle_number in 1..1_000_000_000 {
         cur_rocks = move_rocks_cycle(&cur_rocks);
-        if let Some(cache_entry) = cycle_cache.get(&cur_rocks) {
-            cycle_start = *cache_entry;
-            cycle_length = cycle_number - cache_entry;
+        if let Some(idx) = cache_cycle.iter().position(|r| r == &cur_rocks) {
+            cycle_start = idx;
+            cycle_length = cycle_number - cycle_start;
             break;
         }
-        cycle_cache.insert(cur_rocks.clone(), cycle_number);
         cache_cycle.push(cur_rocks.clone());
     }
 
