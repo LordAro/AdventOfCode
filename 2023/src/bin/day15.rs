@@ -9,12 +9,9 @@ fn hash_alg(s: &str) -> usize {
 
 fn main() -> io::Result<()> {
     let input_str: String =
-        fs::read_to_string(env::args().nth(1).expect("Incorrect number of arguments"))?
-            .chars()
-            .filter(|c| !c.is_ascii_whitespace()) // get rid of the trailing newline. Not especially efficient.
-            .collect();
+        fs::read_to_string(env::args().nth(1).expect("Incorrect number of arguments"))?;
 
-    let hash_strs: Vec<_> = input_str.split(',').collect();
+    let hash_strs: Vec<_> = input_str.trim().split(',').collect();
 
     let hash_sum: usize = hash_strs.iter().map(|s| hash_alg(s)).sum();
 
