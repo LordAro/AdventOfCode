@@ -101,7 +101,7 @@ fn run_beams(
     while !light_beams.is_empty() {
         let mut new_light_beams = vec![];
         for (beam_pos, beam_dir) in light_beams {
-            if let Some(new_pos) = get_next_pos(&beam_pos, beam_dir, &max_coord) {
+            if let Some(new_pos) = get_next_pos(&beam_pos, beam_dir, max_coord) {
                 if let Some(mirror) = mirrors.get(&new_pos) {
                     new_light_beams.extend(
                         get_reflections(*mirror, beam_dir)
@@ -171,7 +171,7 @@ fn main() -> io::Result<()> {
                     .map(|x| {
                         (
                             Coord {
-                                x: x,
+                                x,
                                 y: if d == Dir::Up { max_coord.y } else { 0 },
                             },
                             d,
@@ -183,7 +183,7 @@ fn main() -> io::Result<()> {
                         (
                             Coord {
                                 x: if d == Dir::Left { max_coord.x } else { 0 },
-                                y: y,
+                                y,
                             },
                             d,
                         )
