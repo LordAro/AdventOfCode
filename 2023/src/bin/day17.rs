@@ -12,38 +12,18 @@ struct Coord {
 
 fn get_adjacents(map: &Vec<Vec<u32>>, pos: Coord) -> [Option<Coord>; 4] {
     [
-        if pos.y == 0 {
-            None
-        } else {
-            Some(Coord {
-                x: pos.x,
-                y: pos.y - 1,
-            })
-        }, // north
-        if pos.y == map.len() - 1 {
-            None
-        } else {
-            Some(Coord {
-                x: pos.x,
-                y: pos.y + 1,
-            })
-        }, // south
-        if pos.x == 0 {
-            None
-        } else {
-            Some(Coord {
-                x: pos.x - 1,
-                y: pos.y,
-            })
-        }, // west
-        if pos.x == map[0].len() - 1 {
-            None
-        } else {
-            Some(Coord {
-                x: pos.x + 1,
-                y: pos.y,
-            })
-        }, // south
+        pos.y.checked_sub(1).map(|y| Coord { x: pos.x, y }), // north
+        Some(Coord {
+            x: pos.x,
+            y: pos.y + 1,
+        })
+        .filter(|c| c.y < map.len()), // south
+        pos.x.checked_sub(1).map(|x| Coord { x, y: pos.y }), // west
+        Some(Coord {
+            x: pos.x + 1,
+            y: pos.y,
+        })
+        .filter(|c| c.x < map[0].len()), // east
     ]
 }
 
