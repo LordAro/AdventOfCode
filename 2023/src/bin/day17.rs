@@ -27,10 +27,10 @@ fn get_adjacents(map: &Vec<Vec<u32>>, pos: Coord) -> [Option<Coord>; 4] {
     ]
 }
 
-fn get_route(map: &Vec<Vec<u32>>, source: Coord, target: Coord) -> Vec<Coord> {
-    let mut came_from: HashMap<Coord, Coord> = HashMap::new();
-    let mut open_set = VecDeque::new();
-    open_set.push_back(source);
+// don't incur cost at start
+fn get_route_cost(map: &Vec<Vec<u32>>, route: &[Coord]) -> u32 {
+    route.iter().skip(1).map(|c| map[c.y][c.x]).sum::<u32>()
+}
 
     let mut g_score = HashMap::new();
     g_score.insert(source, map[source.y][source.x]);
@@ -105,7 +105,8 @@ fn main() -> io::Result<()> {
 4564679986453
 1224686865563
 2546548887735
-4322674655533";
+4322674655533
+";
 
     let map: Vec<Vec<u32>> = input_str
         .lines()
@@ -122,10 +123,7 @@ fn main() -> io::Result<()> {
     );
 
     println!("{:?}", route);
-    println!(
-        "Total route cost: {}",
-        route.iter().map(|c| map[c.y][c.x]).sum::<u32>()
-    );
+    println!("Total route cost: {}", get_route_cost(&map, &route));
 
     Ok(())
 }
