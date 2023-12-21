@@ -223,8 +223,7 @@ mod tests {
             .collect();
         let (map, keys, doors, me) = parse_map(&input);
         let route_cache = build_route_cache(&keys, me, &map);
-        let final_route: Vec<_> =
-            tsp(me, &keys, &HashSet::new(), &doors, &map, &route_cache).collect();
+        let final_route: Vec<_> = tsp(me, &keys, &HashSet::new(), &doors, &route_cache).collect();
         assert_eq!(final_route.len(), 8);
     }
 
@@ -239,8 +238,7 @@ mod tests {
             .collect();
         let (map, keys, doors, me) = parse_map(&input);
         let route_cache = build_route_cache(&keys, me, &map);
-        let final_route: Vec<_> =
-            tsp(me, &keys, &HashSet::new(), &doors, &map, &route_cache).collect();
+        let final_route: Vec<_> = tsp(me, &keys, &HashSet::new(), &doors, &route_cache).collect();
         assert_eq!(final_route.len(), 86);
     }
     #[test]
@@ -254,8 +252,7 @@ mod tests {
             .collect();
         let (map, keys, doors, me) = parse_map(&input);
         let route_cache = build_route_cache(&keys, me, &map);
-        let final_route: Vec<_> =
-            tsp(me, &keys, &HashSet::new(), &doors, &map, &route_cache).collect();
+        let final_route: Vec<_> = tsp(me, &keys, &HashSet::new(), &doors, &route_cache).collect();
         assert_eq!(final_route.len(), 132);
     }
 
@@ -274,8 +271,7 @@ mod tests {
             .collect();
         let (map, keys, doors, me) = parse_map(&input);
         let route_cache = build_route_cache(&keys, me, &map);
-        let final_route: Vec<_> =
-            tsp(me, &keys, &HashSet::new(), &doors, &map, &route_cache).collect();
+        let final_route: Vec<_> = tsp(me, &keys, &HashSet::new(), &doors, &route_cache).collect();
         assert_eq!(final_route.len(), 136);
     }
 
@@ -291,8 +287,7 @@ mod tests {
             .collect();
         let (map, keys, doors, me) = parse_map(&input);
         let route_cache = build_route_cache(&keys, me, &map);
-        let final_route: Vec<_> =
-            tsp(me, &keys, &HashSet::new(), &doors, &map, &route_cache).collect();
+        let final_route: Vec<_> = tsp(me, &keys, &HashSet::new(), &doors, &route_cache).collect();
         assert_eq!(final_route.len(), 81);
     }
 }

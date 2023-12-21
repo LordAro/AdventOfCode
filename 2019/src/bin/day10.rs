@@ -21,7 +21,7 @@ fn main() {
         .expect("Could not open input file"),
     )
     .lines()
-    .filter_map(|r| r.ok())
+    .map_while(Result::ok)
     .enumerate()
     .flat_map(|(i, v)| {
         v.chars()

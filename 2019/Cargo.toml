@@ -4,7 +4,7 @@ version = "2019.0.0"
 authors = ["Charles Pigott <charlespigott@googlemail.com>"]
 
 [dependencies]
-rayon = "^1.2"
-itertools = "^0.8"
+rayon = "^1.8"
+itertools = "^0.12"
 permutohedron = "^0.2"
-regex = "^1.3"
+regex = "^1.10"

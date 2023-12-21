@@ -34,11 +34,11 @@ fn div_ceil(a: u64, b: u64) -> u64 {
     (a + b - 1) / b
 }
 
-fn get_ore_count<'a, 'b>(
+fn get_ore_count<'a>(
     reactions: &'a ReactionMap,
     target: &'a str,
     quantity_required: u64,
-    waste: &'b mut HashMap<&'a str, u64>,
+    waste: &mut HashMap<&'a str, u64>,
 ) -> u64 {
     let mut quantity_required = quantity_required;
     if target == "ORE" {
