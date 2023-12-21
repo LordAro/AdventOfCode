@@ -1,4 +1,5 @@
 use std::env;
+use std::fmt::Write;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -28,7 +29,7 @@ fn main() {
     println!("Multiplication: {}", rope[0] * rope[1]);
 
     let num_rounds = 64;
-    let additional = vec![17, 31, 73, 47, 23];
+    let additional = [17, 31, 73, 47, 23];
 
     let input2 = [input_str.as_bytes(), &additional[..]].concat();
     rope = (0..256).collect(); // reset
@@ -51,10 +52,12 @@ fn main() {
             pos = (pos + ins as usize + skip + (r * input2.len())) % 256;
         }
     }
-    let hash: String = rope
+    let hash = rope
         .chunks(16)
         .map(|c| c.iter().fold(0, |a, b| a ^ b))
-        .map(|e| format!("{:02x}", e))
-        .collect();
+        .fold(String::new(), |mut output, e| {
+            let _ = write!(output, "{:02x}", e);
+            output
+        });
     println!("Dense hash: {}", hash);
 }

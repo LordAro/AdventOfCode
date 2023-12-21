@@ -6,7 +6,7 @@ fn knot_hash(input: &[u8]) -> Vec<u8> {
     let mut rope: Vec<usize> = (0..256).collect();
     let mut pos: usize = 0;
 
-    let additional = vec![17, 31, 73, 47, 23];
+    let additional = [17, 31, 73, 47, 23];
     let input2 = [input, &additional[..]].concat();
 
     for r in 0..64 {

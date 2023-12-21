@@ -49,26 +49,20 @@ fn process(input: Vec<Vec<String>>) -> (i32, i32) {
 }
 
 fn main() {
-    let mut total1 = Duration::zero();
-    let mut total2 = Duration::zero();
+    let mut total1 = Duration::ZERO;
+    let mut total2 = Duration::ZERO;
     for _ in 0..10000 {
-        let now1 = time::now();
+        let now1 = time::Instant::now();
         let input = read_input("inputs/day8.input"); // don't duplicate
-        let now2 = time::now();
+        let now2 = time::Instant::now();
 
         let (largest, abs_largest) = process(input);
-        let now3 = time::now();
+        let now3 = time::Instant::now();
         println!("Largest value: {:?}", largest);
         println!("Absolute largest value: {:?}", abs_largest);
-        total1 = total1 + (now2 - now1);
-        total2 = total2 + (now3 - now2);
+        total1 += now2 - now1;
+        total2 += now3 - now2;
     }
-    println!(
-        "Input reading: {:?}us",
-        (total1 / 10000).num_microseconds().unwrap()
-    );
-    println!(
-        "Processing: {:?}us",
-        (total2 / 10000).num_microseconds().unwrap()
-    );
+    println!("Input reading: {:?}us", total1.whole_microseconds());
+    println!("Processing: {:?}us", total2.whole_microseconds());
 }

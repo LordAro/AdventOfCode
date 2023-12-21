@@ -60,12 +60,10 @@ fn variants(input: &Pattern) -> Vec<Pattern> {
         rot3_ccw(input)
     };
     let rots = [base, rot90, rot180, rot270];
-    itertools::Itertools::flatten(
-        rots.iter()
-            .map(|r| vec![r.clone(), flip_h(r), flip_v(r), flip_v(&flip_h(r))]),
-    )
-    .unique()
-    .collect()
+    rots.iter()
+        .flat_map(|r| [r.clone(), flip_h(r), flip_v(r), flip_v(&flip_h(r))])
+        .unique()
+        .collect()
 }
 
 fn main() {
@@ -111,10 +109,10 @@ fn main() {
                 // find matching pattern
                 let new_val = input
                     .iter()
-                    .filter(|&&(ref k, _)| {
+                    .filter(|&(k, _)| {
                         k.len() == subgrid.len() && light_total(k) == light_total(&subgrid)
                     })
-                    .find(|&&(ref k, _)| variants(k).iter().any(|p| *p == subgrid))
+                    .find(|&(k, _)| variants(k).iter().any(|p| *p == subgrid))
                     .unwrap()
                     .1
                     .clone();

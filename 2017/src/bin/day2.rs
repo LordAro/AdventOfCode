@@ -28,13 +28,12 @@ fn main() {
     let sum2: i32 = input
         .iter()
         .map(|l| {
-            itertools::Itertools::flatten(
-                l.iter()
-                    .combinations(2)
-                    .filter(|v| *v.iter().max().unwrap() % *v.iter().min().unwrap() == 0),
-            )
-            .cloned()
-            .collect::<Vec<_>>()
+            l.iter()
+                .combinations(2)
+                .filter(|v| *v.iter().max().unwrap() % *v.iter().min().unwrap() == 0)
+                .flatten()
+                .cloned()
+                .collect::<Vec<_>>()
         })
         .map(|v| *v.iter().max().unwrap() / *v.iter().min().unwrap())
         .sum();

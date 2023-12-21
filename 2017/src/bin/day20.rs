@@ -110,9 +110,9 @@ fn main() {
     // but instead just run simulation for a bit
     for _ in 0..100 {
         // Find collision positions
-        let collisions: Vec<Point> = input
-            .iter()
-            .sorted_by(|a, b| Ord::cmp(&a.pos, &b.pos))
+        let sorted_points: Vec<_> = input.iter().sorted_by(|a, b| a.pos.cmp(&b.pos)).collect();
+
+        let collisions: Vec<Point> = sorted_points
             .windows(2)
             .filter(|&win| win[0].pos == win[1].pos)
             .map(|win| win[0].pos)

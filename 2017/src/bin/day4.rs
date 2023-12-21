@@ -16,14 +16,19 @@ fn main() {
 
     let valid1: usize = input
         .iter()
-        .map(|v| v.iter().sorted())
-        .filter(|v| v.iter().dedup().count() == v.len())
+        .filter(|&v| v.iter().sorted().dedup().count() == v.len())
         .count();
 
     let valid2: usize = input
         .iter()
-        .map(|v| v.iter().map(|w| w.chars().sorted()).sorted())
-        .filter(|v| v.iter().dedup().count() == v.len())
+        .filter(|&v| {
+            v.iter()
+                .map(|w| w.chars().sorted().collect::<String>())
+                .sorted()
+                .dedup()
+                .count()
+                == v.len()
+        })
         .count();
 
     println!("Valid passphrases: {:?}", valid1);
