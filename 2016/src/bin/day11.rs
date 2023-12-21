@@ -26,10 +26,8 @@ fn is_goal(state: &State) -> bool {
 
 fn is_valid(state: &State) -> bool {
     for floor in &state.0 {
-        let (gen, mc): (Floor, Floor) = floor.iter().cloned().partition(|&(_, ref t)| *t == 'g');
-        let mc_no_match = mc
-            .iter()
-            .filter(|&&(ref m, _)| !gen.iter().any(|&(ref g, _)| m == g));
+        let (gen, mc): (Floor, Floor) = floor.iter().cloned().partition(|(_, t)| *t == 'g');
+        let mc_no_match = mc.iter().filter(|&(m, _)| !gen.iter().any(|(g, _)| m == g));
         if mc_no_match.count() != 0 && !gen.is_empty() {
             return false;
         }
@@ -41,19 +39,19 @@ fn hashed_form(state: &State) -> (Vec<(usize, usize)>, usize) {
     let unique_elems = state
         .0
         .iter()
-        .flat_map(|f| f.iter().map(|&(ref e, _)| e.clone()))
+        .flat_map(|f| f.iter().map(|(e, _)| e.clone()))
         .unique();
     let mut hash_pairs: Vec<_> = unique_elems
         .map(|elem| {
             let g_floor = state
                 .0
                 .iter()
-                .position(|f| f.iter().any(|&(ref g, ref t)| elem == *g && *t == 'g'))
+                .position(|f| f.iter().any(|(g, t)| elem == *g && *t == 'g'))
                 .unwrap();
             let m_floor = state
                 .0
                 .iter()
-                .position(|f| f.iter().any(|&(ref g, ref t)| elem == *g && *t == 'm'))
+                .position(|f| f.iter().any(|(g, t)| elem == *g && *t == 'm'))
                 .unwrap();
             (g_floor, m_floor)
         })
@@ -134,11 +132,11 @@ fn main() {
     for (floor_no, floor_opt) in input.lines().enumerate() {
         let floor_str = floor_opt.unwrap();
         for caps in microchip_re.captures_iter(&floor_str) {
-            let mc = caps.at(1).unwrap().to_string();
+            let mc = caps.get(1).unwrap().as_str().to_string();
             floors.0[floor_no].push((mc, 'm'));
         }
         for caps in generator_re.captures_iter(&floor_str) {
-            let g = caps.at(1).unwrap().to_string();
+            let g = caps.get(1).unwrap().as_str().to_string();
             floors.0[floor_no].push((g, 'g'));
         }
     }

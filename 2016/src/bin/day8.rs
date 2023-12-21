@@ -26,8 +26,8 @@ fn main() {
         let l = line.unwrap();
         let cap = rect_re.captures(&l);
         if let Some(caps) = cap {
-            let x: usize = caps.at(1).unwrap().parse().unwrap();
-            let y: usize = caps.at(2).unwrap().parse().unwrap();
+            let x: usize = caps.get(1).unwrap().as_str().parse().unwrap();
+            let y: usize = caps.get(2).unwrap().as_str().parse().unwrap();
 
             for row in grid.iter_mut().take(y) {
                 for cell in row.iter_mut().take(x) {
@@ -36,9 +36,9 @@ fn main() {
             }
         } else {
             let caps = rot_re.captures(&l).unwrap();
-            let dir: char = caps.at(2).unwrap().chars().next().unwrap();
-            let idx: usize = caps.at(3).unwrap().parse().unwrap();
-            let dist: usize = caps.at(4).unwrap().parse().unwrap();
+            let dir: char = caps.get(2).unwrap().as_str().chars().next().unwrap();
+            let idx: usize = caps.get(3).unwrap().as_str().parse().unwrap();
+            let dist: usize = caps.get(4).unwrap().as_str().parse().unwrap();
 
             match dir {
                 'x' => {

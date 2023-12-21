@@ -6,6 +6,7 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::env;
+use std::fmt::Write;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -32,9 +33,10 @@ fn filesystem_hashobj(fs: &Filesystem) -> Vec<FSHashObj> {
 }
 
 fn fs_str(fs: &Filesystem) -> String {
-    fs.iter()
-        .map(|(pos, node)| format!("({:?},{:?})", pos, node.orig_pos))
-        .collect()
+    fs.iter().fold(String::new(), |mut output, (pos, node)| {
+        let _ = write!(output, "({:?},{:?})", pos, node.orig_pos);
+        output
+    })
 }
 
 fn is_viable_copy(a: &StorageNode, b: &StorageNode) -> bool {
@@ -121,14 +123,14 @@ fn main() {
             let l = li.unwrap();
             grid_re.captures(&l).map(|caps| {
                 let pos = (
-                    caps.at(1).unwrap().parse::<usize>().unwrap(),
-                    caps.at(2).unwrap().parse::<usize>().unwrap(),
+                    caps.get(1).unwrap().as_str().parse::<usize>().unwrap(),
+                    caps.get(2).unwrap().as_str().parse::<usize>().unwrap(),
                 );
                 (
                     pos,
                     StorageNode {
-                        total: caps.at(3).unwrap().parse::<usize>().unwrap(),
-                        used: caps.at(4).unwrap().parse::<usize>().unwrap(),
+                        total: caps.get(3).unwrap().as_str().parse::<usize>().unwrap(),
+                        used: caps.get(4).unwrap().as_str().parse::<usize>().unwrap(),
                         orig_pos: pos,
                     },
                 )

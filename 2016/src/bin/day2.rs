@@ -16,9 +16,9 @@ use std::io::{BufRead, BufReader};
 
 fn up(p: i32) -> Option<i32> {
     match p {
-        1 | 2 | 3 => Some(p),
-        4 | 5 | 6 => Some(p - 3),
-        7 | 8 | 9 => Some(p - 3),
+        1..=3 => Some(p),
+        4..=6 => Some(p - 3),
+        7..=9 => Some(p - 3),
         _ => None,
     }
 }
@@ -41,9 +41,9 @@ fn left(p: i32) -> Option<i32> {
 
 fn right(p: i32) -> Option<i32> {
     match p {
-        1 | 2 | 3 => Some(p + 3),
-        4 | 5 | 6 => Some(p + 3),
-        7 | 8 | 9 => Some(p),
+        1..=3 => Some(p + 3),
+        4..=6 => Some(p + 3),
+        7..=9 => Some(p),
         _ => None,
     }
 }

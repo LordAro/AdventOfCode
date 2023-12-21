@@ -66,8 +66,8 @@ fn main() {
             let l = li.unwrap();
             let caps = disc_re.captures(&l).expect("Line not captured by regex");
             (
-                caps.at(1).unwrap().parse::<i64>().unwrap(),
-                caps.at(2).unwrap().parse::<i64>().unwrap(),
+                caps.get(1).unwrap().as_str().parse::<i64>().unwrap(),
+                caps.get(2).unwrap().as_str().parse::<i64>().unwrap(),
             )
         })
         .enumerate()
@@ -81,10 +81,7 @@ fn main() {
 
     // new disc, 11 positions, starting at position 0, below bottom disc
     let new_disc = vec![((11 - (discs.len() as i64 + 1)).rem_euclid(11), 11)];
-    let discs2 = discs
-        .into_iter()
-        .chain(new_disc.into_iter())
-        .collect::<Vec<_>>();
+    let discs2 = discs.into_iter().chain(new_disc).collect::<Vec<_>>();
     let time2 = get_release_time(&discs2);
     println!("Button press time with additional disc: {}", time2);
 }

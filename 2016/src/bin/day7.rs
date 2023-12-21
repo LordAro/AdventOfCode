@@ -49,13 +49,13 @@ fn main() {
 
     let valid_tls = splitted_lines
         .iter()
-        .filter(|&&(ref sn, ref hn)| {
+        .filter(|&(sn, hn)| {
             sn.iter().any(|s| contains_abba_pair(s)) && hn.iter().all(|s| !contains_abba_pair(s))
         })
         .count();
     let valid_ssl = splitted_lines
         .iter()
-        .filter(|&&(ref sn, ref hn)| {
+        .filter(|&(sn, hn)| {
             for aba in find_aba(sn).iter() {
                 let a = aba.chars().next().unwrap();
                 let b = aba.chars().nth(1).unwrap();

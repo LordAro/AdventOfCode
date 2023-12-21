@@ -36,20 +36,20 @@ fn main() {
     for l in input.lines() {
         let line = l.unwrap();
         if let Some(caps) = initial_re.captures(&line) {
-            let v: i32 = caps.at(1).unwrap().parse().unwrap();
-            let b: i32 = caps.at(2).unwrap().parse().unwrap();
+            let v: i32 = caps.get(1).unwrap().as_str().parse().unwrap();
+            let b: i32 = caps.get(2).unwrap().as_str().parse().unwrap();
             bots.entry(b).or_default().push(v);
         } else if let Some(caps) = give_re.captures(&line) {
-            let b: i32 = caps.at(1).unwrap().parse().unwrap();
-            let l_num = caps.at(3).unwrap().parse().unwrap();
-            let l = if caps.at(2).unwrap() == "output" {
+            let b: i32 = caps.get(1).unwrap().as_str().parse().unwrap();
+            let l_num = caps.get(3).unwrap().as_str().parse().unwrap();
+            let l = if caps.get(2).unwrap().as_str() == "output" {
                 BotOutput::Output(l_num)
             } else {
                 BotOutput::Bot(l_num)
             };
 
-            let h_num = caps.at(5).unwrap().parse().unwrap();
-            let h = if caps.at(4).unwrap() == "output" {
+            let h_num = caps.get(5).unwrap().as_str().parse().unwrap();
+            let h = if caps.get(4).unwrap().as_str() == "output" {
                 BotOutput::Output(h_num)
             } else {
                 BotOutput::Bot(h_num)

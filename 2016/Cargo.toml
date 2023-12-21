@@ -4,6 +4,6 @@ version = "2016.14.0"
 authors = ["Charles Pigott <charlespigott@googlemail.com>"]
 
 [dependencies]
-itertools = "^0.5"
-regex = "^0.1"
+itertools = "^0.12"
+regex = "^1.10"
 rust-crypto = "^0.2"
