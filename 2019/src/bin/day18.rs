@@ -73,12 +73,11 @@ fn open_adjacents(pos: Coord, map: &Grid) -> Vec<Coord> {
 }
 
 fn _print_map(positions: &Grid, route: &[Coord]) {
-    for row_ix in 0..positions.len() {
-        for col_ix in 0..positions[row_ix].len() {
+    for (row_ix, row) in positions.iter().enumerate() {
+        for (col_ix, cell) in row.iter().enumerate() {
             if route.contains(&(col_ix, row_ix)) {
                 print!("*");
             } else {
-                let cell = positions[row_ix][col_ix];
                 match cell {
                     State::Clear => print!("."),
                     State::Wall => print!("#"),
@@ -182,7 +181,7 @@ fn get_possible_routes(
             // we can't be doing the optimal route
             r[1..r.len() - 1]
                 .iter()
-                .all(|c| !remaining_key_coords.contains(&c))
+                .all(|c| !remaining_key_coords.contains(c))
         })
         .collect()
 }
@@ -192,8 +191,10 @@ fn get_possible_routes(
 // do tsp on graph
 // repeat
 
+type CacheType = HashMap<(Coord, Vec<char>, BTreeSet<char>), Vec<Coord>>;
+
 fn get_shortest_route(
-    cache: &mut HashMap<(Coord, Vec<char>, BTreeSet<char>), Vec<Coord>>,
+    cache: &mut CacheType,
     maze: &Maze,
     collected_keys: &BTreeSet<char>,
     start: Coord,
@@ -223,7 +224,6 @@ fn get_shortest_route(
         .filter(|&x| !collected_keys.contains(x))
         .cloned()
         .collect();
-    //println!("{remaining_keys:?}");
 
     let possible_routes = get_possible_routes(maze, &unlocked_positions, start, &remaining_keys);
     assert!(
