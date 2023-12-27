@@ -2,6 +2,10 @@ use std::collections::{BTreeSet, HashMap, HashSet, VecDeque};
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use std::iter::FromIterator;
+
+extern crate itertools;
+use itertools::Itertools;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 enum State {
@@ -91,7 +95,12 @@ fn _print_map(positions: &Grid, route: &[Coord]) {
     }
 }
 
-fn get_route(maze: &Maze, unlocked_doors: &[&Coord], source: Coord, target: Coord) -> Vec<Coord> {
+fn get_route(
+    maze: &Maze,
+    unlocked_doors: &[&Coord],
+    source: Coord,
+    target: Coord,
+) -> Option<Vec<Coord>> {
     let mut came_from: HashMap<Coord, Coord> = HashMap::new();
     let mut open_set = VecDeque::new();
     open_set.push_back(source);
@@ -109,7 +118,7 @@ fn get_route(maze: &Maze, unlocked_doors: &[&Coord], source: Coord, target: Coor
                 total_path.push(current);
             }
             total_path.reverse();
-            return total_path;
+            return Some(total_path);
         }
 
         for adj in open_adjacents(current, &maze.map).into_iter() {
@@ -126,19 +135,21 @@ fn get_route(maze: &Maze, unlocked_doors: &[&Coord], source: Coord, target: Coor
             }
         }
     }
-    panic!("Unable to find route between {:?} and {:?}", source, target);
+    None
 }
 
 // basic flood fill
 fn find_accessible_keys(
     map: &Vec<Vec<State>>,
     unlocked_doors: &[&Coord],
-    start_point: Coord,
+    start_positions: &[Coord],
 ) -> Vec<char> {
-    let mut to_search = open_adjacents(start_point, map);
-    let mut searched: HashSet<Coord> = HashSet::new();
+    let mut to_search: Vec<_> = start_positions
+        .iter()
+        .flat_map(|&p| open_adjacents(p, map))
+        .collect();
+    let mut searched: HashSet<Coord> = HashSet::from_iter(start_positions.iter().cloned());
     let mut found_keys = vec![];
-    searched.insert(start_point);
     while let Some(c) = to_search.pop() {
         match map[c.1][c.0] {
             State::Key(k) => found_keys.push(k),
@@ -163,18 +174,16 @@ fn find_accessible_keys(
 fn get_possible_routes(
     maze: &Maze,
     unlocked_doors: &[&Coord],
-    start: Coord,
+    start_positions: &[Coord],
     destinations: &[char],
 ) -> Vec<(char, Vec<Coord>)> {
     let remaining_key_coords: HashSet<Coord> = destinations.iter().map(|k| maze.keys[k]).collect();
 
-    destinations
+    start_positions
         .iter()
-        .map(|&dest| {
-            (
-                dest,
-                get_route(maze, unlocked_doors, start, maze.keys[&dest]),
-            )
+        .cartesian_product(destinations.iter())
+        .flat_map(|(&start, &dest)| {
+            get_route(maze, unlocked_doors, start, maze.keys[&dest]).map(|route| (dest, route))
         })
         .filter(|(_, r)| {
             // if the route contains another key (that we haven't collected yet),
@@ -191,13 +200,13 @@ fn get_possible_routes(
 // do tsp on graph
 // repeat
 
-type CacheType = HashMap<(Coord, Vec<char>, BTreeSet<char>), Vec<Coord>>;
+type CacheType = HashMap<(Vec<Coord>, Vec<char>, BTreeSet<char>), Vec<Coord>>;
 
 fn get_shortest_route(
     cache: &mut CacheType,
     maze: &Maze,
     collected_keys: &BTreeSet<char>,
-    start: Coord,
+    start_positions: &[Coord],
 ) -> Vec<Coord> {
     // collected everything, we're done
     if collected_keys.len() == maze.keys.len() {
@@ -209,7 +218,11 @@ fn get_shortest_route(
         .map(|&k| k.to_ascii_uppercase())
         .collect();
 
-    if let Some(route) = cache.get(&(start, unlocked_doors.clone(), collected_keys.clone())) {
+    if let Some(route) = cache.get(&(
+        start_positions.to_vec(),
+        unlocked_doors.clone(),
+        collected_keys.clone(),
+    )) {
         return route.clone();
     }
 
@@ -219,17 +232,19 @@ fn get_shortest_route(
         .collect();
 
     // don't search for the keys we've already collected
-    let remaining_keys: Vec<_> = find_accessible_keys(&maze.map, &unlocked_positions, start)
-        .iter()
-        .filter(|&x| !collected_keys.contains(x))
-        .cloned()
-        .collect();
+    let remaining_keys: Vec<_> =
+        find_accessible_keys(&maze.map, &unlocked_positions, start_positions)
+            .iter()
+            .filter(|&x| !collected_keys.contains(x))
+            .cloned()
+            .collect();
 
-    let possible_routes = get_possible_routes(maze, &unlocked_positions, start, &remaining_keys);
+    let possible_routes =
+        get_possible_routes(maze, &unlocked_positions, start_positions, &remaining_keys);
     assert!(
         !possible_routes.is_empty(),
         "Could not find route from {:?} to {:?}",
-        start,
+        start_positions,
         remaining_keys
     );
     let res = possible_routes
@@ -237,6 +252,16 @@ fn get_shortest_route(
         .map(|(dest_k, route_to_k)| {
             let mut new_collected_keys = collected_keys.clone();
             new_collected_keys.insert(*dest_k);
+            let new_start_positions: Vec<_> = start_positions
+                .iter()
+                .map(|&p| {
+                    if p == route_to_k[0] {
+                        *route_to_k.last().unwrap()
+                    } else {
+                        p
+                    }
+                })
+                .collect();
 
             // skip first position, counted in the last move of the previous route segment
             route_to_k[1..]
@@ -246,14 +271,18 @@ fn get_shortest_route(
                     cache,
                     maze,
                     &new_collected_keys,
-                    maze.keys[dest_k],
+                    &new_start_positions,
                 ))
                 .collect::<Vec<_>>()
         })
         .min_by_key(|r| r.len())
         .unwrap();
     cache.insert(
-        (start, unlocked_doors.clone(), collected_keys.clone()),
+        (
+            start_positions.to_vec(),
+            unlocked_doors,
+            collected_keys.clone(),
+        ),
         res.clone(),
     );
     res
@@ -276,9 +305,44 @@ fn main() {
     //_print_map(&maze.map, &[]);
 
     let mut cache = HashMap::new();
-    let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), me);
+    let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), &[me]);
     //_print_map(&maze.map, &final_route);
     println!("Route length: {}", final_route.len());
+
+    // ...      @#@
+    // .@.  =>  ###
+    // ...      @#@
+    let mut adjusted_map = maze.map.clone();
+    adjusted_map[me.1 - 1][me.0 - 1] = State::Me;
+    adjusted_map[me.1 - 1][me.0] = State::Wall;
+    adjusted_map[me.1 - 1][me.0 + 1] = State::Me;
+    adjusted_map[me.1][me.0 - 1] = State::Wall;
+    adjusted_map[me.1][me.0] = State::Wall;
+    adjusted_map[me.1][me.0 + 1] = State::Wall;
+    adjusted_map[me.1 + 1][me.0 - 1] = State::Me;
+    adjusted_map[me.1 + 1][me.0] = State::Wall;
+    adjusted_map[me.1 + 1][me.0 + 1] = State::Me;
+    let adjusted_maze = Maze {
+        map: adjusted_map,
+        keys: maze.keys,
+        doors: maze.doors,
+    };
+
+    let start_positions = [
+        (me.0 - 1, me.1 - 1),
+        (me.0 + 1, me.1 - 1),
+        (me.0 - 1, me.1 + 1),
+        (me.0 + 1, me.1 + 1),
+    ];
+
+    let mut cache2 = HashMap::new();
+    let final_route = get_shortest_route(
+        &mut cache2,
+        &adjusted_maze,
+        &BTreeSet::new(),
+        &start_positions,
+    );
+    println!("Route length with robots: {}", final_route.len());
 }
 
 #[cfg(test)]
@@ -294,7 +358,7 @@ mod tests {
             .collect();
         let (maze, me) = parse_map(&input);
         let mut cache = HashMap::new();
-        let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), me);
+        let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), &[me]);
         assert_eq!(final_route.len(), 8);
     }
 
@@ -309,7 +373,7 @@ mod tests {
             .collect();
         let (maze, me) = parse_map(&input);
         let mut cache = HashMap::new();
-        let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), me);
+        let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), &[me]);
         assert_eq!(final_route.len(), 86);
     }
     #[test]
@@ -323,7 +387,7 @@ mod tests {
             .collect();
         let (maze, me) = parse_map(&input);
         let mut cache = HashMap::new();
-        let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), me);
+        let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), &[me]);
         assert_eq!(final_route.len(), 132);
     }
 
@@ -341,11 +405,8 @@ mod tests {
             .lines()
             .collect();
         let (maze, me) = parse_map(&input);
-        print_map(&maze.map, &[]);
         let mut cache = HashMap::new();
-        let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), me);
-        print_map(&maze.map, &final_route);
-        println!("{:?}", final_route);
+        let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), &[me]);
         assert_eq!(final_route.len(), 136);
     }
 
@@ -361,7 +422,7 @@ mod tests {
             .collect();
         let (maze, me) = parse_map(&input);
         let mut cache = HashMap::new();
-        let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), me);
+        let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), &[me]);
         assert_eq!(final_route.len(), 81);
     }
 }
