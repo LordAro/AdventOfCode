@@ -1,13 +1,9 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::collections::VecDeque;
+use std::collections::{BTreeSet, HashMap, HashSet, VecDeque};
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-type Coord = (usize, usize);
-
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 enum State {
     Clear,
     Wall,
@@ -16,16 +12,18 @@ enum State {
     Me,
 }
 
-fn parse_map<T: AsRef<str>>(
-    input_lines: &[T],
-) -> (
-    Vec<Vec<State>>,
-    HashMap<Coord, char>,
-    HashMap<Coord, char>,
-    Coord,
-) {
-    let mut keys: HashMap<Coord, char> = HashMap::new();
-    let mut doors: HashMap<Coord, char> = HashMap::new();
+type Coord = (usize, usize);
+type Grid = Vec<Vec<State>>;
+
+struct Maze {
+    map: Grid,
+    keys: HashMap<char, Coord>,
+    doors: HashMap<char, Coord>,
+}
+
+fn parse_map<T: AsRef<str>>(input_lines: &[T]) -> (Maze, Coord) {
+    let mut keys: HashMap<char, Coord> = HashMap::new();
+    let mut doors: HashMap<char, Coord> = HashMap::new();
     let mut me: Coord = Default::default();
     let map = input_lines
         .iter()
@@ -42,11 +40,11 @@ fn parse_map<T: AsRef<str>>(
                         State::Me
                     }
                     'a'..='z' => {
-                        keys.insert((x, y), c);
+                        keys.insert(c, (x, y));
                         State::Key(c)
                     }
                     'A'..='Z' => {
-                        doors.insert((x, y), c);
+                        doors.insert(c, (x, y));
                         State::Door(c)
                     }
                     _ => panic!("Unrecognised character {}", c),
@@ -54,10 +52,10 @@ fn parse_map<T: AsRef<str>>(
                 .collect()
         })
         .collect();
-    (map, keys, doors, me)
+    (Maze { map, keys, doors }, me)
 }
 
-fn open_adjacents(pos: Coord, map: &Vec<Vec<State>>) -> Vec<Coord> {
+fn open_adjacents(pos: Coord, map: &Grid) -> Vec<Coord> {
     let mut ret = vec![];
     if pos.1 > 0 && map[pos.1 - 1][pos.0] != State::Wall {
         ret.push((pos.0, pos.1 - 1));
@@ -74,22 +72,27 @@ fn open_adjacents(pos: Coord, map: &Vec<Vec<State>>) -> Vec<Coord> {
     ret
 }
 
-fn print_map(positions: &Vec<Vec<State>>) {
-    for row in positions {
-        for cell in row {
-            match cell {
-                State::Clear => print!("."),
-                State::Wall => print!("#"),
-                State::Me => print!("@"),
-                State::Key(k) => print!("{}", k),
-                State::Door(d) => print!("{}", d),
+fn _print_map(positions: &Grid, route: &[Coord]) {
+    for row_ix in 0..positions.len() {
+        for col_ix in 0..positions[row_ix].len() {
+            if route.contains(&(col_ix, row_ix)) {
+                print!("*");
+            } else {
+                let cell = positions[row_ix][col_ix];
+                match cell {
+                    State::Clear => print!("."),
+                    State::Wall => print!("#"),
+                    State::Me => print!("@"),
+                    State::Key(k) => print!("{}", k),
+                    State::Door(d) => print!("{}", d),
+                }
             }
         }
         println!();
     }
 }
 
-fn get_route(source: Coord, target: Coord, map: &Vec<Vec<State>>) -> Vec<Coord> {
+fn get_route(maze: &Maze, unlocked_doors: &[&Coord], source: Coord, target: Coord) -> Vec<Coord> {
     let mut came_from: HashMap<Coord, Coord> = HashMap::new();
     let mut open_set = VecDeque::new();
     open_set.push_back(source);
@@ -110,7 +113,12 @@ fn get_route(source: Coord, target: Coord, map: &Vec<Vec<State>>) -> Vec<Coord> 
             return total_path;
         }
 
-        for adj in open_adjacents(current, map).into_iter() {
+        for adj in open_adjacents(current, &maze.map).into_iter() {
+            if let State::Door(_) = maze.map[adj.1][adj.0] {
+                if !unlocked_doors.contains(&&adj) {
+                    continue;
+                }
+            }
             let dist = g_score[&current] + 1;
             if &dist < g_score.get(&adj).unwrap_or(&isize::max_value()) {
                 came_from.insert(adj, current);
@@ -122,70 +130,133 @@ fn get_route(source: Coord, target: Coord, map: &Vec<Vec<State>>) -> Vec<Coord> 
     panic!("Unable to find route between {:?} and {:?}", source, target);
 }
 
-fn tsp(
-    start: Coord,
-    remaining_keys: &HashMap<Coord, char>,
-    keys_so_far: &HashSet<char>,
-    doors: &HashMap<Coord, char>,
-    route_cache: &HashMap<(Coord, Coord), Vec<Coord>>,
-) -> impl Iterator<Item = Coord> {
-    let mut shortest_route = vec![];
-    let mut shortest_dist = usize::max_value();
-    for (&key, key_name) in remaining_keys {
-        let mut route = route_cache.get(&(start, key)).unwrap().clone();
-        if route
-            .iter()
-            .filter_map(|c| {
-                if doors.contains_key(c) {
-                    Some(doors[c])
-                } else {
-                    None
+// basic flood fill
+fn find_accessible_keys(
+    map: &Vec<Vec<State>>,
+    unlocked_doors: &[&Coord],
+    start_point: Coord,
+) -> Vec<char> {
+    let mut to_search = open_adjacents(start_point, map);
+    let mut searched: HashSet<Coord> = HashSet::new();
+    let mut found_keys = vec![];
+    searched.insert(start_point);
+    while let Some(c) = to_search.pop() {
+        match map[c.1][c.0] {
+            State::Key(k) => found_keys.push(k),
+            State::Door(_) => {
+                if !unlocked_doors.contains(&&c) {
+                    continue;
                 }
-            })
-            .any(|d| !keys_so_far.contains(&d.to_ascii_lowercase()))
-        {
-            continue;
+            }
+            _ => (),
         }
-        //println!("{:?} -> {:?} = {}", start, key, route.len() - 1);
-        let mut new_remaining_keys = remaining_keys.clone();
-        new_remaining_keys.remove(&key);
-        let mut new_keys_so_far = keys_so_far.clone();
-        new_keys_so_far.insert(*key_name);
-        let recurse = tsp(
-            key,
-            &new_remaining_keys,
-            &new_keys_so_far,
-            doors,
-            route_cache,
+        searched.insert(c);
+
+        to_search.extend(
+            open_adjacents(c, map)
+                .iter()
+                .filter(|d| !searched.contains(d)),
         );
-        route.extend(recurse);
-        if route.len() < shortest_dist {
-            shortest_dist = route.len();
-            shortest_route = route;
-        }
     }
-    //shortest_dist - 1
-    shortest_route.into_iter().skip(1) // Remove starting position from the route
+    found_keys
 }
 
-fn build_route_cache(
-    keys: &HashMap<Coord, char>,
+fn get_possible_routes(
+    maze: &Maze,
+    unlocked_doors: &[&Coord],
     start: Coord,
-    map: &Vec<Vec<State>>,
-) -> HashMap<(Coord, Coord), Vec<Coord>> {
-    let mut route_cache: HashMap<(Coord, Coord), Vec<Coord>> = HashMap::new();
-    for &key1 in keys.keys() {
-        let route = get_route(start, key1, map);
-        route_cache.insert((start, key1), route);
-        for &key2 in keys.keys() {
-            if key1 == key2 {
-                continue;
-            }
-            let route = get_route(key1, key2, map);
-            route_cache.insert((key1, key2), route);
-        }
+    destinations: &[char],
+) -> Vec<(char, Vec<Coord>)> {
+    let remaining_key_coords: HashSet<Coord> = destinations.iter().map(|k| maze.keys[k]).collect();
+
+    destinations
+        .iter()
+        .map(|&dest| {
+            (
+                dest,
+                get_route(maze, unlocked_doors, start, maze.keys[&dest]),
+            )
+        })
+        .filter(|(_, r)| {
+            // if the route contains another key (that we haven't collected yet),
+            // we can't be doing the optimal route
+            r[1..r.len() - 1]
+                .iter()
+                .all(|c| !remaining_key_coords.contains(&c))
+        })
+        .collect()
+}
+
+// get all accessible keys
+// find routes from keys to their matching door (if possible) & keys
+// do tsp on graph
+// repeat
+
+fn get_shortest_route(
+    cache: &mut HashMap<(Coord, Vec<char>, BTreeSet<char>), Vec<Coord>>,
+    maze: &Maze,
+    collected_keys: &BTreeSet<char>,
+    start: Coord,
+) -> Vec<Coord> {
+    // collected everything, we're done
+    if collected_keys.len() == maze.keys.len() {
+        return vec![];
     }
-    route_cache
+    let unlocked_doors: Vec<_> = collected_keys
+        .iter()
+        .filter(|&k| maze.doors.contains_key(&k.to_ascii_uppercase()))
+        .map(|&k| k.to_ascii_uppercase())
+        .collect();
+
+    if let Some(route) = cache.get(&(start, unlocked_doors.clone(), collected_keys.clone())) {
+        return route.clone();
+    }
+
+    let unlocked_positions: Vec<_> = unlocked_doors
+        .iter()
+        .map(|d| maze.doors.get(d).unwrap()) // already verified existence using unlocked_doors
+        .collect();
+
+    // don't search for the keys we've already collected
+    let remaining_keys: Vec<_> = find_accessible_keys(&maze.map, &unlocked_positions, start)
+        .iter()
+        .filter(|&x| !collected_keys.contains(x))
+        .cloned()
+        .collect();
+    //println!("{remaining_keys:?}");
+
+    let possible_routes = get_possible_routes(maze, &unlocked_positions, start, &remaining_keys);
+    assert!(
+        !possible_routes.is_empty(),
+        "Could not find route from {:?} to {:?}",
+        start,
+        remaining_keys
+    );
+    let res = possible_routes
+        .iter()
+        .map(|(dest_k, route_to_k)| {
+            let mut new_collected_keys = collected_keys.clone();
+            new_collected_keys.insert(*dest_k);
+
+            // skip first position, counted in the last move of the previous route segment
+            route_to_k[1..]
+                .iter()
+                .cloned()
+                .chain(get_shortest_route(
+                    cache,
+                    maze,
+                    &new_collected_keys,
+                    maze.keys[dest_k],
+                ))
+                .collect::<Vec<_>>()
+        })
+        .min_by_key(|r| r.len())
+        .unwrap();
+    cache.insert(
+        (start, unlocked_doors.clone(), collected_keys.clone()),
+        res.clone(),
+    );
+    res
 }
 
 fn main() {
@@ -201,13 +272,13 @@ fn main() {
     .map(|l| l.unwrap())
     .collect();
 
-    let (map, keys, doors, me) = parse_map(&input_lines);
-    print_map(&map);
+    let (maze, me) = parse_map(&input_lines);
+    //_print_map(&maze.map, &[]);
 
-    let route_cache = build_route_cache(&keys, me, &map);
-
-    let final_route: Vec<_> = tsp(me, &keys, &HashSet::new(), &doors, &route_cache).collect();
-    println!("Route length: {} {:?}", final_route.len(), final_route);
+    let mut cache = HashMap::new();
+    let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), me);
+    //_print_map(&maze.map, &final_route);
+    println!("Route length: {}", final_route.len());
 }
 
 #[cfg(test)]
@@ -221,9 +292,9 @@ mod tests {
                              #########"
             .lines()
             .collect();
-        let (map, keys, doors, me) = parse_map(&input);
-        let route_cache = build_route_cache(&keys, me, &map);
-        let final_route: Vec<_> = tsp(me, &keys, &HashSet::new(), &doors, &route_cache).collect();
+        let (maze, me) = parse_map(&input);
+        let mut cache = HashMap::new();
+        let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), me);
         assert_eq!(final_route.len(), 8);
     }
 
@@ -236,9 +307,9 @@ mod tests {
                              ########################"
             .lines()
             .collect();
-        let (map, keys, doors, me) = parse_map(&input);
-        let route_cache = build_route_cache(&keys, me, &map);
-        let final_route: Vec<_> = tsp(me, &keys, &HashSet::new(), &doors, &route_cache).collect();
+        let (maze, me) = parse_map(&input);
+        let mut cache = HashMap::new();
+        let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), me);
         assert_eq!(final_route.len(), 86);
     }
     #[test]
@@ -250,9 +321,9 @@ mod tests {
                              ########################"
             .lines()
             .collect();
-        let (map, keys, doors, me) = parse_map(&input);
-        let route_cache = build_route_cache(&keys, me, &map);
-        let final_route: Vec<_> = tsp(me, &keys, &HashSet::new(), &doors, &route_cache).collect();
+        let (maze, me) = parse_map(&input);
+        let mut cache = HashMap::new();
+        let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), me);
         assert_eq!(final_route.len(), 132);
     }
 
@@ -269,9 +340,12 @@ mod tests {
                              #################"
             .lines()
             .collect();
-        let (map, keys, doors, me) = parse_map(&input);
-        let route_cache = build_route_cache(&keys, me, &map);
-        let final_route: Vec<_> = tsp(me, &keys, &HashSet::new(), &doors, &route_cache).collect();
+        let (maze, me) = parse_map(&input);
+        print_map(&maze.map, &[]);
+        let mut cache = HashMap::new();
+        let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), me);
+        print_map(&maze.map, &final_route);
+        println!("{:?}", final_route);
         assert_eq!(final_route.len(), 136);
     }
 
@@ -285,9 +359,9 @@ mod tests {
                              ########################"
             .lines()
             .collect();
-        let (map, keys, doors, me) = parse_map(&input);
-        let route_cache = build_route_cache(&keys, me, &map);
-        let final_route: Vec<_> = tsp(me, &keys, &HashSet::new(), &doors, &route_cache).collect();
+        let (maze, me) = parse_map(&input);
+        let mut cache = HashMap::new();
+        let final_route = get_shortest_route(&mut cache, &maze, &BTreeSet::new(), me);
         assert_eq!(final_route.len(), 81);
     }
 }
