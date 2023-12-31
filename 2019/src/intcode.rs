@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
 
-type Word = isize;
+pub type Word = isize;
 
 #[derive(PartialEq, Debug)]
 #[allow(clippy::upper_case_acronyms)]
