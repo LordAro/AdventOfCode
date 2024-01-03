@@ -1,16 +1,31 @@
-#include <openssl/md5.h>
+#include <openssl/evp.h>
 
 #include <iostream>
 #include <fstream>
 
+constexpr size_t MD5_DIGEST_LENGTH = 16;
+
 std::string bytetostr(unsigned char array[MD5_DIGEST_LENGTH])
 {
 	char hexstr[MD5_DIGEST_LENGTH * 2 + 1];
-	for (int i = 0; i < MD5_DIGEST_LENGTH; i++) {
+	for (size_t i = 0; i < MD5_DIGEST_LENGTH; i++) {
 		sprintf(hexstr + i * 2, "%02x", array[i]);
 	}
 	hexstr[MD5_DIGEST_LENGTH * 2] = 0;
 	return std::string(hexstr);
+}
+
+// Can't use OpenSSL MD5 anymore, as it's been deprecated
+void myMD5(const unsigned char *data, size_t len, unsigned char *md5)
+{
+    // Use the MD5 digest algorithm
+    const EVP_MD *md = EVP_md5();
+
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    EVP_DigestInit_ex(mdctx, md, NULL);
+    EVP_DigestUpdate(mdctx, data, len);
+    EVP_DigestFinal_ex(mdctx, md5, NULL);
+    EVP_MD_CTX_free(mdctx);
 }
 
 int main(int argc, char **argv)
@@ -33,7 +48,7 @@ int main(int argc, char **argv)
 		std::string newstr = secret + std::to_string(i);
 
 		unsigned char result[MD5_DIGEST_LENGTH];
-		MD5((const unsigned char *)newstr.c_str(), newstr.size(), result);
+		myMD5((const unsigned char *)newstr.c_str(), newstr.size(), result);
 
 		std::string hexstr = bytetostr(result);
 
