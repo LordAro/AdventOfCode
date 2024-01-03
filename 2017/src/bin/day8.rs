@@ -8,27 +8,23 @@ fn main() {
     if env::args().len() != 2 {
         panic!("Incorrect number of arguments provided");
     }
-    let input: Vec<Vec<_>> = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
+    let input: Vec<_> = BufReader::new(File::open(env::args().nth(1).unwrap()).unwrap())
         .lines()
-        .map(|l| {
-            l.unwrap()
-                .split_whitespace()
-                .map(|s| s.to_string())
-                .collect()
-        })
+        .map(|l| l.unwrap())
         .collect();
 
     let mut map = HashMap::new();
     let mut abs_largest = 0;
-    input.iter().for_each(|v| {
-        // Array destructuring is experimental :(
-        let reg = v.get(0).unwrap();
-        let change_dir = if v.get(1).unwrap() == "inc" { 1 } else { -1 };
-        let chg_amt: i32 = v.get(2).unwrap().parse().unwrap();
-        // v.get(3) == "if"
-        let cond_reg = v.get(4).unwrap();
-        let cond_op = v.get(5).unwrap();
-        let cond_r: i32 = v.get(6).unwrap().parse().unwrap();
+    input.iter().for_each(|line| {
+        let v: Vec<_> = line.split_ascii_whitespace().collect();
+
+        let reg = v[0];
+        let change_dir = if v[1] == "inc" { 1 } else { -1 };
+        let chg_amt: i32 = v[2].parse().unwrap();
+        // v[3] == "if"
+        let cond_reg = v[4];
+        let cond_op = v[5];
+        let cond_r: i32 = v[6].parse().unwrap();
 
         let cond_val = *map.entry(cond_reg).or_insert(0);
         let cond = cond_op == "==" && cond_val == cond_r
