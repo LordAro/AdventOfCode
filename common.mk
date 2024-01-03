@@ -10,9 +10,9 @@ ifeq ($(BINDIR),)
 BINDIR=builds
 endif
 
-# Shelling out to echo, tr & sort required for numerical sort
+# Individual wildcards are sorted, so both wildcards together results in a sorted list
 # TODO: renumber solutions to use 2 digits?
-CUR_SLNS=$(shell echo $(subst day,, $(basename $(notdir $(wildcard $(SRCDIR)/day*.$(FILEEXT))))) | tr ' ' '\n' | sort -n)
+CUR_SLNS=$(subst day,, $(basename $(notdir $(wildcard $(SRCDIR)/day[0-9].$(FILEEXT)) $(wildcard $(SRCDIR)/day[0-9][0-9].$(FILEEXT)))))
 
 .PHONY: all build_all run_all time_all perf_all
 all: run_all
