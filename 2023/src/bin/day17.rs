@@ -32,62 +32,95 @@ fn get_route_cost(map: &Vec<Vec<u32>>, route: &[Coord]) -> u32 {
     route.iter().skip(1).map(|c| map[c.y][c.x]).sum::<u32>()
 }
 
-    let mut g_score = HashMap::new();
-    g_score.insert(source, map[source.y][source.x]);
+// Horrendously inefficient BFS, needs replacing
+fn get_route_bfs(map: &Vec<Vec<u32>>, source: Coord, target: Coord) -> Vec<Coord> {
+    let mut to_search = VecDeque::new();
+    to_search.push_back((vec![source], 0));
 
-    while !open_set.is_empty() {
-        let current = open_set.pop_front().unwrap();
-        if current == target {
-            let mut total_path = vec![current];
-            let mut current = current;
-            while came_from.contains_key(&current) {
-                current = came_from[&current];
-                total_path.push(current);
-            }
-            total_path.reverse();
-            return total_path;
+    while !to_search.is_empty() {
+        let (search_path, search_path_current_cost) = to_search.pop_front().unwrap();
+        let search_node = search_path.last().unwrap();
+
+        if *search_node == target {
+            //println!("{:?}", search_path);
+            return search_path;
         }
 
-        for adj in get_adjacents(map, current).iter().flatten() {
-            if came_from.contains_key(&current) && *adj == came_from[&current] {
-                // no reversing
+        for adj in get_adjacents(map, *search_node).iter().flatten() {
+            // no reversing
+            if search_path.contains(adj) {
                 continue;
             }
-            if came_from.contains_key(&current)
-                && came_from.contains_key(&came_from[&current])
-                && came_from.contains_key(&came_from[&came_from[&current]])
-                && came_from.contains_key(&came_from[&came_from[&came_from[&current]]])
-            {
-                let parent1 = came_from[&current];
-                let parent2 = came_from[&parent1];
-                let parent3 = came_from[&parent2];
-                let parent4 = came_from[&parent3];
-                if (adj.x == current.x
-                    && current.x == parent1.x
-                    && parent1.x == parent2.x
-                    && parent2.x == parent3.x
-                    && parent2.x == parent4.x)
-                    || (adj.y == current.y
-                        && current.y == parent1.y
-                        && parent1.y == parent2.y
-                        && parent2.y == parent3.y
-                        && parent3.y == parent4.y)
+            if search_path.len() > 3 {
+                let ix = search_path.len();
+                let parent1 = search_path[ix - 1];
+                let parent2 = search_path[ix - 2];
+                let parent3 = search_path[ix - 3];
+                if (adj.x == parent1.x && parent1.x == parent2.x && parent2.x == parent3.x)
+                    || (adj.y == parent1.y && parent1.y == parent2.y && parent2.y == parent3.y)
                 {
-                    // can't travel more than 3 blocks in the same direction
-                    // but we count up to 4 to account for entry into a block
                     continue;
                 }
             }
-            let dist = g_score[&current] + map[adj.y][adj.x];
-            if &dist < g_score.get(adj).unwrap_or(&u32::max_value()) {
-                came_from.insert(*adj, current);
-                g_score.insert(*adj, dist);
-                open_set.push_back(*adj);
+            let mut v = search_path.clone();
+            v.push(*adj);
+            let i =
+                to_search.partition_point(|a| a.1 < search_path_current_cost + map[adj.y][adj.x]);
+            to_search.insert(i, (v, search_path_current_cost + map[adj.y][adj.x]));
+        }
+    }
+    panic!("Could not find path");
+}
+
+fn get_route(map: &Vec<Vec<u32>>, source: Coord, target: Coord) -> Vec<Coord> {
+    let mut came_from: HashMap<(Coord, u32, u32), Coord> = HashMap::new();
+    let mut open_set = VecDeque::new();
+    open_set.push_back((source, 0, 0));
+
+    let mut g_score = HashMap::new();
+    g_score.insert(open_set[0], 0); // don't incur heat loss at start
+
+    while !open_set.is_empty() {
+        let current_triple = open_set.pop_front().unwrap();
+        let (current, move_x_count, move_y_count) = current_triple;
+        if move_x_count > 3 || move_y_count > 3 {
+            continue;
+        }
+        //println!("current: {current:?} {move_x_count} {move_y_count}");
+        if current == target {
+            break;
+        }
+
+        for adj in get_adjacents(map, current).iter().flatten() {
+            let new_x_move_count = if adj.x == current.x {
+                move_x_count + 1
+            } else {
+                0
+            };
+            let new_y_move_count = if adj.y == current.y {
+                move_y_count + 1
+            } else {
+                0
+            };
+            let next_triple = (*adj, new_x_move_count, new_y_move_count);
+            let dist = g_score[&current_triple] + map[adj.y][adj.x];
+            println!("  {adj:?} {dist}");
+            if &dist < g_score.get(&next_triple).unwrap_or(&u32::max_value()) {
+                came_from.insert(next_triple, current);
+                g_score.insert(next_triple, dist);
+                open_set.push_back((*adj, new_x_move_count, new_y_move_count));
             }
         }
     }
-    //print_positions(known_positions);
-    panic!("Unable to find route between {:?} and {:?}", source, target);
+    let mut total_path = vec![target];
+    let mut current = target;
+    while came_from.contains_key(&current) {
+        println!("{current:?}");
+        current = came_from[&current];
+        total_path.push(current);
+    }
+    total_path.reverse();
+    return total_path;
 }
 
 fn main() -> io::Result<()> {
