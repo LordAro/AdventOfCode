@@ -16,7 +16,8 @@ void main(string[] args)
 	Coord pos, prev_pos;
 	int[Coord] distances = [pos: 0];
 
-	foreach (c; input.dropOne.dropBackOne) {
+	// drop ^ and $ (and trailing newline)
+	foreach (c; input.dropOne.dropBackOne.dropBackOne) {
 		switch (c) {
 			case '(':
 				positions ~= pos;
