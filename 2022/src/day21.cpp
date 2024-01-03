@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <charconv>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <map>
