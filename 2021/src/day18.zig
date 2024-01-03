@@ -271,10 +271,9 @@ pub fn main() anyerror!void {
 
     var args_iter = std.process.args();
     _ = args_iter.skip(); // program name
-    const input_file = try args_iter.next(alloc) orelse unreachable;
-    defer alloc.free(input_file);
-    const input = std.fs.cwd().openFile(input_file, .{ .read = true }) catch |err| {
-        std.log.err("Could not open {s} due to: {s}", .{ input_file, err });
+    const input_file = args_iter.next() orelse unreachable;
+    const input = std.fs.cwd().openFile(input_file, .{}) catch |err| {
+        std.log.err("Could not open {s} due to: {}", .{ input_file, err });
         std.os.exit(1);
     };
     defer input.close();

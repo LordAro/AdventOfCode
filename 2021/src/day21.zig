@@ -84,17 +84,13 @@ fn p2(p1_start: u64, p2_start: u64, p1_score: u64, p2_score: u64) WinCounter {
 }
 
 pub fn main() !void {
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const alloc = arena.allocator();
     const stdout = std.io.getStdOut().writer();
 
     var args_iter = std.process.args();
     _ = args_iter.skip(); // program name
-    const input_file = try args_iter.next(alloc) orelse unreachable;
-    defer alloc.free(input_file);
-    const input = std.fs.cwd().openFile(input_file, .{ .read = true }) catch |err| {
-        std.log.err("Could not open {s} due to: {s}", .{ input_file, err });
+    const input_file = args_iter.next() orelse unreachable;
+    const input = std.fs.cwd().openFile(input_file, .{}) catch |err| {
+        std.log.err("Could not open {s} due to: {}", .{ input_file, err });
         std.os.exit(1);
     };
     defer input.close();
