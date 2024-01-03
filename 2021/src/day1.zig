@@ -28,8 +28,8 @@ pub fn main() anyerror!void {
     var i: usize = 0;
     const len = lines.items.len;
     while (i < len) : (i += 1) {
-        p1_count += @boolToInt(i < len - 1 and lines.items[i + 1] > lines.items[i]);
-        p2_count += @boolToInt(i < len - 3 and lines.items[i + 3] > lines.items[i]);
+        p1_count += @intFromBool(i < len - 1 and lines.items[i + 1] > lines.items[i]);
+        p2_count += @intFromBool(i < len - 3 and lines.items[i + 3] > lines.items[i]);
     }
 
     try stdout.print("Number of increases: {}\n", .{p1_count});

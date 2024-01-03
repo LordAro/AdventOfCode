@@ -116,6 +116,6 @@ pub fn main() !void {
 
     const p2result = p2(player1_pos, player2_pos, 0, 0);
 
-    try stdout.print("Losing player score: {}, number of dice rolls: {} ({})\n", .{ std.math.min(p1result.p1, p1result.p2), p1result.die_rolls, std.math.min(p1result.p1, p1result.p2) * p1result.die_rolls });
+    try stdout.print("Losing player score: {}, number of dice rolls: {} ({})\n", .{ @min(p1result.p1, p1result.p2), p1result.die_rolls, @min(p1result.p1, p1result.p2) * p1result.die_rolls });
     try stdout.print("P1 winning: {}, P2 winning: {}\n", .{ p2result.p1, p2result.p2 });
 }

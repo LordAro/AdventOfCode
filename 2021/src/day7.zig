@@ -28,8 +28,8 @@ pub fn main() anyerror!void {
     var min: u32 = std.math.maxInt(u32);
     var max: u32 = 0;
     for (numbers.items) |n| {
-        min = std.math.min(min, n);
-        max = std.math.max(max, n);
+        min = @min(min, n);
+        max = @max(max, n);
     }
 
     var minFuelCost: u32 = std.math.maxInt(u32);
@@ -39,12 +39,12 @@ pub fn main() anyerror!void {
         var fuelCost: u32 = 0;
         var fuelCost2: u32 = 0;
         for (numbers.items) |n| {
-            const distance = @intCast(u32, try std.math.absInt(@intCast(i32, n) - @intCast(i32, pos)));
+            const distance = @as(u32, @intCast(try std.math.absInt(@as(i32, @intCast(n)) - @as(i32, @intCast(pos)))));
             fuelCost += distance;
             fuelCost2 += distance * (distance + 1) / 2; // triangle numbers
         }
-        minFuelCost = std.math.min(minFuelCost, fuelCost);
-        minFuelCost2 = std.math.min(minFuelCost2, fuelCost2);
+        minFuelCost = @min(minFuelCost, fuelCost);
+        minFuelCost2 = @min(minFuelCost2, fuelCost2);
     }
 
     try stdout.print("Min fuel cost (constant rate): {}\n", .{minFuelCost});

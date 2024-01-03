@@ -11,7 +11,7 @@ const Packet = struct {
 fn input_to_bits(alloc: std.mem.Allocator, input: []const u8) !std.ArrayList(bool) {
     var program_bits = std.ArrayList(bool).init(alloc);
     for (input) |c| {
-        const digit: u4 = @intCast(u4, try std.fmt.charToDigit(c, 16));
+        const digit: u4 = @as(u4, @intCast(try std.fmt.charToDigit(c, 16)));
         try program_bits.append(((digit >> 3) & 1) != 0);
         try program_bits.append(((digit >> 2) & 1) != 0);
         try program_bits.append(((digit >> 1) & 1) != 0);
@@ -22,15 +22,15 @@ fn input_to_bits(alloc: std.mem.Allocator, input: []const u8) !std.ArrayList(boo
 
 fn bits_to_num(blob: []bool) u32 {
     var out: u32 = 0;
-    for (blob) |b, i| {
-        out |= @as(u32, @boolToInt(b)) << @intCast(u5, blob.len) - @intCast(u5, i) - 1;
+    for (blob, 0..) |b, i| {
+        out |= @as(u32, @intFromBool(b)) << @as(u5, @intCast(blob.len)) - @as(u5, @intCast(i)) - 1;
     }
     return out;
 }
 
 fn parse_packet(alloc: std.mem.Allocator, program: []bool) Packet {
-    const version = @intCast(u3, bits_to_num(program[0..3]));
-    const typeid = @intCast(u3, bits_to_num(program[3..6]));
+    const version = @as(u3, @intCast(bits_to_num(program[0..3])));
+    const typeid = @as(u3, @intCast(bits_to_num(program[3..6])));
 
     var packet = Packet{ .version = version, .typeid = typeid, .length = 0, .value = 0, .subpackets = undefined };
     var pc: u32 = 6;
@@ -39,7 +39,7 @@ fn parse_packet(alloc: std.mem.Allocator, program: []bool) Packet {
         var val: u64 = 0; // max 8 groups
         var n: u1 = 1;
         while (n != 0) {
-            n = @intCast(u1, bits_to_num(program[pc .. pc + 1]));
+            n = @as(u1, @intCast(bits_to_num(program[pc .. pc + 1])));
             pc += 1;
             const segment = bits_to_num(program[pc .. pc + 4]);
             val = (val << 4) + segment;
@@ -50,7 +50,7 @@ fn parse_packet(alloc: std.mem.Allocator, program: []bool) Packet {
         packet.subpackets = std.ArrayList(Packet).init(alloc);
     } else {
         // operator
-        const lengthtypeid = @intCast(u1, bits_to_num(program[pc .. pc + 1]));
+        const lengthtypeid = @as(u1, @intCast(bits_to_num(program[pc .. pc + 1])));
         pc += 1;
 
         if (lengthtypeid == 0) {
@@ -89,13 +89,13 @@ fn parse_packet(alloc: std.mem.Allocator, program: []bool) Packet {
             2 => { // minimum
                 packet.value = std.math.maxInt(u32);
                 for (packet.subpackets.items) |sp| {
-                    packet.value = std.math.min(packet.value, sp.value);
+                    packet.value = @min(packet.value, sp.value);
                 }
             },
             3 => { // maximum
                 packet.value = 0;
                 for (packet.subpackets.items) |sp| {
-                    packet.value = std.math.max(packet.value, sp.value);
+                    packet.value = @max(packet.value, sp.value);
                 }
             },
             4 => unreachable, // literals
@@ -246,7 +246,7 @@ test "p2_examples" {
         3, 54, 7, 9, 1, 0, 0, 1,
     };
 
-    for (inputs) |input, i| {
+    for (inputs, expected_value) |input, expected| {
         const program = try input_to_bits(test_alloc, input);
         defer program.deinit();
         std.debug.print("\n", .{});
@@ -254,6 +254,6 @@ test "p2_examples" {
         const packet = parse_packet(test_alloc, program.items);
         defer packetlist_deinit(packet.subpackets);
 
-        try std.testing.expectEqual(packet.value, expected_value[i]);
+        try std.testing.expectEqual(packet.value, expected);
     }
 }

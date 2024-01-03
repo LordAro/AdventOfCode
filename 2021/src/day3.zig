@@ -32,7 +32,7 @@ pub fn main() anyerror!void {
 
     var buf: [16]u8 = undefined;
     while (try input.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
-        num_bits = @intCast(u4, line.len);
+        num_bits = @as(u4, @intCast(line.len));
         try diagnostic_numbers.append(try std.fmt.parseInt(u16, line, 2));
     }
 
@@ -111,6 +111,6 @@ test "get_bitcount" {
     const expected_results = [_]u16{ 7, 5, 8, 7, 5 };
     var i: usize = 0;
     while (i < expected_results.len) : (i += 1) {
-        try std.testing.expect(get_bitcount(numbers, @intCast(u4, i)) == expected_results[i]);
+        try std.testing.expect(get_bitcount(numbers, @as(u4, @intCast(i))) == expected_results[i]);
     }
 }

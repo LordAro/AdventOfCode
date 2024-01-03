@@ -62,7 +62,7 @@ const LineIterator = struct {
             // Done counting up
             return null;
         }
-        self.next_val = Coord{ .x = @intCast(u32, @intCast(i32, rv.x) + self.step_x), .y = @intCast(u32, @intCast(i32, rv.y) + self.step_y) };
+        self.next_val = Coord{ .x = @as(u32, @intCast(@as(i32, @intCast(rv.x)) + self.step_x)), .y = @as(u32, @intCast(@as(i32, @intCast(rv.y)) + self.step_y)) };
         return rv;
     }
 

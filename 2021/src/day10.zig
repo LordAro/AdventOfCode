@@ -80,7 +80,7 @@ pub fn main() anyerror!void {
         }
     }
 
-    std.sort.sort(u64, autocomplete_scores.items, {}, comptime std.sort.asc(u64));
+    std.mem.sort(u64, autocomplete_scores.items, {}, comptime std.sort.asc(u64));
 
     const middle_score = autocomplete_scores.items[(autocomplete_scores.items.len - 1) / 2];
 

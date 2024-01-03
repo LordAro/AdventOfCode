@@ -2,13 +2,13 @@ const std = @import("std");
 
 fn flood_fill(grid: anytype, contents: *std.AutoHashMap(u32, void), x: usize, y: usize) void {
     const cell = grid.items[y].items[x];
-    if (contents.*.contains(@intCast(u32, y * grid.items.len + x))) {
+    if (contents.*.contains(@as(u32, @intCast(y * grid.items.len + x)))) {
         return;
     }
     if (cell == 9) {
         return;
     }
-    contents.*.put(@intCast(u32, y * grid.items.len + x), {}) catch unreachable;
+    contents.*.put(@as(u32, @intCast(y * grid.items.len + x)), {}) catch unreachable;
     if (x > 0) {
         flood_fill(grid, contents, x - 1, y);
     }
@@ -53,8 +53,8 @@ pub fn main() anyerror!void {
     var risk_level: u32 = 0;
     var basin_sizes = std.ArrayList(u32).init(alloc);
 
-    for (grid.items) |row, y| {
-        for (row.items) |cell, x| {
+    for (grid.items, 0..) |row, y| {
+        for (row.items, 0..) |cell, x| {
             const upper = if (y == 0) 10 else grid.items[y - 1].items[x];
             const lower = if (y == grid.items.len - 1) 10 else grid.items[y + 1].items[x];
             const left = if (x == 0) 10 else grid.items[y].items[x - 1];
@@ -71,7 +71,7 @@ pub fn main() anyerror!void {
         }
     }
 
-    std.sort.sort(u32, basin_sizes.items, {}, comptime std.sort.desc(u32));
+    std.mem.sort(u32, basin_sizes.items, {}, comptime std.sort.desc(u32));
 
     try stdout.print("Total risk level of low points: {}\n", .{risk_level});
     try stdout.print("Three largest basins: {} {} {} ({})\n", .{ basin_sizes.items[0], basin_sizes.items[1], basin_sizes.items[2], basin_sizes.items[0] * basin_sizes.items[1] * basin_sizes.items[2] });

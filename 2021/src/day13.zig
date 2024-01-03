@@ -72,8 +72,8 @@ pub fn main() anyerror!void {
     var max_x: u32 = 0;
     var max_y: u32 = 0;
     for (grid.keys()) |c| {
-        max_x = std.math.max(max_x, c.x);
-        max_y = std.math.max(max_y, c.y);
+        max_x = @max(max_x, c.x);
+        max_y = @max(max_y, c.y);
     }
 
     try stdout.print("Points after one fold: {}\n", .{num_points});

@@ -42,10 +42,10 @@ pub fn main() anyerror!void {
         const y1 = try std.fmt.parseInt(i32, y_split.next().?, 0);
         const y2 = try std.fmt.parseInt(i32, y_split.next().?, 0);
 
-        target_tl.x = std.math.min(x1, x2);
-        target_br.x = std.math.max(x1, x2);
-        target_tl.y = std.math.max(y1, y2);
-        target_br.y = std.math.min(y1, y2);
+        target_tl.x = @min(x1, x2);
+        target_br.x = @max(x1, x2);
+        target_tl.y = @max(y1, y2);
+        target_br.y = @min(y1, y2);
     } else unreachable;
 
     var velocity_count: u32 = 0;
@@ -77,7 +77,7 @@ pub fn main() anyerror!void {
                 }
                 velocity.y -= 1; // gravity
 
-                max_y = std.math.max(max_y, pos.y);
+                max_y = @max(max_y, pos.y);
 
                 if (is_within_target(target_tl, target_br, pos)) {
                     has_point_in_target = true;

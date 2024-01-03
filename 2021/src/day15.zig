@@ -21,7 +21,7 @@ fn find_path(alloc: std.mem.Allocator, grid: std.ArrayList(std.ArrayList(u8)), s
     var toSearch = std.PriorityQueue(PathCost, void, lt).init(alloc, {});
     defer toSearch.deinit();
     try toSearch.add(PathCost{ .coord = start, .cost = 0 });
-    var found_dist: u32 = @intCast(u32, grid.items.len) * @intCast(u32, grid.items.len);
+    var found_dist: u32 = @as(u32, @intCast(grid.items.len)) * @as(u32, @intCast(grid.items.len));
 
     while (toSearch.items.len > 0) {
         const current = toSearch.remove();
@@ -110,7 +110,7 @@ pub fn main() anyerror!void {
     {
         var i: u8 = 1;
         while (i < 5) : (i += 1) {
-            for (big_grid.items) |og_row, ix| {
+            for (big_grid.items, 0..) |og_row, ix| {
                 if (ix == 100) break;
                 var long_row = std.ArrayList(u8).init(alloc);
                 for (og_row.items) |c| {

@@ -98,8 +98,8 @@ pub fn main() !void {
 
     var row_n: usize = 0;
     while (try input_reader.readUntilDelimiterOrEof(&buf, '\n')) |line| : (row_n += 1) {
-        for (line) |c, col_n| {
-            try grid.put(Coord{ .x = @intCast(i32, col_n), .y = @intCast(i32, row_n) }, c == '#');
+        for (line, 0..) |c, col_n| {
+            try grid.put(Coord{ .x = @as(i32, @intCast(col_n)), .y = @as(i32, @intCast(row_n)) }, c == '#');
         }
     }
 

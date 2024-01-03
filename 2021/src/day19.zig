@@ -109,7 +109,7 @@ pub fn main() !void {
     _ = scanner_outputs.swapRemove(initial_scanner_ix);
 
     while (scanner_outputs.items.len != 0) {
-        outer: for (scanner_outputs.items) |relative_beacons, beacon_number| {
+        outer: for (scanner_outputs.items, 0..) |relative_beacons, beacon_number| {
             var abs_beacon_it = absolute_beacons.keyIterator();
             while (abs_beacon_it.next()) |abs_beacon| {
                 for (relative_beacons.items) |initial_relative_beacon| {
@@ -142,11 +142,11 @@ pub fn main() !void {
     }
 
     var max_manhattan_dist: i32 = 0;
-    for (scanner_positions.items) |scanner_a, i| {
+    for (scanner_positions.items, 0..) |scanner_a, i| {
         for (scanner_positions.items[i + 1 ..]) |scanner_b| {
             const diff = scanner_a.sub(scanner_b);
             const manhattan = (try std.math.absInt(diff.x)) + (try std.math.absInt(diff.y)) + (try std.math.absInt(diff.z));
-            max_manhattan_dist = std.math.max(max_manhattan_dist, manhattan);
+            max_manhattan_dist = @max(max_manhattan_dist, manhattan);
         }
     }
 

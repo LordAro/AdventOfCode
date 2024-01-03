@@ -305,11 +305,11 @@ pub fn main() anyerror!void {
         while (j < snail_numbers.items.len) : (j += 1) {
             const sum1 = try add_snail(alloc, snail_numbers.items[i], snail_numbers.items[j]);
             defer sum1.deinit();
-            max_magnitude = std.math.max(max_magnitude, sum1.magnitude());
+            max_magnitude = @max(max_magnitude, sum1.magnitude());
 
             const sum2 = try add_snail(alloc, snail_numbers.items[j], snail_numbers.items[i]);
             defer sum2.deinit();
-            max_magnitude = std.math.max(max_magnitude, sum2.magnitude());
+            max_magnitude = @max(max_magnitude, sum2.magnitude());
         }
     }
     try stdout.print("Total sum snail number: {any}, magnitude: {}\n", .{ snail_sum, snail_sum.?.magnitude() });

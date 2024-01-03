@@ -106,10 +106,10 @@ fn decodeSegments(alloc: std.mem.Allocator, line: []const u8) anyerror![4]u32 {
     //std.debug.print("{s}\n", .{foundItems});
 
     var ret: [4]u32 = [_]u32{ 0, 0, 0, 0 };
-    for (output_values.items) |val, output_ix| {
-        for (foundItems) |n, i| {
+    for (output_values.items, &ret) |val, *output| {
+        for (foundItems, 0..) |n, i| {
             if (val.len == n.len and contains(val, n) and contains(n, val)) {
-                ret[output_ix] = @intCast(u32, i);
+                output.* = @as(u32, @intCast(i));
                 break;
             }
         }
