@@ -1,10 +1,11 @@
-#include <array>
-#include <iterator>
 #include <algorithm>
+#include <array>
 #include <cassert>
-#include <numeric>
-#include <iostream>
+#include <cstdint>
 #include <fstream>
+#include <iostream>
+#include <iterator>
+#include <numeric>
 #include <set>
 #include <unordered_set>
 #include <vector>
