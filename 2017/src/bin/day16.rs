@@ -88,6 +88,8 @@ fn main() {
             }
         });
 
+    let mut seen_program_orderings: HashMap<Vec<char>, usize> = HashMap::new();
+
     for d in 0..1_000_000_000 {
         let mut new_programs = programs.clone();
         for (&a, &b) in &prog_swaps {
@@ -99,12 +101,26 @@ fn main() {
             .iter()
             .map(|&i| programs[i as usize])
             .collect();
+
+        // found a loop
+        if let Some(seen_d) = seen_program_orderings.get(&programs) {
+            let rem = (1_000_000_000 + seen_d) % d;
+            println!(
+                "Final dance position: {}",
+                seen_program_orderings
+                    .iter()
+                    .find(|&(_, &v)| v == rem - 1)
+                    .unwrap()
+                    .0
+                    .iter()
+                    .collect::<String>()
+            );
+            break;
+        } else {
+            seen_program_orderings.insert(programs.clone(), d);
+        }
         if d == 0 {
             println!("Dance position 1: {}", programs.iter().collect::<String>());
         }
     }
-    println!(
-        "Final dance position: {}",
-        programs.iter().collect::<String>()
-    );
 }
