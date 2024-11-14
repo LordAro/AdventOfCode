@@ -5,7 +5,8 @@ use std::io;
 use std::iter;
 
 fn main() -> io::Result<()> {
-    let (p1_input_filename, p2_input_filename, p3_input_filename) = everybody_codes::get_input_files()?;
+    let (p1_input_filename, p2_input_filename, p3_input_filename) =
+        everybody_codes::get_input_files()?;
 
     {
         let p1_input: String = fs::read_to_string(p1_input_filename)?;

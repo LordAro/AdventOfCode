@@ -26,7 +26,8 @@ fn required_potions<const GROUP_SIZE: usize>(creatures: &[char]) -> usize {
 }
 
 fn main() -> io::Result<()> {
-    let (p1_input_filename, p2_input_filename, p3_input_filename) = everybody_codes::get_input_files()?;
+    let (p1_input_filename, p2_input_filename, p3_input_filename) =
+        everybody_codes::get_input_files()?;
 
     let p1_input: Vec<_> = fs::read_to_string(p1_input_filename)?
         .chars()

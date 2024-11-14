@@ -17,5 +17,3 @@ pub fn get_input_files() -> io::Result<(String, String, String)> {
         format!("inputs/everybody_codes_e2024_q{exe_name}_p3.txt"),
     ))
 }
-
-

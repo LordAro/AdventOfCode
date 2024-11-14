@@ -173,7 +173,8 @@ fn get_dig_total<const INCLUDE_DIAG: bool>(input_str: &str) -> usize {
 }
 
 fn main() -> io::Result<()> {
-    let (p1_input_filename, p2_input_filename, p3_input_filename) = everybody_codes::get_input_files()?;
+    let (p1_input_filename, p2_input_filename, p3_input_filename) =
+        everybody_codes::get_input_files()?;
 
     let p1_total_removed_earth = get_dig_total::<false>(&fs::read_to_string(p1_input_filename)?);
     println!("P1: Total removed earth blocks: {p1_total_removed_earth}");
