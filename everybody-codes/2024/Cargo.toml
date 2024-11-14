@@ -1,0 +1,9 @@
+[package]
+name = "everybody_codes"
+version = "2024.1.0"
+authors = ["Charles Pigott <charlespigott@googlemail.com>"]
+edition = "2021"
+
+[dependencies]
+itertools = "0.13.0"
+ansi_term = "0.12.1"
