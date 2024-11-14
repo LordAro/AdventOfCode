@@ -34,14 +34,66 @@ fn print_grid(grid: &Vec<Vec<State>>) {
 fn can_be_dug<const INCLUDE_DIAG: bool>(grid: &[Vec<State>], c: Coord) -> bool {
     let neighbours = if INCLUDE_DIAG {
         vec![
-            c.y.checked_sub(1).map(|y| Coord { x: c.x, y }),
-            Some(c.y + 1)
-                .filter(|y| *y < grid.len())
-                .map(|y| Coord { x: c.x, y }),
-            c.x.checked_sub(1).map(|x| Coord { x, y: c.y }),
-            Some(c.x + 1)
-                .filter(|x| *x < grid[c.y].len())
-                .map(|x| Coord { x, y: c.y }),
+            // NW
+            if c.x > 0 && c.y > 0 {
+                Some(Coord {
+                    x: c.x - 1,
+                    y: c.y - 1,
+                })
+            } else {
+                None
+            },
+            // N
+            if c.y > 0 {
+                Some(Coord { x: c.x, y: c.y - 1 })
+            } else {
+                None
+            },
+            // NE
+            if c.y > 0 && c.x < grid[c.y].len() - 1 {
+                Some(Coord {
+                    x: c.x + 1,
+                    y: c.y - 1,
+                })
+            } else {
+                None
+            },
+            // W
+            if c.x > 0 {
+                Some(Coord { x: c.x - 1, y: c.y })
+            } else {
+                None
+            },
+            // E
+            if c.x < grid[c.y].len() - 1 {
+                Some(Coord { x: c.x + 1, y: c.y })
+            } else {
+                None
+            },
+            // SW
+            if c.y < grid.len() - 1 && c.x > 0 {
+                Some(Coord {
+                    x: c.x - 1,
+                    y: c.y + 1,
+                })
+            } else {
+                None
+            },
+            // S
+            if c.y < grid.len() - 1 {
+                Some(Coord { x: c.x, y: c.y + 1 })
+            } else {
+                None
+            },
+            // SE
+            if c.y < grid.len() - 1 && c.x < grid[c.y].len() - 1 {
+                Some(Coord {
+                    x: c.x + 1,
+                    y: c.y + 1,
+                })
+            } else {
+                None
+            },
         ]
     } else {
         vec![
