@@ -23,19 +23,22 @@ fn do_move(positions: &mut [Vec<usize>], move_no: usize) {
     let cur_col = move_no % positions.len();
     let clapper = positions[cur_col].remove(0);
 
-    let mut clapper_val = clapper;
-    let mut left_side = true;
     let next_col = (cur_col + 1) % positions.len();
-    while clapper_val > positions[next_col].len() {
-        clapper_val -= positions[next_col].len();
-        // switch sides
-        left_side = !left_side;
-    }
-    if left_side {
-        positions[next_col].insert(clapper_val - 1, clapper);
+    let next_col_len = positions[next_col].len();
+
+    let mut is_left_side = ((clapper / next_col_len) % 2) == 0;
+    let mut new_clapper_pos = clapper;
+    if clapper % next_col_len == 0 {
+        new_clapper_pos = next_col_len;
+        is_left_side = !is_left_side;
     } else {
-        let l = positions[next_col].len();
-        positions[next_col].insert(l - clapper_val + 1, clapper);
+        new_clapper_pos %= next_col_len;
+    }
+
+    if is_left_side {
+        positions[next_col].insert(new_clapper_pos - 1, clapper);
+    } else {
+        positions[next_col].insert(next_col_len - new_clapper_pos + 1, clapper);
     }
 }
 
@@ -47,18 +50,15 @@ fn get_shout_number(positions: &[Vec<usize>]) -> usize {
 
 fn do_2024_dance(positions: &mut [Vec<usize>]) -> (usize, usize) {
     let mut shout_map = HashMap::<usize, usize>::new();
+
     let mut move_no = 0;
     loop {
         do_move(positions, move_no);
         let shout_no = get_shout_number(positions);
 
-        let mut shout_total = 0;
-        shout_map
+        let shout_total = *shout_map
             .entry(shout_no)
-            .and_modify(|counter| {
-                *counter += 1;
-                shout_total = *counter;
-            })
+            .and_modify(|counter| *counter += 1)
             .or_insert(1);
         if shout_total == 2024 {
             break;
@@ -73,14 +73,15 @@ fn do_forever_dance(positions: &mut [Vec<usize>]) -> usize {
     let mut state_set = HashSet::<Vec<Vec<usize>>>::new();
     let mut shout_set = HashSet::<usize>::new();
 
-    let mut move_no = 0;
-    while !state_set.contains(positions) {
+    for move_no in 0.. {
         state_set.insert(positions.to_vec());
         let shout_no = get_shout_number(positions);
         shout_set.insert(shout_no);
 
         do_move(positions, move_no);
-        move_no += 1;
+        if state_set.contains(positions) {
+            break;
+        }
     }
     *shout_set.iter().max().unwrap()
 }
