@@ -105,19 +105,17 @@ fn parse_track_fancy(input: &[&[u8]]) -> Vec<Action> {
 }
 
 fn run_race_individual(actions: &[Action], total_rounds: usize) -> usize {
-    let mut accumulated_power = (0, 10);
-    for round_no in 0..total_rounds {
-        let cur_power = accumulated_power.1;
-        let action = &actions[round_no % actions.len()];
-        let new_power = match action {
-            Action::Increase => cur_power + 1,
-            Action::Decrease => cur_power - 1,
-            Action::Maintain => cur_power,
-            Action::Start => unreachable!(),
+    let mut acc = 0;
+    let mut cur_power = 10;
+    for action in actions.iter().cycle().take(total_rounds) {
+        match action {
+            Action::Increase => cur_power += 1,
+            Action::Decrease => cur_power -= 1,
+            _ => (),
         };
-        accumulated_power = (accumulated_power.0 + cur_power, new_power);
+        acc += cur_power;
     }
-    accumulated_power.0 + accumulated_power.1 - 10 // remove initial default
+    acc
 }
 
 fn run_race(
@@ -131,22 +129,25 @@ fn run_race(
 }
 
 fn run_race_track_individual(track: &[Action], actions: &[Action], lap_count: usize) -> usize {
-    let mut accumulated_power = (0, 10);
-    for round_no in 0..track.len() * lap_count {
-        let cur_power = accumulated_power.1;
-        let action = &actions[round_no % actions.len()];
-        let track_action = &track[round_no % track.len()];
-
-        let new_power = match (track_action, action) {
-            (Action::Increase, _) => cur_power + 1,
-            (Action::Decrease, _) => cur_power - 1,
-            (Action::Start | Action::Maintain, Action::Increase) => cur_power + 1,
-            (Action::Start | Action::Maintain, Action::Decrease) => cur_power - 1,
-            _ => cur_power,
+    let mut acc = 0;
+    let mut cur_power = 10;
+    for (track_action, action) in track
+        .iter()
+        .cycle()
+        .zip(actions.iter().cycle())
+        .take(track.len() * lap_count)
+    {
+        match (track_action, action) {
+            (Action::Increase, _) => cur_power += 1,
+            (Action::Decrease, _) => cur_power -= 1,
+            // order important
+            (_, Action::Increase) => cur_power += 1,
+            (_, Action::Decrease) => cur_power -= 1,
+            _ => (),
         };
-        accumulated_power = (accumulated_power.0 + cur_power, new_power);
+        acc += cur_power;
     }
-    accumulated_power.0 + accumulated_power.1 - 10 // remove initial default
+    acc
 }
 
 fn run_track(
@@ -227,10 +228,9 @@ fn main() -> io::Result<()> {
             .chars()
             .map(|c| Action::from(c).unwrap())
             .collect();
-        let perms = initial_action_plan
+        let num_winning_plans = initial_action_plan
             .into_iter()
-            .permutations(initial_action_plan_str.len());
-        let num_winning_plans = perms
+            .permutations(initial_action_plan_str.len())
             .unique()
             .filter(|action_plan| {
                 let score: usize = run_race_track_individual(&race_track, action_plan, num_laps);
