@@ -5,7 +5,7 @@ use std::fs;
 use std::io;
 use std::str::FromStr;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 enum Action {
     Increase,
     Decrease,
@@ -131,7 +131,6 @@ fn run_race(
 }
 
 fn run_race_track_individual(track: &[Action], actions: &[Action], lap_count: usize) -> usize {
-    //let mut accumulated_power = Vec::with_capacity(lap_count * track.len());
     let mut accumulated_power = (0, 10);
     for round_no in 0..track.len() * lap_count {
         let cur_power = accumulated_power.1;
@@ -150,7 +149,7 @@ fn run_race_track_individual(track: &[Action], actions: &[Action], lap_count: us
     accumulated_power.0 + accumulated_power.1 - 10 // remove initial default
 }
 
-fn run_on_track(
+fn run_track(
     track: &[Action],
     device_actions: &HashMap<char, Vec<Action>>,
     lap_count: usize,
@@ -196,7 +195,7 @@ fn main() -> io::Result<()> {
     ]);
 
     let p2_device_actions = parse_device_actions(&fs::read_to_string(p2_input_filename)?);
-    let p2_race_results = get_race_results(&run_on_track(&p2_race_track, &p2_device_actions, 10));
+    let p2_race_results = get_race_results(&run_track(&p2_race_track, &p2_device_actions, 10));
     println!("P2: Race results: {p2_race_results}");
 
     let p3_race_track = parse_track_fancy(&[
@@ -221,12 +220,15 @@ fn main() -> io::Result<()> {
         .collect();
     let perms = initial_action_plan.into_iter().permutations(11);
     let num_winning_plans = perms
+        .unique()
         .filter(|action_plan| {
             let score: usize = run_race_track_individual(&p3_race_track, action_plan, 2024);
             score > p3_opposition_score
         })
         .count();
-    println!("P3: Number of winning action plans: {num_winning_plans} (beating {p3_opposition_score})");
+    println!(
+        "P3: Number of winning action plans: {num_winning_plans} (beating {p3_opposition_score})"
+    );
 
     Ok(())
 }
@@ -245,12 +247,7 @@ mod tests {
 
         let actions = parse_device_actions(input_str);
         let race_scores = run_race(&actions, 10);
-        let expected_scores = HashMap::from([
-            ('A', 103),
-            ('B', 116),
-            ('C', 107),
-            ('D', 110),
-        ]);
+        let expected_scores = HashMap::from([('A', 103), ('B', 116), ('C', 107), ('D', 110)]);
         assert_eq!(race_scores, expected_scores);
         let race_result = get_race_results(&race_scores);
         assert_eq!(race_result, "BDCA");
@@ -262,7 +259,7 @@ mod tests {
         let race_track = parse_track_hardcoded("+===++-=+=-S");
 
         let actions = parse_device_actions(input_str);
-        let race_result = get_race_results(&run_on_track(&race_track, &actions, 10));
+        let race_result = get_race_results(&run_track(&race_track, &actions, 10));
         assert_eq!(race_result, "DCBA");
     }
 
