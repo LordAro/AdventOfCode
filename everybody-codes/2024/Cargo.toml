@@ -6,4 +6,3 @@ edition = "2021"
 
 [dependencies]
 itertools = "0.13.0"
-ansi_term = "0.12.1"

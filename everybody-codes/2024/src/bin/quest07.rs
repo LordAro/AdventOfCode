@@ -178,57 +178,69 @@ fn main() -> io::Result<()> {
     let (p1_input_filename, p2_input_filename, p3_input_filename) =
         everybody_codes::get_input_files()?;
 
-    let p1_device_actions = parse_device_actions(&fs::read_to_string(p1_input_filename)?);
-    let p1_race_results = get_race_results(&run_race(&p1_device_actions, 10));
-    println!("P1: Race results: {p1_race_results}");
+    {
+        let device_actions = parse_device_actions(&fs::read_to_string(p1_input_filename)?);
+        let race_results = get_race_results(&run_race(&device_actions, 10));
+        println!("P1: Race results: {race_results}");
+    }
 
-    let p2_race_track = parse_track_fancy(&[
-        "S-=++=-==++=++=-=+=-=+=+=--=-=++=-==++=-+=-=+=-=+=+=++=-+==++=++=-=-=--".as_bytes(),
-        "-                                                                     -".as_bytes(),
-        "=                                                                     =".as_bytes(),
-        "+                                                                     +".as_bytes(),
-        "=                                                                     +".as_bytes(),
-        "+                                                                     =".as_bytes(),
-        "=                                                                     =".as_bytes(),
-        "-                                                                     -".as_bytes(),
-        "--==++++==+=+++-=+=-=+=-+-=+-=+-=+=-=+=--=+++=++=+++==++==--=+=++==+++-".as_bytes(),
-    ]);
+    {
+        let race_track = parse_track_fancy(&[
+            "S-=++=-==++=++=-=+=-=+=+=--=-=++=-==++=-+=-=+=-=+=+=++=-+==++=++=-=-=--".as_bytes(),
+            "-                                                                     -".as_bytes(),
+            "=                                                                     =".as_bytes(),
+            "+                                                                     +".as_bytes(),
+            "=                                                                     +".as_bytes(),
+            "+                                                                     =".as_bytes(),
+            "=                                                                     =".as_bytes(),
+            "-                                                                     -".as_bytes(),
+            "--==++++==+=+++-=+=-=+=-+-=+-=+-=+=-=+=--=+++=++=+++==++==--=+=++==+++-".as_bytes(),
+        ]);
 
-    let p2_device_actions = parse_device_actions(&fs::read_to_string(p2_input_filename)?);
-    let p2_race_results = get_race_results(&run_track(&p2_race_track, &p2_device_actions, 10));
-    println!("P2: Race results: {p2_race_results}");
+        let device_actions = parse_device_actions(&fs::read_to_string(p2_input_filename)?);
+        let race_results = get_race_results(&run_track(&race_track, &device_actions, 10));
+        println!("P2: Race results: {race_results}");
+    }
 
-    let p3_race_track = parse_track_fancy(&[
-        "S+= +=-== +=++=     =+=+=--=    =-= ++=     +=-  =+=++=-+==+ =++=-=-=--".as_bytes(),
-        "- + +   + =   =     =      =   == = - -     - =  =         =-=        -".as_bytes(),
-        "= + + +-- =-= ==-==-= --++ +  == == = +     - =  =    ==++=    =++=-=++".as_bytes(),
-        "+ + + =     +         =  + + == == ++ =     = =  ==   =   = =++=       ".as_bytes(),
-        "= = + + +== +==     =++ == =+=  =  +  +==-=++ =   =++ --= + =          ".as_bytes(),
-        "+ ==- = + =   = =+= =   =       ++--          +     =   = = =--= ==++==".as_bytes(),
-        "=     ==- ==+-- = = = ++= +=--      ==+ ==--= +--+=-= ==- ==   =+=    =".as_bytes(),
-        "-               = = = =   +  +  ==+ = = +   =        ++    =          -".as_bytes(),
-        "-               = + + =   +  -  = + = = +   =        +     =          -".as_bytes(),
-        "--==++++==+=+++-= =-= =-+-=  =+-= =-= =--   +=++=+++==     -=+=++==+++-".as_bytes(),
-    ]);
-    let p3_device_actions = parse_device_actions(&fs::read_to_string(p3_input_filename)?);
-    let p3_opposition_score: usize =
-        run_race_track_individual(&p3_race_track, p3_device_actions.get(&'A').unwrap(), 2024);
+    {
+        let race_track = parse_track_fancy(&[
+            "S+= +=-== +=++=     =+=+=--=    =-= ++=     +=-  =+=++=-+==+ =++=-=-=--".as_bytes(),
+            "- + +   + =   =     =      =   == = - -     - =  =         =-=        -".as_bytes(),
+            "= + + +-- =-= ==-==-= --++ +  == == = +     - =  =    ==++=    =++=-=++".as_bytes(),
+            "+ + + =     +         =  + + == == ++ =     = =  ==   =   = =++=       ".as_bytes(),
+            "= = + + +== +==     =++ == =+=  =  +  +==-=++ =   =++ --= + =          ".as_bytes(),
+            "+ ==- = + =   = =+= =   =       ++--          +     =   = = =--= ==++==".as_bytes(),
+            "=     ==- ==+-- = = = ++= +=--      ==+ ==--= +--+=-= ==- ==   =+=    =".as_bytes(),
+            "-               = = = =   +  +  ==+ = = +   =        ++    =          -".as_bytes(),
+            "-               = + + =   +  -  = + = = +   =        +     =          -".as_bytes(),
+            "--==++++==+=+++-= =-= =-+-=  =+-= =-= =--   +=++=+++==     -=+=++==+++-".as_bytes(),
+        ]);
+        let device_actions = parse_device_actions(&fs::read_to_string(p3_input_filename)?);
+        // The full race is 2024 laps, but a cycle forms at 11 laps so if we're ahead then we're
+        // going to stay ahead
+        let num_laps = 11;
+        let opposition_score: usize =
+            run_race_track_individual(&race_track, device_actions.get(&'A').unwrap(), num_laps);
 
-    let initial_action_plan: Vec<_> = "+++++---==="
-        .chars()
-        .map(|c| Action::from(c).unwrap())
-        .collect();
-    let perms = initial_action_plan.into_iter().permutations(11);
-    let num_winning_plans = perms
-        .unique()
-        .filter(|action_plan| {
-            let score: usize = run_race_track_individual(&p3_race_track, action_plan, 2024);
-            score > p3_opposition_score
-        })
-        .count();
-    println!(
-        "P3: Number of winning action plans: {num_winning_plans} (beating {p3_opposition_score})"
-    );
+        let initial_action_plan_str = "+++++---===";
+        let initial_action_plan: Vec<_> = initial_action_plan_str
+            .chars()
+            .map(|c| Action::from(c).unwrap())
+            .collect();
+        let perms = initial_action_plan
+            .into_iter()
+            .permutations(initial_action_plan_str.len());
+        let num_winning_plans = perms
+            .unique()
+            .filter(|action_plan| {
+                let score: usize = run_race_track_individual(&race_track, action_plan, num_laps);
+                score > opposition_score
+            })
+            .count();
+        println!(
+            "P3: Number of winning action plans: {num_winning_plans} (beating {opposition_score})"
+        );
+    }
 
     Ok(())
 }
