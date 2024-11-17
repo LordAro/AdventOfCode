@@ -106,17 +106,19 @@ fn parse_track_fancy(input: &[&[u8]]) -> Vec<Action> {
 }
 
 fn run_race_individual(actions: &[Action], total_rounds: usize) -> usize {
-    let mut acc = 0;
-    let mut cur_power = 10;
-    for action in actions.iter().cycle().take(total_rounds) {
-        match action {
-            Action::Increase => cur_power += 1,
-            Action::Decrease => cur_power -= 1,
-            _ => (),
-        };
-        acc += cur_power;
-    }
-    acc
+    actions
+        .iter()
+        .cycle()
+        .take(total_rounds)
+        .scan(10, |cur_power, action| {
+            match action {
+                Action::Increase => *cur_power += 1,
+                Action::Decrease => *cur_power -= 1,
+                _ => (),
+            };
+            Some(*cur_power)
+        })
+        .sum()
 }
 
 fn run_race(
@@ -130,25 +132,23 @@ fn run_race(
 }
 
 fn run_race_track_individual(track: &[Action], actions: &[Action], lap_count: usize) -> usize {
-    let mut acc = 0;
-    let mut cur_power = 10;
-    for (track_action, action) in track
+    track
         .iter()
         .cycle()
         .zip(actions.iter().cycle())
         .take(track.len() * lap_count)
-    {
-        match (track_action, action) {
-            (Action::Increase, _) => cur_power += 1,
-            (Action::Decrease, _) => cur_power -= 1,
-            // order important
-            (_, Action::Increase) => cur_power += 1,
-            (_, Action::Decrease) => cur_power -= 1,
-            _ => (),
-        };
-        acc += cur_power;
-    }
-    acc
+        .scan(10, |cur_power, (track_action, action)| {
+            match (track_action, action) {
+                (Action::Increase, _) => *cur_power += 1,
+                (Action::Decrease, _) => *cur_power -= 1,
+                // order important
+                (_, Action::Increase) => *cur_power += 1,
+                (_, Action::Decrease) => *cur_power -= 1,
+                _ => (),
+            };
+            Some(*cur_power)
+        })
+        .sum()
 }
 
 fn run_track(
