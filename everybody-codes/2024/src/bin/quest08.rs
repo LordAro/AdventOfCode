@@ -51,37 +51,28 @@ fn get_pyramid_layer(n: usize, k: usize, priests: usize, acolytes: usize) -> usi
     pyramid_outer_columns(n, priests, acolytes) + get_pyramid_layer(n - 1, k - 1, priests, acolytes)
 }
 
-fn do_last_layer_block_removals(layer: &[usize], priests: usize, acolytes: usize) -> usize {
-    let max_layer_idx = layer.len() - 1;
-    layer
-        .iter()
-        .enumerate()
-        .map(|(column_idx, column_total)| {
-            if column_idx == 0 || column_idx == max_layer_idx {
-                return *column_total;
-            }
-            let blocks_to_remove = (priests * (max_layer_idx + 1) * column_total) % acolytes;
-            //println!("{column_idx} {column_total} -> {priests} * {max_layer_idx} * {column_total} mod {acolytes} -> {blocks_to_remove}");
-            column_total - blocks_to_remove
-        })
-        .sum()
-}
-
 fn get_fancier_total(block_supply: usize, priests: usize, acolytes: usize) -> usize {
-    for n in 1.. {
-        let layer_width = (n - 1) * 2 + 1;
-        let mut layer_totals = Vec::with_capacity(layer_width);
-        for k in 1..=layer_width {
-            let column_total = get_pyramid_layer(n, k, priests, acolytes);
-            layer_totals.push(column_total);
-        }
-        let spaced_layer_total = do_last_layer_block_removals(&layer_totals, priests, acolytes);
-        //println!("{n} -> {spaced_layer_total}");
-        if spaced_layer_total > block_supply {
-            return spaced_layer_total;
-        }
-    }
-    unreachable!();
+    (1..)
+        .map(|layer_n| {
+            let layer_width = (layer_n - 1) * 2 + 1;
+
+            // Get shrine totals
+            (0..layer_width)
+                .map(|k| {
+                    let column_total = get_pyramid_layer(layer_n, k + 1, priests, acolytes);
+
+                    // Now work out how many blocks to remove
+                    if k == 0 || k == layer_width - 1 {
+                        return column_total;
+                    }
+                    let blocks_to_remove = (priests * layer_width * column_total) % acolytes;
+                    //println!("{priests} * {layer_width} * {column_total} mod {acolytes} -> {blocks_to_remove}");
+                    column_total - blocks_to_remove
+                })
+                .sum()
+        })
+        .find(|&spaced_layer_total| spaced_layer_total > block_supply)
+        .unwrap()
 }
 
 fn main() -> io::Result<()> {
