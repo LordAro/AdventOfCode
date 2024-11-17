@@ -1,11 +1,12 @@
 use itertools::Itertools;
+use std::collections::btree_set::{BTreeSet, IntoIter};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fs;
 use std::io;
 use std::str::FromStr;
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Action {
     Increase,
     Decrease,
@@ -175,6 +176,90 @@ fn get_race_results(results: &HashMap<char, usize>) -> String {
         .collect()
 }
 
+// Taken from https://stackoverflow.com/questions/59939808/how-to-iterate-over-all-unique-permutations-of-a-sequence-in-rust
+enum UniquePermutations<T> {
+    Leaf {
+        elements: Option<Vec<T>>,
+    },
+    Stem {
+        elements: Vec<T>,
+        unique_elements: IntoIter<T>,
+        first_element: T,
+        inner: Box<Self>,
+    },
+}
+
+impl<T: Clone + Ord> UniquePermutations<T> {
+    fn new(elements: Vec<T>) -> Self {
+        if elements.len() == 1 {
+            let elements = Some(elements);
+            Self::Leaf { elements }
+        } else {
+            let mut unique_elements = elements
+                .clone()
+                .into_iter()
+                .collect::<BTreeSet<_>>()
+                .into_iter();
+
+            let (first_element, inner) = Self::next_level(&mut unique_elements, elements.clone())
+                .expect("Must have at least one item");
+
+            Self::Stem {
+                elements,
+                unique_elements,
+                first_element,
+                inner,
+            }
+        }
+    }
+
+    fn next_level(
+        mut unique_elements: impl Iterator<Item = T>,
+        elements: Vec<T>,
+    ) -> Option<(T, Box<Self>)> {
+        let first_element = unique_elements.next()?;
+
+        let mut remaining_elements = elements;
+
+        if let Some(idx) = remaining_elements.iter().position(|i| *i == first_element) {
+            remaining_elements.remove(idx);
+        }
+
+        let inner = Box::new(Self::new(remaining_elements));
+
+        Some((first_element, inner))
+    }
+}
+
+impl<T: Clone + Ord> Iterator for UniquePermutations<T> {
+    type Item = Vec<T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Leaf { elements } => elements.take(),
+            Self::Stem {
+                elements,
+                unique_elements,
+                first_element,
+                inner,
+            } => loop {
+                match inner.next() {
+                    Some(mut v) => {
+                        v.insert(0, first_element.clone());
+                        return Some(v);
+                    }
+                    None => {
+                        let (next_fe, next_i) =
+                            Self::next_level(&mut *unique_elements, elements.clone())?;
+                        *first_element = next_fe;
+                        *inner = next_i;
+                    }
+                }
+            },
+        }
+    }
+}
+
 fn main() -> io::Result<()> {
     let (p1_input_filename, p2_input_filename, p3_input_filename) =
         everybody_codes::get_input_files()?;
@@ -228,10 +313,7 @@ fn main() -> io::Result<()> {
             .chars()
             .map(|c| Action::from(c).unwrap())
             .collect();
-        let num_winning_plans = initial_action_plan
-            .into_iter()
-            .permutations(initial_action_plan_str.len())
-            .unique()
+        let num_winning_plans = UniquePermutations::new(initial_action_plan)
             .filter(|action_plan| {
                 let score: usize = run_race_track_individual(&race_track, action_plan, num_laps);
                 score > opposition_score
