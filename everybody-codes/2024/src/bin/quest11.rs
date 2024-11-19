@@ -75,12 +75,11 @@ mod tests {
     fn ex1() {
         let input_map = HashMap::from([
             ("A", vec!["B", "C"]),
-            ("B", vec!["C", "A", "A"]),
+            ("B", vec!["C", "A"]),
             ("C", vec!["A"]),
         ]);
-        let mut termites = HashMap::from([("A", 1)]);
-        termites = run_day(&input_map, &termites);
-        let expected = HashMap::from([("B", 1), ("C", 1)]);
-        assert_eq!(termites, expected);
+        let population = run_simulation(&input_map, 4, "A");
+        let expected = 8;
+        assert_eq!(population, expected);
     }
 }
