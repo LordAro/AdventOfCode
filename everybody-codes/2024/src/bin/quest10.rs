@@ -14,19 +14,17 @@ fn get_new_rune(grid: &[Vec<char>], x: usize, y: usize) -> char {
 fn get_new_rune_word(grid: &[Vec<char>], grid_x: usize, grid_y: usize) -> String {
     // Only copy the specific grid we're interested in
     // Might be less efficient than just copying the whole thing, dunno
-    let mut updated_grid: Vec<Vec<char>> = grid[grid_y..grid_y + 8]
+    let mut specific_grid: Vec<Vec<char>> = grid[grid_y..grid_y + 8]
         .iter()
         .map(|row| row.iter().skip(grid_x).take(8).cloned().collect())
         .collect();
-    let mut rune_word = "".to_string();
-    for y in 2..6 {
-        for x in 2..6 {
+    iproduct!(2..6, 2..6)
+        .scan(specific_grid, |updated_grid, (y, x)| {
             let new_rune = get_new_rune(&updated_grid, x, y);
             updated_grid[y][x] = new_rune;
-            rune_word.push(new_rune);
-        }
-    }
-    rune_word
+            Some(new_rune)
+        })
+        .collect()
 }
 
 fn get_rune_word_power(rune_word: &str) -> usize {
