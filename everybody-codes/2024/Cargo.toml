@@ -7,3 +7,6 @@ edition = "2021"
 [dependencies]
 itertools = "0.13.0"
 memoise = "0.3.2"
+
+[profile.release]
+debug = true
