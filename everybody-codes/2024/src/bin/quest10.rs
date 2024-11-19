@@ -2,18 +2,7 @@ use itertools::iproduct;
 use std::fs;
 use std::io;
 
-fn get_new_rune(grid: &[Vec<char>], x: usize, y: usize) -> Option<char> {
-    let row: Vec<_> = grid[y]
-        .iter()
-        .filter(|c| **c != '.' && **c != '?')
-        .collect();
-    grid.iter()
-        .map(|row| row[x])
-        .filter(|c| *c != '.' && *c != '?')
-        .find(|c| row.contains(&c))
-}
-
-fn get_new_rune2(
+fn try_find_symbol(
     grid: &[Vec<char>],
     grid_x: usize,
     grid_y: usize,
@@ -49,14 +38,14 @@ fn get_rune_word(grid: &[Vec<char>], grid_x: usize, grid_y: usize) -> Option<Str
     // try_reduce is nightly only
     iproduct!(2..6, 2..6)
         .map(|(y, x)| grid[grid_y + y][grid_x + x])
-        .try_fold(String::new(), |mut acc, ch|
+        .try_fold(String::new(), |mut acc, ch| {
             if ch == '.' {
                 None
             } else {
                 acc.push(ch);
                 Some(acc)
             }
-        )
+        })
 }
 
 fn get_new_rune_word(grid: &[Vec<char>], grid_x: usize, grid_y: usize) -> String {
@@ -68,7 +57,7 @@ fn get_new_rune_word(grid: &[Vec<char>], grid_x: usize, grid_y: usize) -> String
         .collect();
     iproduct!(2..6, 2..6)
         .scan(specific_grid, |updated_grid, (y, x)| {
-            if let Some(new_rune) = get_new_rune(updated_grid, x, y) {
+            if let Some(new_rune) = try_find_symbol(updated_grid, 0, 0, x, y) {
                 updated_grid[y][x] = new_rune;
                 Some(new_rune)
             } else {
@@ -168,7 +157,7 @@ fn process_merged_grid(full_grid: &[Vec<char>]) -> usize {
             let mut made_changes_local = false;
             for (y, x) in iproduct!(2..6, 2..6) {
                 if grid[gy + y][gx + x] == '.' {
-                    if let Some(r) = get_new_rune2(&grid, gx, gy, x, y) {
+                    if let Some(r) = try_find_symbol(&grid, gx, gy, x, y) {
                         grid[gy + y][gx + x] = r;
                         made_changes += 1;
                         made_changes_local = true;
@@ -193,16 +182,6 @@ fn process_merged_grid(full_grid: &[Vec<char>]) -> usize {
             power += get_rune_word_power(&rune);
         }
     }
-    //for r in grid {
-    //    for c in r {
-    //        if c == '?' {
-    //            print!("{}", Colour::Red.paint("?"));
-    //        } else {
-    //            print!("{}", c);
-    //        }
-    //    }
-    //    println!();
-    //}
     power
 }
 
@@ -259,7 +238,7 @@ mod tests {
             "**GMJH**".chars().collect::<Vec<_>>(),
         ];
 
-        assert_eq!(get_new_rune(&input, 2, 2), Some('P'));
+        assert_eq!(try_find_symbol(&input, 0, 0, 2, 2), Some('P'));
         assert_eq!(get_new_rune_word(&input, 0, 0), "PTBVRCZHFLJWGMNS");
     }
 
