@@ -30,8 +30,8 @@ fn get_new_rune_word(grid: &[Vec<char>], grid_x: usize, grid_y: usize) -> String
 fn get_rune_word_power(rune_word: &str) -> usize {
     rune_word
         .chars()
-        .enumerate()
-        .map(|(i, c)| (i + 1) * (c as u8 - b'A') as usize)
+        .zip(1..)
+        .map(|(c, i)| i * (c as u8 - b'A' + 1) as usize)
         .sum()
 }
 
@@ -82,5 +82,10 @@ mod tests {
 
         assert_eq!(get_new_rune(&input, 2, 2), 'P');
         assert_eq!(get_new_rune_word(&input, 0, 0), "PTBVRCZHFLJWGMNS");
+    }
+
+    #[test]
+    fn ex2() {
+        assert_eq!(get_rune_word_power("PTBVRCZHFLJWGMNS"), 1851);
     }
 }
