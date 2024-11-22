@@ -10,10 +10,17 @@ struct Coord {
 }
 
 #[derive(Debug, PartialEq)]
+struct IntersectInfo {
+    start_pos: usize,
+    power: usize,
+    altitude: usize,
+    time: usize, // debugging only
+}
+
+#[derive(Debug, PartialEq)]
 enum Type {
     Normal,
     Hard,
-    Meteor, // lol
 }
 
 fn get_targets(input: &str) -> Vec<(Coord, Type)> {
@@ -22,6 +29,7 @@ fn get_targets(input: &str) -> Vec<(Coord, Type)> {
     input
         .lines()
         .enumerate()
+        .take_while(|(str_y, _)| *str_y < input_height) // skip last line
         .flat_map(|(str_y, l)| {
             let y = input_height - (str_y + 1);
             l.chars()
@@ -40,6 +48,86 @@ fn get_targets(input: &str) -> Vec<(Coord, Type)> {
 
 fn get_catapult_landing_x(start_pos: usize, power: usize) -> usize {
     start_pos + 3 * power
+}
+
+fn get_projectile_pos_at_time(start_pos: usize, power: usize, time: usize) -> Option<Coord> {
+    if time <= power {
+        Some(Coord {
+            x: time,
+            y: start_pos + time,
+        })
+    } else if time <= power * 2 {
+        Some(Coord {
+            x: time,
+            y: start_pos + power,
+        })
+    } else {
+        (start_pos + 3 * power)
+            .checked_sub(time)
+            .map(|y| Coord { x: time, y })
+    }
+}
+
+fn get_projectile_meteor_intersect_altitude(
+    start_pos: usize,
+    power: usize,
+    meteor: Coord,
+) -> Option<usize> {
+    let meteor_coords = (0..).map_while(|t| {
+        meteor
+            .y
+            .checked_sub(t)
+            .and_then(|y| meteor.x.checked_sub(t).map(|x| Coord { x, y }))
+    });
+    let projectile_coords = (0..).map_while(|t| get_projectile_pos_at_time(start_pos, power, t));
+
+    projectile_coords
+        .zip(meteor_coords)
+        .find(|(p, m)| p == m)
+        .map(|(p, _)| p.y)
+}
+
+fn find_meteor_intersect(meteor_start: Coord) -> Option<IntersectInfo> {
+    // can't step any further than this
+    for time in 0..usize::min(meteor_start.x, meteor_start.y) {
+        let meteor = Coord {
+            x: meteor_start.x - time,
+            y: meteor_start.y - time,
+        };
+
+        let meteor_landing_x = meteor.x.saturating_sub(meteor.y);
+        let intersect_point = (0..3)
+            .flat_map(move |catapult| {
+                (0..)
+                    .skip_while(move |&power| {
+                        get_catapult_landing_x(catapult, power) < meteor_landing_x
+                    })
+                    // overkill, but necessary for the few meteors that won't actually land
+                    .take_while(move |&power| {
+                        get_catapult_landing_x(catapult, power) < meteor.x + meteor.y
+                    })
+                    .flat_map(move |power| {
+                        get_projectile_meteor_intersect_altitude(catapult, power, meteor)
+                            .map(|y| (power, y))
+                    })
+                    .map(move |(power, y)| IntersectInfo {
+                        start_pos: catapult,
+                        power,
+                        altitude: y,
+                        time,
+                    })
+            })
+            .min_by(|a, b| {
+                // max altitude followed by min rank score
+                b.altitude
+                    .cmp(&a.altitude)
+                    .then((a.start_pos * a.power).cmp(&(b.start_pos * b.power)))
+            });
+        if intersect_point.is_some() {
+            return intersect_point;
+        }
+    }
+    None
 }
 
 fn get_ranking_value_sum(targets: &[(Coord, Type)]) -> usize {
@@ -81,36 +169,23 @@ fn main() -> io::Result<()> {
     println!("P2: Ranking value sum: {p2_ranking_value_sum}");
 
     let p3_input = fs::read_to_string(p3_input_filename)?;
-    let p3_targets: Vec<_> = p3_input
+    let p3_min_rank_score: usize = p3_input
         .lines()
         .map(|l| {
             let (x, y) = l.split_once(' ').unwrap();
-            (
-                Coord {
-                    x: x.parse().unwrap(),
-                    y: y.parse().unwrap(),
-                },
-                Type::Meteor,
-            )
-        })
-        .collect();
-
-    {
-        let furthest_target = p3_targets.iter().max_by_key(|ct| ct.0).unwrap();
-        let furthest_target_x = furthest_target.0.x - furthest_target.0.y;
-
-        // target x -> pos, power
-        let mut firing_solutions: HashMap<usize, (usize, usize)> = HashMap::new();
-        for start_catapult in 0..3 {
-            for power in 1.. {
-                let landing_pos = get_catapult_landing_x(start_catapult, power);
-                firing_solutions.insert(landing_pos, (start_catapult, power));
-                if landing_pos >= furthest_target_x {
-                    break;
-                }
+            Coord {
+                x: x.parse().unwrap(),
+                y: y.parse().unwrap(),
             }
-        }
-    }
+        })
+        .map(|meteor| {
+            let ii = find_meteor_intersect(meteor).unwrap();
+            (ii.start_pos + 1) * ii.power
+        })
+        .sum();
+
+    println!("P3: Minimum ranking score to destroy all meteors: {p3_min_rank_score}");
+
     Ok(())
 }
 
@@ -152,5 +227,97 @@ mod tests {
         let target_positions = get_targets(input_str);
         let ranking_value_sum = get_ranking_value_sum(&target_positions);
         assert_eq!(ranking_value_sum, 13);
+    }
+
+    #[test]
+    fn ex3a() {
+        // C1
+        let positions: Vec<_> = (0..)
+            .map_while(|t| get_projectile_pos_at_time(2, 1, t))
+            .collect();
+        let expected = vec![
+            Coord { x: 0, y: 2 },
+            Coord { x: 1, y: 3 },
+            Coord { x: 2, y: 3 },
+            Coord { x: 3, y: 2 },
+            Coord { x: 4, y: 1 },
+            Coord { x: 5, y: 0 },
+        ];
+        assert_eq!(positions, expected);
+
+        // C3
+        let positions: Vec<_> = (0..)
+            .map_while(|t| get_projectile_pos_at_time(2, 3, t))
+            .collect();
+        let expected = vec![
+            Coord { x: 0, y: 2 },
+            Coord { x: 1, y: 3 },
+            Coord { x: 2, y: 4 },
+            Coord { x: 3, y: 5 },
+            Coord { x: 4, y: 5 },
+            Coord { x: 5, y: 5 },
+            Coord { x: 6, y: 5 },
+            Coord { x: 7, y: 4 },
+            Coord { x: 8, y: 3 },
+            Coord { x: 9, y: 2 },
+            Coord { x: 10, y: 1 },
+            Coord { x: 11, y: 0 },
+        ];
+        assert_eq!(positions, expected);
+    }
+
+    #[test]
+    fn ex3b() {
+        // C1
+        assert_eq!(
+            get_projectile_meteor_intersect_altitude(2, 1, Coord { x: 6, y: 5 }),
+            Some(2)
+        );
+    }
+
+    #[test]
+    fn ex3c() {
+        // Finds A2
+        assert_eq!(
+            find_meteor_intersect(Coord { x: 6, y: 5 }),
+            Some(IntersectInfo {
+                start_pos: 0,
+                power: 2,
+                altitude: 2,
+                time: 0,
+            })
+        );
+
+        assert_eq!(
+            find_meteor_intersect(Coord { x: 6, y: 7 }),
+            // C2 also valid, with same rank score
+            Some(IntersectInfo {
+                start_pos: 1,
+                power: 3,
+                altitude: 4,
+                time: 0,
+            })
+        );
+
+        assert_eq!(
+            find_meteor_intersect(Coord { x: 10, y: 5 }),
+            Some(IntersectInfo {
+                start_pos: 2,
+                power: 1,
+                altitude: 0,
+                time: 0,
+            })
+        );
+
+        // Needs delay
+        assert_eq!(
+            find_meteor_intersect(Coord { x: 5, y: 5 }),
+            Some(IntersectInfo {
+                start_pos: 0,
+                power: 2,
+                altitude: 2,
+                time: 1,
+            })
+        );
     }
 }
