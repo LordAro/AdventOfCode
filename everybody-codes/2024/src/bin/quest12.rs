@@ -88,49 +88,40 @@ fn get_projectile_meteor_intersect_altitude(
 }
 
 fn find_meteor_intersect(meteor_start: Coord) -> Option<IntersectInfo> {
+    // never changes through multiple time steps
     let meteor_landing_x = meteor_start.x.saturating_sub(meteor_start.y);
 
     // can't step any further than this
-    for time in 0..usize::min(meteor_start.x, meteor_start.y) {
+    // Find the first result we get at this time step.
+    // If we've found a solution, there can't be any better ones at later time values as the
+    // altitude will be lower, so return immediately
+    (0..usize::min(meteor_start.x, meteor_start.y)).find_map(|time| {
         let meteor = Coord {
             x: meteor_start.x - time,
             y: meteor_start.y - time,
         };
 
-        // For all 3 catapults
-        let intersect_point = (0..3)
-            .flat_map(move |catapult| {
-                // get a power level that approximates the range we can intersect with the meteor
-                // power_end is overkill, but necessary for the few meteors that won't actually land
-                let power_start = meteor_landing_x.saturating_sub(catapult) / 3;
-                let power_end = (meteor.x + meteor.y - catapult) / 3;
+        // For all 3 catapults, find the first intersect point
+        (0..3).find_map(move |catapult| {
+            // get a power level that approximates the range we can intersect with the meteor
+            // power_end is overkill, but necessary for the few meteors that won't actually land
+            let power_start = meteor_landing_x.saturating_sub(catapult) / 3;
+            let power_end = (meteor.x + meteor.y - catapult) / 3;
 
-                (power_start..=power_end)
-                    // first result is the best by construction
-                    .find_map(move |power| {
-                        get_projectile_meteor_intersect_altitude(catapult, power, meteor).map(|y| {
-                            IntersectInfo {
-                                start_pos: catapult,
-                                power,
-                                altitude: y,
-                                time,
-                            }
-                        })
+            (power_start..=power_end)
+                // first result at this power level is the best by construction
+                .find_map(move |power| {
+                    get_projectile_meteor_intersect_altitude(catapult, power, meteor).map(|y| {
+                        IntersectInfo {
+                            start_pos: catapult,
+                            power,
+                            altitude: y,
+                            time,
+                        }
                     })
-            })
-            .min_by(|a, b| {
-                // max altitude followed by min rank score
-                b.altitude
-                    .cmp(&a.altitude)
-                    .then((a.start_pos * a.power).cmp(&(b.start_pos * b.power)))
-            });
-        // If we've found a solution, there can't be any better ones at later time values as the
-        // altitude will be lower, so return immediately
-        if intersect_point.is_some() {
-            return intersect_point;
-        }
-    }
-    None
+                })
+        })
+    })
 }
 
 fn get_ranking_value_sum(targets: &[(Coord, Type)]) -> usize {
