@@ -1,8 +1,8 @@
 ifdef DEBUG
-BINDIR=builds/debug
+BINDIR=target/debug
 else
 CARGO_FLAGS=--release
-BINDIR=builds/release
+BINDIR=target/release
 endif
 FLAGS=-Wwarnings -Wbad-style -Wfuture-incompatible -Wunused
 
@@ -36,5 +36,5 @@ run%: $(BINDIR)/quest%
 .PRECIOUS: $(BINDIR)/quest%
 $(BINDIR)/quest%: src/bin/quest%.rs $(MAKEFILE_LIST)
 	@echo -e '\x1b[1;34mCompiling quest $* solution\x1b[0m'
-	@RUSTFLAGS='$(FLAGS) $(FLAGS_QUEST_$@)' cargo build $(CARGO_FLAGS) --tests --target-dir builds --bin quest$*
-	@RUSTFLAGS='$(FLAGS) $(FLAGS_QUEST_$@)' cargo test $(CARGO_FLAGS) --target-dir builds --bin quest$*
+	@RUSTFLAGS='$(FLAGS) $(FLAGS_QUEST_$@)' cargo build $(CARGO_FLAGS) --tests --bin quest$*
+	@RUSTFLAGS='$(FLAGS) $(FLAGS_QUEST_$@)' cargo test $(CARGO_FLAGS) --bin quest$*
