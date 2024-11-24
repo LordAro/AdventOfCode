@@ -2,109 +2,11 @@ use std::collections::{HashSet, VecDeque};
 use std::fs;
 use std::io;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct Coord {
     x: isize,
     y: isize,
     z: isize,
-}
-
-#[derive(Debug)]
-struct PathNode {
-    c: Coord,
-    path_len: usize,
-}
-
-fn get_distance_bfs(branch_grid: &HashSet<Coord>, t: Coord, l: Coord) -> usize {
-    let mut to_search = VecDeque::<PathNode>::new();
-    to_search.push_back(PathNode { c: t, path_len: 0 });
-    let mut searched = HashSet::<Coord>::new();
-    while !to_search.is_empty() {
-        let Some(PathNode {
-            c: node,
-            path_len: node_distance,
-        }) = to_search.pop_front()
-        else {
-            unreachable!()
-        };
-        if node == l {
-            return node_distance;
-        }
-
-        if searched.contains(&node) {
-            continue;
-        }
-
-        searched.insert(node);
-
-        let node_u = Coord {
-            x: node.x + 1,
-            y: node.y,
-            z: node.z,
-        };
-        let node_d = Coord {
-            x: node.x - 1,
-            y: node.y,
-            z: node.z,
-        };
-        let node_r = Coord {
-            x: node.x,
-            y: node.y + 1,
-            z: node.z,
-        };
-        let node_l = Coord {
-            x: node.x,
-            y: node.y - 1,
-            z: node.z,
-        };
-        let node_f = Coord {
-            x: node.x,
-            y: node.y,
-            z: node.z + 1,
-        };
-        let node_b = Coord {
-            x: node.x,
-            y: node.y,
-            z: node.z - 1,
-        };
-        if branch_grid.contains(&node_u) {
-            to_search.push_back(PathNode {
-                c: node_u,
-                path_len: node_distance + 1,
-            });
-        }
-        if branch_grid.contains(&node_d) {
-            to_search.push_back(PathNode {
-                c: node_d,
-                path_len: node_distance + 1,
-            });
-        }
-        if branch_grid.contains(&node_r) {
-            to_search.push_back(PathNode {
-                c: node_r,
-                path_len: node_distance + 1,
-            });
-        }
-        if branch_grid.contains(&node_l) {
-            to_search.push_back(PathNode {
-                c: node_l,
-                path_len: node_distance + 1,
-            });
-        }
-        if branch_grid.contains(&node_f) {
-            to_search.push_back(PathNode {
-                c: node_f,
-                path_len: node_distance + 1,
-            });
-        }
-        if branch_grid.contains(&node_b) {
-            to_search.push_back(PathNode {
-                c: node_b,
-                path_len: node_distance + 1,
-            });
-        }
-    }
-    unreachable!(); // all nodes are reachable eventually
 }
 
 fn parse_instructions(input: &str) -> Vec<Vec<(u8, isize)>> {
@@ -118,7 +20,7 @@ fn parse_instructions(input: &str) -> Vec<Vec<(u8, isize)>> {
         .collect()
 }
 
-fn grow_tree(instrs: &[(u8, isize)]) -> Vec<Coord> {
+fn grow_branch(instrs: &[(u8, isize)]) -> Vec<Coord> {
     instrs
         .iter()
         .scan(Coord { x: 0, y: 0, z: 0 }, |pos, instr| {
@@ -164,18 +66,71 @@ fn grow_tree(instrs: &[(u8, isize)]) -> Vec<Coord> {
         .collect()
 }
 
-fn get_min_sap_murkiness(branch_instrs: &[Vec<(u8, isize)>]) -> usize {
-    let all_tree_segments: Vec<_> = branch_instrs
-        .iter()
-        .map(|instrs| grow_tree(instrs))
-        .collect();
-    let unique_tree_segments: HashSet<_> = all_tree_segments.iter().flatten().cloned().collect();
+fn grow_tree(all_instrs: &[Vec<(u8, isize)>]) -> (HashSet<Coord>, HashSet<Coord>) {
+    let mut segments = HashSet::new();
+    let mut leaves = HashSet::new();
+    for branch_instr in all_instrs {
+        let branch_coords = grow_branch(branch_instr);
+        segments.extend(&branch_coords);
+        leaves.insert(*branch_coords.last().unwrap());
+    }
+    (segments, leaves)
+}
 
-    let leaf_segments: Vec<_> = all_tree_segments
-        .iter()
-        .map(|branch| branch.last().unwrap())
-        .collect();
-    let trunk_segments: HashSet<_> = unique_tree_segments
+fn get_distance_bfs(branch_grid: &HashSet<Coord>, start: Coord, end: Coord) -> usize {
+    let mut to_search = VecDeque::from([(start, 0)]);
+    let mut seen = HashSet::from([start]);
+    while let Some((node, node_distance)) = to_search.pop_front() {
+        if node == end {
+            return node_distance;
+        }
+
+        let neighbours = [
+            Coord {
+                x: node.x + 1,
+                y: node.y,
+                z: node.z,
+            },
+            Coord {
+                x: node.x - 1,
+                y: node.y,
+                z: node.z,
+            },
+            Coord {
+                x: node.x,
+                y: node.y + 1,
+                z: node.z,
+            },
+            Coord {
+                x: node.x,
+                y: node.y - 1,
+                z: node.z,
+            },
+            Coord {
+                x: node.x,
+                y: node.y,
+                z: node.z + 1,
+            },
+            Coord {
+                x: node.x,
+                y: node.y,
+                z: node.z - 1,
+            },
+        ];
+        for neighbour in neighbours {
+            if branch_grid.contains(&neighbour) && !seen.contains(&neighbour) {
+                to_search.push_back((neighbour, node_distance + 1));
+                seen.insert(neighbour);
+            }
+        }
+    }
+    unreachable!(); // all nodes are reachable eventually
+}
+
+fn get_min_sap_murkiness(branch_instrs: &[Vec<(u8, isize)>]) -> usize {
+    let (tree_segments, leaf_segments) = grow_tree(branch_instrs);
+
+    let trunk_segments: HashSet<_> = tree_segments
         .iter()
         .filter(|c| c.x == 0 && c.z == 0)
         .collect();
@@ -185,7 +140,8 @@ fn get_min_sap_murkiness(branch_instrs: &[Vec<(u8, isize)>]) -> usize {
         .map(|&t| {
             leaf_segments
                 .iter()
-                .map(|&l| get_distance_bfs(&unique_tree_segments, *t, *l))
+                // fewer leaves than trunk pieces, so faster to reverse
+                .map(|&l| get_distance_bfs(&tree_segments, l, *t))
                 .sum()
         })
         .min()
@@ -196,17 +152,14 @@ fn main() -> io::Result<()> {
     let (p1_input_filename, p2_input_filename, p3_input_filename) =
         everybody_codes::get_input_files()?;
 
-    let p1_instrs = &parse_instructions(&fs::read_to_string(p1_input_filename)?)[0];
-    let p1_tree_segments = grow_tree(p1_instrs);
+    let p1_instrs = &parse_instructions(&fs::read_to_string(p1_input_filename)?);
+    let (p1_tree_segments, _) = grow_tree(p1_instrs);
     let p1_max_height = p1_tree_segments.iter().max_by_key(|c| c.y).unwrap().y;
 
     println!("P1: Plant final height: {p1_max_height}");
 
     let p2_branch_instrs = &parse_instructions(&fs::read_to_string(p2_input_filename)?);
-    let p2_tree_segments: HashSet<_> = p2_branch_instrs
-        .iter()
-        .flat_map(|instrs| grow_tree(instrs))
-        .collect();
+    let (p2_tree_segments, _) = grow_tree(p2_branch_instrs);
     println!("P2: Total unique segments: {}", p2_tree_segments.len());
 
     let p3_branch_instrs = parse_instructions(&fs::read_to_string(p3_input_filename)?);
@@ -223,7 +176,7 @@ mod tests {
     #[test]
     fn ex1() {
         let instrs = &parse_instructions("U5,R3,D2,L5,U4,R5,D2")[0];
-        let tree_idxs = grow_tree(&instrs);
+        let tree_idxs = grow_branch(&instrs);
         let max_height = tree_idxs.iter().max_by_key(|c| c.y).unwrap().y;
         assert_eq!(max_height, 7);
     }
@@ -233,10 +186,7 @@ mod tests {
         let input = "U5,R3,D2,L5,U4,R5,D2
 U6,L1,D2,R3,U2,L1";
         let branch_instrs = parse_instructions(input);
-        let tree_segments: HashSet<_> = branch_instrs
-            .iter()
-            .flat_map(|instrs| grow_tree(&instrs))
-            .collect();
+        let (tree_segments, _) = grow_tree(&branch_instrs);
         assert_eq!(tree_segments.len(), 32);
     }
 
