@@ -1,4 +1,4 @@
-use std::collections::{HashSet, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs;
 use std::io;
 
@@ -77,75 +77,71 @@ fn grow_tree(all_instrs: &[Vec<(u8, isize)>]) -> (HashSet<Coord>, HashSet<Coord>
     (segments, leaves)
 }
 
-fn get_distance_bfs(branch_grid: &HashSet<Coord>, start: Coord, end: Coord) -> usize {
-    let mut to_search = VecDeque::from([(start, 0)]);
-    let mut seen = HashSet::from([start]);
-    while let Some((node, node_distance)) = to_search.pop_front() {
-        if node == end {
-            return node_distance;
-        }
-
-        let neighbours = [
-            Coord {
-                x: node.x + 1,
-                y: node.y,
-                z: node.z,
-            },
-            Coord {
-                x: node.x - 1,
-                y: node.y,
-                z: node.z,
-            },
-            Coord {
-                x: node.x,
-                y: node.y + 1,
-                z: node.z,
-            },
-            Coord {
-                x: node.x,
-                y: node.y - 1,
-                z: node.z,
-            },
-            Coord {
-                x: node.x,
-                y: node.y,
-                z: node.z + 1,
-            },
-            Coord {
-                x: node.x,
-                y: node.y,
-                z: node.z - 1,
-            },
-        ];
-        for neighbour in neighbours {
-            if branch_grid.contains(&neighbour) && !seen.contains(&neighbour) {
-                to_search.push_back((neighbour, node_distance + 1));
-                seen.insert(neighbour);
-            }
-        }
-    }
-    unreachable!(); // all nodes are reachable eventually
-}
-
 fn get_min_sap_murkiness(branch_instrs: &[Vec<(u8, isize)>]) -> usize {
     let (tree_segments, leaf_segments) = grow_tree(branch_instrs);
 
-    let trunk_segments: HashSet<_> = tree_segments
+    let num_trunk_segments = tree_segments
         .iter()
-        .filter(|c| c.x == 0 && c.z == 0)
-        .collect();
+        .filter(|n| n.x == 0 && n.z == 0)
+        .count();
 
-    trunk_segments
-        .iter()
-        .map(|&t| {
-            leaf_segments
-                .iter()
-                // fewer leaves than trunk pieces, so faster to reverse
-                .map(|&l| get_distance_bfs(&tree_segments, l, *t))
-                .sum()
-        })
-        .min()
-        .unwrap()
+    let mut trunk_distances = HashMap::new();
+    // find all trunk distances for each leaf at once, rather than repeating for each trunk/leaf combination
+    for leaf in leaf_segments {
+        let mut num_inserts = 0;
+        let mut to_search = VecDeque::from([(leaf, 0)]);
+        let mut seen = HashSet::from([leaf]);
+        while let Some((node, node_distance)) = to_search.pop_front() {
+            if node.x == 0 && node.z == 0 {
+                *trunk_distances.entry(node).or_default() += node_distance;
+                num_inserts += 1;
+                if num_inserts == num_trunk_segments {
+                    // done, no need to search any further
+                    break;
+                }
+            }
+
+            let neighbours = [
+                Coord {
+                    x: node.x + 1,
+                    y: node.y,
+                    z: node.z,
+                },
+                Coord {
+                    x: node.x - 1,
+                    y: node.y,
+                    z: node.z,
+                },
+                Coord {
+                    x: node.x,
+                    y: node.y + 1,
+                    z: node.z,
+                },
+                Coord {
+                    x: node.x,
+                    y: node.y - 1,
+                    z: node.z,
+                },
+                Coord {
+                    x: node.x,
+                    y: node.y,
+                    z: node.z + 1,
+                },
+                Coord {
+                    x: node.x,
+                    y: node.y,
+                    z: node.z - 1,
+                },
+            ];
+            for neighbour in neighbours {
+                if tree_segments.contains(&neighbour) && !seen.contains(&neighbour) {
+                    to_search.push_back((neighbour, node_distance + 1));
+                    seen.insert(neighbour);
+                }
+            }
+        }
+    }
+    *trunk_distances.values().min().unwrap()
 }
 
 fn main() -> io::Result<()> {
