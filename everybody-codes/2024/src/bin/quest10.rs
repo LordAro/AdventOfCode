@@ -14,7 +14,7 @@ fn try_find_symbol(
         .skip(grid_x)
         .take(8)
         .filter(|c| **c != '.')
-        .cloned()
+        .copied()
         .collect();
     let col: Vec<char> = grid
         .iter()
@@ -53,7 +53,7 @@ fn get_new_rune_word(grid: &[Vec<char>], grid_x: usize, grid_y: usize) -> String
     // Might be less efficient than just copying the whole thing, dunno
     let specific_grid: Vec<Vec<char>> = grid[grid_y..grid_y + 8]
         .iter()
-        .map(|row| row.iter().skip(grid_x).take(8).cloned().collect())
+        .map(|row| row.iter().skip(grid_x).take(8).copied().collect())
         .collect();
     iproduct!(2..6, 2..6)
         .scan(specific_grid, |updated_grid, (y, x)| {
@@ -94,7 +94,7 @@ fn try_place_unknown_symbol(grid: &mut [Vec<char>], grid_x: usize, grid_y: usize
             .iter()
             .skip(grid_x)
             .take(8)
-            .cloned()
+            .copied()
             .collect();
         let col: Vec<char> = grid
             .iter()
@@ -107,16 +107,16 @@ fn try_place_unknown_symbol(grid: &mut [Vec<char>], grid_x: usize, grid_y: usize
             .iter()
             .take(2)
             .chain(row.iter().skip(6).take(2))
-            .cloned()
+            .copied()
             .collect();
         let col_outer: Vec<char> = col
             .iter()
             .take(2)
             .chain(col.iter().skip(6).take(2))
-            .cloned()
+            .copied()
             .collect();
-        let row_inner: Vec<char> = row.iter().skip(2).take(4).cloned().collect();
-        let col_inner: Vec<char> = col.iter().skip(2).take(4).cloned().collect();
+        let row_inner: Vec<char> = row.iter().skip(2).take(4).copied().collect();
+        let col_inner: Vec<char> = col.iter().skip(2).take(4).copied().collect();
         let row_fill_count = row_inner.iter().filter(|r| **r != '.').count();
         let col_fill_count = col_inner.iter().filter(|c| **c != '.').count();
 

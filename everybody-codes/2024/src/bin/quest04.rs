@@ -15,7 +15,7 @@ fn get_required_hammer_hits_avg(input_str: &str) -> isize {
         .lines()
         .map(|l| l.parse().expect("Should be numeric"))
         .collect();
-    nails.sort();
+    nails.sort_unstable();
     let median_nail = nails[nails.len() / 2];
 
     nails

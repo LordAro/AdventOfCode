@@ -81,7 +81,7 @@ impl PartialOrd for PathNode {
 fn find_shortest_path(
     map: &HashMap<Coord, Chamber>,
     start_pos: Coord,
-    possible_end_positions: HashSet<Coord>,
+    possible_end_positions: &HashSet<Coord>,
 ) -> usize {
     let mut to_search = BTreeSet::new();
     to_search.insert(PathNode {
@@ -128,20 +128,20 @@ fn main() -> io::Result<()> {
     let p1_input = fs::read_to_string(p1_input_filename)?;
     let (p1_chamber, p1_starts, p1_ends) = parse_chamber(&p1_input);
     let p1_path_distance =
-        find_shortest_path(&p1_chamber, p1_starts.into_iter().next().unwrap(), p1_ends);
+        find_shortest_path(&p1_chamber, p1_starts.into_iter().next().unwrap(), &p1_ends);
     println!("P1: Shortest path: {p1_path_distance}");
 
     let p2_input = fs::read_to_string(p2_input_filename)?;
     let (p2_chamber, p2_starts, p2_ends) = parse_chamber(&p2_input);
     let p2_path_distance =
-        find_shortest_path(&p2_chamber, p2_starts.into_iter().next().unwrap(), p2_ends);
+        find_shortest_path(&p2_chamber, p2_starts.into_iter().next().unwrap(), &p2_ends);
     println!("P2: Shortest path: {p2_path_distance}");
 
     let p3_input = fs::read_to_string(p3_input_filename)?;
     let (p3_chamber, p3_starts, p3_ends) = parse_chamber(&p3_input);
     // invert start/end
     let p3_path_distance =
-        find_shortest_path(&p3_chamber, p3_ends.into_iter().next().unwrap(), p3_starts);
+        find_shortest_path(&p3_chamber, p3_ends.into_iter().next().unwrap(), &p3_starts);
     println!("P3: Shortest path: {p3_path_distance}");
     Ok(())
 }
@@ -157,8 +157,8 @@ mod tests {
 S50505E
 #97434#
 #######";
-        let (chamber, starts, ends) = parse_chamber(&input_str);
-        let path_distance = find_shortest_path(&chamber, starts.into_iter().next().unwrap(), ends);
+        let (chamber, starts, ends) = parse_chamber(input_str);
+        let path_distance = find_shortest_path(&chamber, starts.into_iter().next().unwrap(), &ends);
         assert_eq!(path_distance, 28);
     }
 }

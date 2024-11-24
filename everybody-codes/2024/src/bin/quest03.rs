@@ -22,7 +22,7 @@ fn print_grid(grid: &Vec<Vec<State>>) {
                     if *d == 0 {
                         print!("#");
                     } else {
-                        print!("{:x}", d);
+                        print!("{d:x}");
                     }
                 }
             };
@@ -31,69 +31,37 @@ fn print_grid(grid: &Vec<Vec<State>>) {
     }
 }
 
-fn can_be_dug<const INCLUDE_DIAG: bool>(grid: &[Vec<State>], c: Coord) -> bool {
+fn can_be_dug<const INCLUDE_DIAG: bool>(grid: &[Vec<State>], c: &Coord) -> bool {
     let neighbours = if INCLUDE_DIAG {
         vec![
             // NW
-            if c.x > 0 && c.y > 0 {
-                Some(Coord {
-                    x: c.x - 1,
-                    y: c.y - 1,
-                })
-            } else {
-                None
-            },
+            (c.x > 0 && c.y > 0).then_some(Coord {
+                x: c.x - 1,
+                y: c.y - 1,
+            }),
             // N
-            if c.y > 0 {
-                Some(Coord { x: c.x, y: c.y - 1 })
-            } else {
-                None
-            },
+            (c.y > 0).then_some(Coord { x: c.x, y: c.y - 1 }),
             // NE
-            if c.y > 0 && c.x < grid[c.y].len() - 1 {
-                Some(Coord {
-                    x: c.x + 1,
-                    y: c.y - 1,
-                })
-            } else {
-                None
-            },
+            (c.y > 0 && c.x < grid[c.y].len() - 1).then_some(Coord {
+                x: c.x + 1,
+                y: c.y - 1,
+            }),
             // W
-            if c.x > 0 {
-                Some(Coord { x: c.x - 1, y: c.y })
-            } else {
-                None
-            },
+            (c.x > 0).then_some(Coord { x: c.x - 1, y: c.y }),
             // E
-            if c.x < grid[c.y].len() - 1 {
-                Some(Coord { x: c.x + 1, y: c.y })
-            } else {
-                None
-            },
+            (c.x < grid[c.y].len() - 1).then_some(Coord { x: c.x + 1, y: c.y }),
             // SW
-            if c.y < grid.len() - 1 && c.x > 0 {
-                Some(Coord {
-                    x: c.x - 1,
-                    y: c.y + 1,
-                })
-            } else {
-                None
-            },
+            (c.y < grid.len() - 1 && c.x > 0).then_some(Coord {
+                x: c.x - 1,
+                y: c.y + 1,
+            }),
             // S
-            if c.y < grid.len() - 1 {
-                Some(Coord { x: c.x, y: c.y + 1 })
-            } else {
-                None
-            },
+            (c.y < grid.len() - 1).then_some(Coord { x: c.x, y: c.y + 1 }),
             // SE
-            if c.y < grid.len() - 1 && c.x < grid[c.y].len() - 1 {
-                Some(Coord {
-                    x: c.x + 1,
-                    y: c.y + 1,
-                })
-            } else {
-                None
-            },
+            (c.y < grid.len() - 1 && c.x < grid[c.y].len() - 1).then_some(Coord {
+                x: c.x + 1,
+                y: c.y + 1,
+            }),
         ]
     } else {
         vec![
@@ -108,9 +76,8 @@ fn can_be_dug<const INCLUDE_DIAG: bool>(grid: &[Vec<State>], c: Coord) -> bool {
         ]
     };
 
-    let cur_depth = match grid[c.y][c.x] {
-        State::Silver(d) => d,
-        _ => unreachable!(),
+    let State::Silver(cur_depth) = grid[c.y][c.x] else {
+        unreachable!()
     };
 
     neighbours.iter().all(|maybe_n| match maybe_n {
@@ -128,13 +95,13 @@ fn dig_grid_step<const INCLUDE_DIAG: bool>(grid: &[Vec<State>]) -> (Vec<Vec<Stat
     for y in 0..grid.len() {
         for x in 0..grid[y].len() {
             let c = &grid[y][x];
-            if matches!(c, State::Silver(_)) && can_be_dug::<INCLUDE_DIAG>(grid, Coord { x, y }) {
+            if matches!(c, State::Silver(_)) && can_be_dug::<INCLUDE_DIAG>(grid, &Coord { x, y }) {
                 match c {
                     State::Silver(d) => {
                         new_grid[y][x] = State::Silver(d + 1);
                         count += 1;
                     }
-                    _ => unreachable!(),
+                    State::None => unreachable!(),
                 }
             }
         }

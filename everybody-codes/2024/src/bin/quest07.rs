@@ -44,7 +44,7 @@ impl FromStr for Action {
 }
 
 impl Action {
-    pub fn from(c: char) -> Result<Action, ()> {
+    fn from(c: char) -> Result<Action, ()> {
         match c {
             '+' => Ok(Action::Increase),
             '-' => Ok(Action::Decrease),
@@ -243,18 +243,13 @@ impl<T: Clone + Ord> Iterator for UniquePermutations<T> {
                 first_element,
                 inner,
             } => loop {
-                match inner.next() {
-                    Some(mut v) => {
-                        v.insert(0, first_element.clone());
-                        return Some(v);
-                    }
-                    None => {
-                        let (next_fe, next_i) =
-                            Self::next_level(&mut *unique_elements, elements.clone())?;
-                        *first_element = next_fe;
-                        *inner = next_i;
-                    }
+                if let Some(mut v) = inner.next() {
+                    v.insert(0, first_element.clone());
+                    return Some(v);
                 }
+                let (next_fe, next_i) = Self::next_level(&mut *unique_elements, elements.clone())?;
+                *first_element = next_fe;
+                *inner = next_i;
             },
         }
     }
@@ -305,8 +300,8 @@ fn main() -> io::Result<()> {
         // The full race is 2024 laps, but a cycle forms at 11 laps so if we're ahead then we're
         // going to stay ahead
         let num_laps = 11;
-        let opposition_score: usize =
-            run_race_track_individual(&race_track, device_actions.get(&'A').unwrap(), num_laps);
+        let opposition_score =
+            run_race_track_individual(&race_track, &device_actions[&'A'], num_laps);
 
         let initial_action_plan_str = "+++++---===";
         let initial_action_plan: Vec<_> = initial_action_plan_str
@@ -315,7 +310,7 @@ fn main() -> io::Result<()> {
             .collect();
         let num_winning_plans = UniquePermutations::new(initial_action_plan)
             .filter(|action_plan| {
-                let score: usize = run_race_track_individual(&race_track, action_plan, num_laps);
+                let score = run_race_track_individual(&race_track, action_plan, num_laps);
                 score > opposition_score
             })
             .count();

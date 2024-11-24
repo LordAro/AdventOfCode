@@ -13,7 +13,7 @@ fn parse_instructions(input: &str) -> Vec<Vec<(u8, isize)>> {
     input
         .lines()
         .map(|l| {
-            l.split(",")
+            l.split(',')
                 .map(|instr| (instr.as_bytes()[0], instr[1..].parse::<isize>().unwrap()))
                 .collect()
         })
@@ -159,7 +159,7 @@ fn main() -> io::Result<()> {
     println!("P2: Total unique segments: {}", p2_tree_segments.len());
 
     let p3_branch_instrs = parse_instructions(&fs::read_to_string(p3_input_filename)?);
-    let p3_min_murkiness_level: usize = get_min_sap_murkiness(&p3_branch_instrs);
+    let p3_min_murkiness_level = get_min_sap_murkiness(&p3_branch_instrs);
     println!("P3: Minimum sap murkiness: {p3_min_murkiness_level}");
 
     Ok(())
@@ -172,7 +172,7 @@ mod tests {
     #[test]
     fn ex1() {
         let instrs = &parse_instructions("U5,R3,D2,L5,U4,R5,D2")[0];
-        let tree_idxs = grow_branch(&instrs);
+        let tree_idxs = grow_branch(instrs);
         let max_height = tree_idxs.iter().max_by_key(|c| c.y).unwrap().y;
         assert_eq!(max_height, 7);
     }
@@ -191,7 +191,7 @@ U6,L1,D2,R3,U2,L1";
         let input = "U5,R3,D2,L5,U4,R5,D2
 U6,L1,D2,R3,U2,L1";
         let branch_instrs = parse_instructions(input);
-        let min_murkiness_level: usize = get_min_sap_murkiness(&branch_instrs);
+        let min_murkiness_level = get_min_sap_murkiness(&branch_instrs);
         assert_eq!(min_murkiness_level, 5);
     }
 
@@ -203,7 +203,7 @@ U30,L2,F1,R1,B1,R1,F2,U1,F1
 U25,R1,L2,B1,U1,R2,F1,L2
 U16,L1,B1,L1,B3,L1,B1,F1";
         let branch_instrs = parse_instructions(input);
-        let min_murkiness_level: usize = get_min_sap_murkiness(&branch_instrs);
+        let min_murkiness_level = get_min_sap_murkiness(&branch_instrs);
         assert_eq!(min_murkiness_level, 46);
     }
 }

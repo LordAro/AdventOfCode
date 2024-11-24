@@ -29,7 +29,7 @@ fn read_termite_map(input: &str) -> HashMap<&str, Vec<&str>> {
         .lines()
         .map(|l| {
             let (parent, children) = l.split_once(':').unwrap();
-            (parent, children.split(",").collect::<Vec<_>>())
+            (parent, children.split(',').collect::<Vec<_>>())
         })
         .collect()
 }

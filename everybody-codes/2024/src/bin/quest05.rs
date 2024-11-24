@@ -5,7 +5,7 @@ use std::io;
 fn get_starting_positions(input: &str) -> Vec<Vec<usize>> {
     let v: Vec<Vec<_>> = input
         .lines()
-        .map(|l| l.split(" ").map(|c| c.parse::<usize>().unwrap()).collect())
+        .map(|l| l.split(' ').map(|c| c.parse::<usize>().unwrap()).collect())
         .collect();
 
     // Convert to columnular data
@@ -115,10 +115,7 @@ fn main() -> io::Result<()> {
         let mut p3_state = get_starting_positions(&fs::read_to_string(p3_input_filename)?);
         let p3_largest_shout = do_forever_dance(&mut p3_state);
 
-        println!(
-            "P3: Largest shout number for forever dance: {}",
-            p3_largest_shout,
-        );
+        println!("P3: Largest shout number for forever dance: {p3_largest_shout}");
     }
     Ok(())
 }

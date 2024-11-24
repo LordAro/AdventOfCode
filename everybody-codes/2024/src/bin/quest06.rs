@@ -14,7 +14,7 @@ fn parse_tree(input: &str) -> Tree {
                 .next()
                 .unwrap()
                 .split(',')
-                .map(|s| s.to_string())
+                .map(ToString::to_string)
                 .collect();
             (root, branches)
         })
@@ -46,7 +46,7 @@ fn get_unique_fruit_path(tree: &Tree) -> Vec<&str> {
             paths.push(new_path);
         }
     }
-    complete_paths.sort_by_key(|path| path.len());
+    complete_paths.sort_by_key(Vec::len);
     complete_paths
         .chunk_by(|a, b| a.len() == b.len())
         .find(|chunk| chunk.len() == 1)

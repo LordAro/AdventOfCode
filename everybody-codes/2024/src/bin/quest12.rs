@@ -142,7 +142,7 @@ fn get_ranking_value_sum(targets: &[(Coord, Type)]) -> usize {
     targets
         .iter()
         .map(|(target, type_)| {
-            let (catapult, power) = firing_solutions.get(&(target.x + target.y)).unwrap();
+            let (catapult, power) = firing_solutions[&(target.x + target.y)];
             (catapult + 1) * power * if *type_ == Type::Normal { 1 } else { 2 }
         })
         .sum()
