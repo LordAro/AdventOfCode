@@ -87,12 +87,16 @@ fn get_herb_distances(
 }
 
 fn herb_tsp(
+    state_cache: &mut FxHashMap<(FixedBitSet, Coord), usize>,
     herb_vertices: &FxHashMap<(Coord, Coord), usize>,
     herb_destinations: &FxHashMap<Coord, usize>,
     visited_herbs: &FixedBitSet,
     start_pos: Coord,
     position: Coord,
 ) -> usize {
+    if let Some(result) = state_cache.get(&(visited_herbs.clone(), position)) {
+        return *result;
+    }
     if visited_herbs.is_full() {
         // note, backwards as we never bothered calculating the opposite direction
         return herb_vertices[&(start_pos, position)];
@@ -109,6 +113,7 @@ fn herb_tsp(
             min,
             this_len
                 + herb_tsp(
+                    state_cache,
                     herb_vertices,
                     herb_destinations,
                     &new_visited_herbs,
@@ -117,6 +122,7 @@ fn herb_tsp(
                 ),
         );
     }
+    state_cache.insert((visited_herbs.clone(), position), min);
     min
 }
 
@@ -149,8 +155,10 @@ fn get_herb_round_trip_len(input: &str) -> usize {
         .collect();
     let herbs_by_idx = herbs.iter().map(|(c, t)| (*c, herb_num_map[t])).collect();
 
+    let mut memoise_cache = FxHashMap::default();
     let visited_herbs = FixedBitSet::with_capacity(herb_num_map.len());
     herb_tsp(
+        &mut memoise_cache,
         &herb_vertices,
         &herbs_by_idx,
         &visited_herbs,
