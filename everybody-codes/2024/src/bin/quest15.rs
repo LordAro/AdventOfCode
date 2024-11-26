@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs;
 use std::io;
@@ -51,12 +50,22 @@ fn get_neighbour_coords(pos: Coord) -> [Option<Coord>; 4] {
     ]
 }
 
-fn get_herb_path_len(map: &HashMap<Coord, Type>, start: Coord, end: Coord) -> usize {
+fn get_herb_distances(
+    map: &HashMap<Coord, Type>,
+    start: Coord,
+    destinations: &[Coord],
+) -> HashMap<(Coord, Coord), usize> {
     let mut to_search = VecDeque::from([(start, 0)]);
     let mut seen = HashSet::from([start]);
+
+    let mut pair_distances = HashMap::new();
     while let Some((node, node_distance)) = to_search.pop_front() {
-        if node == end {
-            return node_distance;
+        if destinations.contains(&node) {
+            pair_distances.insert((start, node), node_distance);
+            // done.
+            if pair_distances.len() == destinations.len() {
+                break;
+            }
         }
 
         for neighbour in get_neighbour_coords(node)
@@ -70,35 +79,7 @@ fn get_herb_path_len(map: &HashMap<Coord, Type>, start: Coord, end: Coord) -> us
             }
         }
     }
-    unreachable!();
-}
-
-// Nice.
-fn get_herb_combos(map: &HashMap<Coord, Type>, start_pos: Coord) -> Vec<(Coord, Coord)> {
-    [start_pos]
-        .into_iter()
-        .chain(
-            map.iter()
-                .filter(|(_, t)| matches!(t, Type::Herb(..)))
-                .map(|(c, _)| *c),
-        )
-        .combinations(2)
-        .filter(|combo| map[&combo[0]] != map[&combo[1]])
-        .map(|combo| (combo[0], combo[1]))
-        .collect()
-}
-
-fn get_herb_graph_vertices(
-    map: &HashMap<Coord, Type>,
-    pairs: &[(Coord, Coord)],
-) -> HashMap<(Coord, Coord), usize> {
-    pairs
-        .iter()
-        .flat_map(|pair| {
-            let len = get_herb_path_len(map, pair.0, pair.1);
-            [((pair.0, pair.1), len), ((pair.1, pair.0), len)]
-        })
-        .collect()
+    pair_distances
 }
 
 fn herb_tsp(
@@ -108,7 +89,8 @@ fn herb_tsp(
     remaining_destinations: &HashMap<Coord, Type>,
 ) -> usize {
     if remaining_destinations.is_empty() {
-        return herb_vertices[&(position, start_pos)];
+        // note, backwards as we never bothered calculating the opposite direction
+        return herb_vertices[&(start_pos, position)];
     }
     let mut min = usize::MAX;
     for (coord, type_) in remaining_destinations {
@@ -139,8 +121,20 @@ fn get_herb_round_trip_len(input: &str) -> usize {
         .filter(|(_, t)| matches!(t, Type::Herb(..)))
         .map(|(c, t)| (*c, *t))
         .collect();
-    let herb_combos = get_herb_combos(&map, start_pos);
-    let herb_vertices = get_herb_graph_vertices(&map, &herb_combos);
+    let mut herb_vertices =
+        get_herb_distances(&map, start_pos, &herbs.keys().copied().collect::<Vec<_>>());
+    for (herb_coord, herb_type) in &herbs {
+        let valid_herb_destinations: Vec<_> = herbs
+            .iter()
+            .filter(|(_, t)| **t != *herb_type)
+            .map(|(c, _)| *c)
+            .collect();
+        herb_vertices.extend(get_herb_distances(
+            &map,
+            *herb_coord,
+            &valid_herb_destinations,
+        ));
+    }
 
     herb_tsp(&herb_vertices, start_pos, start_pos, &herbs)
 }
