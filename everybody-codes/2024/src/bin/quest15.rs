@@ -1,4 +1,7 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use fixedbitset::FixedBitSet;
+use itertools::Itertools;
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::VecDeque;
 use std::fs;
 use std::io;
 
@@ -8,14 +11,14 @@ struct Coord {
     y: usize,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Type {
     Space,
     Herb(char),
 }
 
-fn parse_map(input: &str) -> (HashMap<Coord, Type>, Coord) {
-    let mut map = HashMap::new();
+fn parse_map(input: &str) -> (FxHashMap<Coord, Type>, Coord) {
+    let mut map = FxHashMap::default();
     let mut start_pos = Coord { x: 0, y: 0 };
     for (y, line) in input.lines().enumerate() {
         for (x, c) in line.chars().enumerate() {
@@ -51,14 +54,15 @@ fn get_neighbour_coords(pos: Coord) -> [Option<Coord>; 4] {
 }
 
 fn get_herb_distances(
-    map: &HashMap<Coord, Type>,
+    map: &FxHashMap<Coord, Type>,
     start: Coord,
     destinations: &[Coord],
-) -> HashMap<(Coord, Coord), usize> {
+) -> FxHashMap<(Coord, Coord), usize> {
     let mut to_search = VecDeque::from([(start, 0)]);
-    let mut seen = HashSet::from([start]);
+    let mut seen = FxHashSet::default();
+    seen.insert(start);
 
-    let mut pair_distances = HashMap::new();
+    let mut pair_distances = FxHashMap::default();
     while let Some((node, node_distance)) = to_search.pop_front() {
         if destinations.contains(&node) {
             pair_distances.insert((start, node), node_distance);
@@ -83,31 +87,33 @@ fn get_herb_distances(
 }
 
 fn herb_tsp(
-    herb_vertices: &HashMap<(Coord, Coord), usize>,
+    herb_vertices: &FxHashMap<(Coord, Coord), usize>,
+    herb_destinations: &FxHashMap<Coord, usize>,
+    visited_herbs: &FixedBitSet,
     start_pos: Coord,
     position: Coord,
-    remaining_destinations: &HashMap<Coord, Type>,
 ) -> usize {
-    if remaining_destinations.is_empty() {
+    if visited_herbs.is_full() {
         // note, backwards as we never bothered calculating the opposite direction
         return herb_vertices[&(start_pos, position)];
     }
     let mut min = usize::MAX;
-    for (coord, type_) in remaining_destinations {
-        let this_len = herb_vertices[&(position, *coord)];
-        let new_remaining_destinations = remaining_destinations
-            .iter()
-            .filter(|(_, t)| *t != type_)
-            .map(|(c, t)| (*c, *t))
-            .collect();
+    for (herb_coord, herb_num) in herb_destinations {
+        if visited_herbs[*herb_num] {
+            continue;
+        }
+        let this_len = herb_vertices[&(position, *herb_coord)];
+        let mut new_visited_herbs = visited_herbs.clone();
+        new_visited_herbs.insert(*herb_num);
         min = usize::min(
             min,
             this_len
                 + herb_tsp(
                     herb_vertices,
+                    herb_destinations,
+                    &new_visited_herbs,
                     start_pos,
-                    *coord,
-                    &new_remaining_destinations,
+                    *herb_coord,
                 ),
         );
     }
@@ -116,7 +122,7 @@ fn herb_tsp(
 
 fn get_herb_round_trip_len(input: &str) -> usize {
     let (map, start_pos) = parse_map(input);
-    let herbs: HashMap<Coord, Type> = map
+    let herbs: FxHashMap<Coord, Type> = map
         .iter()
         .filter(|(_, t)| matches!(t, Type::Herb(..)))
         .map(|(c, t)| (*c, *t))
@@ -135,8 +141,22 @@ fn get_herb_round_trip_len(input: &str) -> usize {
             &valid_herb_destinations,
         ));
     }
+    let herb_num_map: FxHashMap<Type, usize> = herbs
+        .values()
+        .unique()
+        .enumerate()
+        .map(|(i, c)| (*c, i))
+        .collect();
+    let herbs_by_idx = herbs.iter().map(|(c, t)| (*c, herb_num_map[t])).collect();
 
-    herb_tsp(&herb_vertices, start_pos, start_pos, &herbs)
+    let visited_herbs = FixedBitSet::with_capacity(herb_num_map.len());
+    herb_tsp(
+        &herb_vertices,
+        &herbs_by_idx,
+        &visited_herbs,
+        start_pos,
+        start_pos,
+    )
 }
 
 fn main() -> io::Result<()> {
