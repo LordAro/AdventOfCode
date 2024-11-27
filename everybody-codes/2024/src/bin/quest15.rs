@@ -87,42 +87,45 @@ fn get_herb_distances(
 }
 
 fn herb_tsp(
-    state_cache: &mut FxHashMap<(FixedBitSet, Coord), usize>,
+    state_cache: &mut FxHashMap<(usize, Coord), usize>,
     herb_vertices: &FxHashMap<(Coord, Coord), usize>,
     herb_destinations: &FxHashMap<Coord, usize>,
-    visited_herbs: &FixedBitSet,
+    visited_herbs: &mut FixedBitSet,
     start_pos: Coord,
     position: Coord,
 ) -> usize {
-    if let Some(result) = state_cache.get(&(visited_herbs.clone(), position)) {
+    // Big hack of only using the first 'Block' of the bitset as we know our input is no more than one
+    let cache_key = (visited_herbs.as_slice()[0], position);
+    if let Some(result) = state_cache.get(&cache_key) {
         return *result;
     }
+    let mut min = usize::MAX;
     if visited_herbs.is_full() {
         // note, backwards as we never bothered calculating the opposite direction
-        return herb_vertices[&(start_pos, position)];
-    }
-    let mut min = usize::MAX;
-    for (herb_coord, herb_num) in herb_destinations {
-        if visited_herbs[*herb_num] {
-            continue;
+        min = herb_vertices[&(start_pos, position)];
+    } else {
+        for (&herb_coord, &herb_num) in herb_destinations {
+            if visited_herbs[herb_num] {
+                continue;
+            }
+            let this_len = herb_vertices[&(position, herb_coord)];
+            visited_herbs.insert(herb_num);
+            min = usize::min(
+                min,
+                this_len
+                    + herb_tsp(
+                        state_cache,
+                        herb_vertices,
+                        herb_destinations,
+                        visited_herbs,
+                        start_pos,
+                        herb_coord,
+                    ),
+            );
+            visited_herbs.remove(herb_num);
         }
-        let this_len = herb_vertices[&(position, *herb_coord)];
-        let mut new_visited_herbs = visited_herbs.clone();
-        new_visited_herbs.insert(*herb_num);
-        min = usize::min(
-            min,
-            this_len
-                + herb_tsp(
-                    state_cache,
-                    herb_vertices,
-                    herb_destinations,
-                    &new_visited_herbs,
-                    start_pos,
-                    *herb_coord,
-                ),
-        );
     }
-    state_cache.insert((visited_herbs.clone(), position), min);
+    state_cache.insert(cache_key, min);
     min
 }
 
@@ -156,12 +159,13 @@ fn get_herb_round_trip_len(input: &str) -> usize {
     let herbs_by_idx = herbs.iter().map(|(c, t)| (*c, herb_num_map[t])).collect();
 
     let mut memoise_cache = FxHashMap::default();
-    let visited_herbs = FixedBitSet::with_capacity(herb_num_map.len());
+    let mut visited_herbs = FixedBitSet::with_capacity(herb_num_map.len());
+    assert!(visited_herbs.as_slice().len() == 1);
     herb_tsp(
         &mut memoise_cache,
         &herb_vertices,
         &herbs_by_idx,
-        &visited_herbs,
+        &mut visited_herbs,
         start_pos,
         start_pos,
     )
