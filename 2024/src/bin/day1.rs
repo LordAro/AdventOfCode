@@ -27,9 +27,9 @@ fn main() -> io::Result<()> {
     let similarity_score: usize = left_list
         .iter()
         .map(|l| {
-            // TODO: Should be a better way of doing this given a sorted list
-            let count = right_list.iter().filter(|r| *r == l).count();
-            l * count
+            let p1 = right_list.partition_point(|x| x <= l);
+            let p2 = right_list.partition_point(|x| x < l);
+            l * (p1 - p2)
         })
         .sum();
 
