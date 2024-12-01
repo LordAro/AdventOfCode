@@ -21,11 +21,12 @@ run_all: $(addprefix run,$(CUR_SLNS))
 time_all: $(addprefix time,$(CUR_SLNS))
 perf_all: $(addprefix perf,$(CUR_SLNS))
 
+PERF?=perf
 PERF_COUNT?=1000
 perf%b: $(BINDIR)/day%b inputs/day%.input
 perf%: $(BINDIR)/day% inputs/day%.input
 	@echo -e '\x1b[1;32mRunning day $* solution (perf)\x1b[0m'
-	perf stat -r$(PERF_COUNT) ./$(BINDIR)/day$* inputs/day$*.input >/dev/null
+	$(PERF) stat -r$(PERF_COUNT) ./$(BINDIR)/day$* inputs/day$*.input >/dev/null
 
 time%b: $(BINDIR)/day%b inputs/day%.input
 time%: $(BINDIR)/day% inputs/day%.input
