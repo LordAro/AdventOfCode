@@ -1,9 +1,7 @@
+use itertools::Itertools;
 use std::env;
 use std::fs;
 use std::io;
-
-extern crate itertools;
-use itertools::Itertools;
 
 #[derive(Clone)]
 struct Coord {

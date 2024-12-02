@@ -1,11 +1,9 @@
+use regex::Regex;
 use std::cmp::max;
 use std::env;
 use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
-
-extern crate regex;
-use regex::Regex;
 
 struct CubeCount {
     r: u32,

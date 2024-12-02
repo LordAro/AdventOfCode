@@ -3,8 +3,6 @@ use std::env;
 use std::fs;
 use std::io;
 
-extern crate num;
-
 fn find_exit<F>(
     instructions: &str,
     map: &HashMap<&str, (&str, &str)>,

@@ -2,6 +2,7 @@
 name = "advent_of_code"
 version = "2023.1.0"
 authors = ["Charles Pigott <charlespigott@googlemail.com>"]
+edition = "2021"
 
 [dependencies]
 regex = "^1.10"

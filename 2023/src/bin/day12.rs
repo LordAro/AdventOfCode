@@ -1,12 +1,10 @@
+use itertools::Itertools;
 use std::cmp;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::io;
 use std::str;
-
-extern crate itertools;
-use itertools::Itertools;
 
 struct Record(String, Vec<usize>);
 

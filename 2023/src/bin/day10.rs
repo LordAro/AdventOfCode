@@ -18,7 +18,7 @@ enum Dir {
     West,
 }
 
-fn get_next_coord(map: &Vec<Vec<char>>, c: &Coord, d: &Dir) -> Option<Coord> {
+fn get_next_coord(map: &[Vec<char>], c: &Coord, d: &Dir) -> Option<Coord> {
     match d {
         Dir::North => {
             if c.y > 0 {
@@ -51,7 +51,7 @@ fn get_next_coord(map: &Vec<Vec<char>>, c: &Coord, d: &Dir) -> Option<Coord> {
     }
 }
 
-fn get_next_coord_on_loop(map: &Vec<Vec<char>>, pos: &Coord, dir: &Dir) -> Option<(Coord, Dir)> {
+fn get_next_coord_on_loop(map: &[Vec<char>], pos: &Coord, dir: &Dir) -> Option<(Coord, Dir)> {
     if let Some(next_coord) = get_next_coord(map, pos, dir) {
         let next_dir = match (map[next_coord.y][next_coord.x], dir) {
             // no change, if we hit 'S' we're done, don't care about the direction anymore
@@ -75,7 +75,7 @@ fn get_next_coord_on_loop(map: &Vec<Vec<char>>, pos: &Coord, dir: &Dir) -> Optio
     }
 }
 
-fn trace_route(map: &Vec<Vec<char>>, route: &[(Coord, Dir)]) -> (HashSet<Coord>, HashSet<Coord>) {
+fn trace_route(map: &[Vec<char>], route: &[(Coord, Dir)]) -> (HashSet<Coord>, HashSet<Coord>) {
     let route_set: HashSet<_> = route.iter().map(|(c, _)| c).collect(); // quick lookups
     let mut set_a: HashSet<Coord> = HashSet::new();
     let mut set_b: HashSet<Coord> = HashSet::new();
@@ -103,7 +103,7 @@ fn trace_route(map: &Vec<Vec<char>>, route: &[(Coord, Dir)]) -> (HashSet<Coord>,
 }
 
 fn flood_fill(
-    map: &Vec<Vec<char>>,
+    map: &[Vec<char>],
     route_set: &HashSet<&Coord>,
     starting_set: &HashSet<Coord>,
 ) -> HashSet<Coord> {
@@ -131,7 +131,7 @@ fn flood_fill(
     searched
 }
 
-fn get_enclosed_pieces(map: &Vec<Vec<char>>, route: &[(Coord, Dir)]) -> HashSet<Coord> {
+fn get_enclosed_pieces(map: &[Vec<char>], route: &[(Coord, Dir)]) -> HashSet<Coord> {
     let (set_a, set_b) = trace_route(map, route);
     debug_assert!(set_a.intersection(&set_b).count() == 0);
 

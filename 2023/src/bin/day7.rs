@@ -1,11 +1,9 @@
+use itertools::Itertools;
 use std::convert::TryInto;
 use std::env;
 use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
-
-extern crate itertools;
-use itertools::Itertools;
 
 #[derive(Ord, Eq, PartialEq, PartialOrd)]
 enum Rank {
