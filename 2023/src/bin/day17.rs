@@ -1,16 +1,41 @@
-use std::collections::HashMap;
-use std::collections::VecDeque;
+use std::cmp::Ordering;
+use std::collections::{BTreeSet, HashSet};
 use std::env;
 use std::fs;
 use std::io;
 
-#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, PartialOrd, Ord)]
 struct Coord {
     x: usize,
     y: usize,
 }
 
-fn get_adjacents(map: &Vec<Vec<u32>>, pos: Coord) -> [Option<Coord>; 4] {
+#[derive(Debug, PartialEq, Eq)]
+struct PathNode {
+    cost: u32,
+    coord: Coord,
+    prev_coord: Coord,
+    x_move_count: u8,
+    y_move_count: u8,
+}
+
+impl Ord for PathNode {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.cost
+            .cmp(&other.cost)
+            .then(self.coord.cmp(&other.coord))
+            .then(self.y_move_count.cmp(&other.y_move_count))
+            .then(self.x_move_count.cmp(&other.x_move_count))
+    }
+}
+
+impl PartialOrd for PathNode {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+fn get_adjacents(map: &[Vec<u32>], pos: Coord) -> [Option<Coord>; 4] {
     [
         pos.y.checked_sub(1).map(|y| Coord { x: pos.x, y }), // north
         Some(Coord {
@@ -27,106 +52,121 @@ fn get_adjacents(map: &Vec<Vec<u32>>, pos: Coord) -> [Option<Coord>; 4] {
     ]
 }
 
-// don't incur cost at start
-fn get_route_cost(map: &Vec<Vec<u32>>, route: &[Coord]) -> u32 {
-    route.iter().skip(1).map(|c| map[c.y][c.x]).sum::<u32>()
-}
+fn get_route<const MIN_LEN: u8, const MAX_LEN: u8>(
+    map: &[Vec<u32>],
+    source: Coord,
+    target: Coord,
+) -> u32 {
+    let mut to_search = BTreeSet::new();
+    to_search.insert(PathNode {
+        cost: 0,
+        coord: source,
+        prev_coord: source,
+        x_move_count: 0,
+        y_move_count: 0,
+    });
+    let mut searched: HashSet<(Coord, Coord, u8, u8)> = HashSet::new();
 
-// Horrendously inefficient BFS, needs replacing
-fn get_route_bfs(map: &Vec<Vec<u32>>, source: Coord, target: Coord) -> Vec<Coord> {
-    let mut to_search = VecDeque::new();
-    to_search.push_back((vec![source], 0));
-
-    while !to_search.is_empty() {
-        let (search_path, search_path_current_cost) = to_search.pop_front().unwrap();
-        let search_node = search_path.last().unwrap();
-
-        if *search_node == target {
-            //println!("{:?}", search_path);
-            return search_path;
+    while let Some(pn) = to_search.pop_first() {
+        //println!("{pn:?}");
+        if pn.coord == target {
+            return pn.cost;
         }
 
-        for adj in get_adjacents(map, *search_node).iter().flatten() {
-            // no reversing
-            if search_path.contains(adj) {
-                continue;
-            }
-            if search_path.len() > 3 {
-                let ix = search_path.len();
-                let parent1 = search_path[ix - 1];
-                let parent2 = search_path[ix - 2];
-                let parent3 = search_path[ix - 3];
-                if (adj.x == parent1.x && parent1.x == parent2.x && parent2.x == parent3.x)
-                    || (adj.y == parent1.y && parent1.y == parent2.y && parent2.y == parent3.y)
+        searched.insert((pn.coord, pn.prev_coord, pn.x_move_count, pn.y_move_count)); // can't go back to different node
+        for neighbour_quad in get_adjacents(map, pn.coord)
+            .into_iter()
+            .flatten()
+            // don't go backwards
+            .filter(|n| *n != pn.prev_coord)
+            .filter(|n| {
+                if (pn.prev_coord.x == pn.coord.x && pn.coord.x == n.x)
+                    || (pn.prev_coord.y == pn.coord.y && pn.coord.y == n.y)
                 {
-                    continue;
+                    // no change in direction, allowed (might be excluded further down)
+                    true
+                } else if n.y != pn.coord.y {
+                    pn.x_move_count >= MIN_LEN
+                } else if n.x != pn.coord.x {
+                    pn.y_move_count >= MIN_LEN
+                } else {
+                    unreachable!()
                 }
-            }
-            let mut v = search_path.clone();
-            v.push(*adj);
-            let i =
-                to_search.partition_point(|a| a.1 < search_path_current_cost + map[adj.y][adj.x]);
-            to_search.insert(i, (v, search_path_current_cost + map[adj.y][adj.x]));
+            })
+            .map(|n| {
+                let new_x_count = if n.y == pn.coord.y {
+                    pn.x_move_count + 1
+                } else {
+                    0
+                };
+                let new_y_count = if n.x == pn.coord.x {
+                    pn.y_move_count + 1
+                } else {
+                    0
+                };
+                (n, pn.coord, new_x_count, new_y_count)
+            })
+            .filter(|quad| {
+                // remove neighbours that are too far in a straight line
+                // remove seen before
+                quad.2 <= MAX_LEN && quad.3 <= MAX_LEN && !searched.contains(quad)
+            })
+        {
+            //println!(" -> {neighbour_quad:?}");
+            let (n, _, x_move_count, y_move_count) = neighbour_quad;
+            let new_heat_loss = map[n.y][n.x];
+            to_search.insert(PathNode {
+                cost: pn.cost + new_heat_loss,
+                coord: n,
+                prev_coord: pn.coord,
+                x_move_count,
+                y_move_count,
+            });
         }
     }
-    panic!("Could not find path");
-}
-
-fn get_route(map: &Vec<Vec<u32>>, source: Coord, target: Coord) -> Vec<Coord> {
-    let mut came_from: HashMap<(Coord, u32, u32), Coord> = HashMap::new();
-    let mut open_set = VecDeque::new();
-    open_set.push_back((source, 0, 0));
-
-    let mut g_score = HashMap::new();
-    g_score.insert(open_set[0], 0); // don't incur heat loss at start
-
-    while !open_set.is_empty() {
-        let current_triple = open_set.pop_front().unwrap();
-        let (current, move_x_count, move_y_count) = current_triple;
-        if move_x_count > 3 || move_y_count > 3 {
-            continue;
-        }
-        //println!("current: {current:?} {move_x_count} {move_y_count}");
-        if current == target {
-            break;
-        }
-
-        for adj in get_adjacents(map, current).iter().flatten() {
-            let new_x_move_count = if adj.x == current.x {
-                move_x_count + 1
-            } else {
-                0
-            };
-            let new_y_move_count = if adj.y == current.y {
-                move_y_count + 1
-            } else {
-                0
-            };
-            let next_triple = (*adj, new_x_move_count, new_y_move_count);
-            let dist = g_score[&current_triple] + map[adj.y][adj.x];
-            println!("  {adj:?} {dist}");
-            if &dist < g_score.get(&next_triple).unwrap_or(&u32::max_value()) {
-                came_from.insert(next_triple, current);
-                g_score.insert(next_triple, dist);
-                open_set.push_back((*adj, new_x_move_count, new_y_move_count));
-            }
-        }
-    }
-    let mut total_path = vec![target];
-    let mut current = target;
-    while came_from.contains_key(&current) {
-        println!("{current:?}");
-        current = came_from[&current];
-        total_path.push(current);
-    }
-    total_path.reverse();
-    return total_path;
+    unreachable!() // No path!
 }
 
 fn main() -> io::Result<()> {
     let input_str = fs::read_to_string(env::args().nth(1).expect("Incorrect number of arguments"))?;
 
-    let input_str = "2413432311323
+    let map: Vec<Vec<u32>> = input_str
+        .lines()
+        .map(|l| l.chars().map(|c| c.to_digit(10).unwrap()).collect())
+        .collect();
+
+    let route_cost = get_route::<0, 3>(
+        &map,
+        Coord { x: 0, y: 0 },
+        Coord {
+            x: map[0].len() - 1,
+            y: map.len() - 1,
+        },
+    );
+
+    println!("Total route cost: {route_cost}");
+
+    let ultra_route_cost = get_route::<4, 10>(
+        &map,
+        Coord { x: 0, y: 0 },
+        Coord {
+            x: map[0].len() - 1,
+            y: map.len() - 1,
+        },
+    );
+
+    println!("Total route cost with ultra crucibles: {ultra_route_cost}");
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+
+    #[test]
+    fn ex1() {
+        let input_str = "2413432311323
 3215453535623
 3255245654254
 3446585845452
@@ -140,23 +180,51 @@ fn main() -> io::Result<()> {
 2546548887735
 4322674655533
 ";
+        let map: Vec<Vec<u32>> = input_str
+            .lines()
+            .map(|l| l.chars().map(|c| c.to_digit(10).unwrap()).collect())
+            .collect();
 
-    let map: Vec<Vec<u32>> = input_str
-        .lines()
-        .map(|l| l.chars().map(|c| c.to_digit(10).unwrap()).collect())
-        .collect();
+        let route_cost = get_route::<0, 3>(
+            &map,
+            Coord { x: 0, y: 0 },
+            Coord {
+                x: map[0].len() - 1,
+                y: map.len() - 1,
+            },
+        );
+        assert_eq!(route_cost, 102);
+    }
 
-    let route = get_route(
-        &map,
-        Coord { x: 0, y: 0 },
-        Coord {
-            x: map[0].len() - 1,
-            y: map.len() - 1,
-        },
-    );
+    #[test]
+    fn ex2() {
+        let input_str = "2413432311323
+3215453535623
+3255245654254
+3446585845452
+4546657867536
+1438598798454
+4457876987766
+3637877979653
+4654967986887
+4564679986453
+1224686865563
+2546548887735
+4322674655533
+";
+        let map: Vec<Vec<u32>> = input_str
+            .lines()
+            .map(|l| l.chars().map(|c| c.to_digit(10).unwrap()).collect())
+            .collect();
 
-    println!("{:?}", route);
-    println!("Total route cost: {}", get_route_cost(&map, &route));
-
-    Ok(())
+        let route_cost = get_route::<4, 10>(
+            &map,
+            Coord { x: 0, y: 0 },
+            Coord {
+                x: map[0].len() - 1,
+                y: map.len() - 1,
+            },
+        );
+        assert_eq!(route_cost, 94);
+    }
 }
