@@ -6,17 +6,14 @@ use std::io;
 fn main() -> io::Result<()> {
     let input: String = fs::read_to_string(env::args().nth(1).expect("missing cli argument"))?;
 
-    let re = Regex::new(r"do\(\)|don't\(\)|mul\(([0-9]+),([0-9]+)\)").unwrap();
+    let re = Regex::new(r"mul\(([0-9]+),([0-9]+)\)|(do\(\))|(don't\(\))").unwrap();
 
-    let captures: Vec<_> = re.captures_iter(&input).collect();
     let mut p1_sum = 0;
     let mut p2_sum = 0;
     let mut capturing = true;
-    for c in captures {
-        if c.get(0).unwrap().as_str() == "do()" {
-            capturing = true;
-        } else if c.get(0).unwrap().as_str() == "don't()" {
-            capturing = false;
+    for c in re.captures_iter(&input) {
+        if c.get(3).is_some() || c.get(4).is_some() {
+            capturing = c.get(3).is_some();
         } else {
             let a = c.get(1).unwrap().as_str().parse::<i32>().unwrap();
             let b = c.get(2).unwrap().as_str().parse::<i32>().unwrap();
