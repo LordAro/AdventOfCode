@@ -1,4 +1,4 @@
-use itertools::Itertools;
+use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::env;
 use std::fs;
@@ -22,52 +22,54 @@ fn parse_input(input: &str) -> (HashSet<(i32, i32)>, Vec<Vec<i32>>) {
     (rules, initial_orderings)
 }
 
-fn get_first_incorrect_pair(
-    rules: &HashSet<(i32, i32)>,
-    ordering: &[i32],
-) -> Option<(usize, usize)> {
-    ordering
+fn get_sorter_func(rules: &HashSet<(i32, i32)>) -> impl Fn(&i32, &i32) -> Ordering + use<'_> {
+    move |a, b| {
+        if rules.contains(&(*a, *b)) {
+            Ordering::Less
+        } else if rules.contains(&(*b, *a)) {
+            Ordering::Greater
+        } else {
+            Ordering::Equal
+        }
+    }
+}
+
+fn get_correct_middle_sum(rules: &HashSet<(i32, i32)>, all_orderings: &[Vec<i32>]) -> i32 {
+    // for some reason is_sorted_by requires a bool return value rather than a Ordering
+    let bool_sorter_func = |a, b| get_sorter_func(rules)(a, b).is_le();
+    all_orderings
         .iter()
-        .enumerate()
-        .combinations(2)
-        .find(|page_pair| !rules.contains(&(*page_pair[0].1, *page_pair[1].1)))
-        .map(|page_pair| (page_pair[0].0, page_pair[1].0))
+        .filter(|o| o.is_sorted_by(bool_sorter_func))
+        .map(|o| o[o.len() / 2])
+        .sum()
 }
 
-fn get_correct_middle(rules: &HashSet<(i32, i32)>, ordering: &[i32]) -> Option<i32> {
-    if get_first_incorrect_pair(rules, ordering).is_none() {
-        Some(ordering[(ordering.len() - 1) / 2])
-    } else {
-        None
-    }
-}
-
-fn fix_ordering(rules: &HashSet<(i32, i32)>, ordering: &[i32]) -> Vec<i32> {
-    let mut new_ordering = ordering.to_owned();
-    while let Some((idx_a, idx_b)) = get_first_incorrect_pair(rules, &new_ordering) {
-        new_ordering.swap(idx_a, idx_b);
-    }
-    new_ordering
+fn get_corrected_middle_sum(rules: &HashSet<(i32, i32)>, all_orderings: &[Vec<i32>]) -> i32 {
+    let bool_sorter_func = |a, b| get_sorter_func(rules)(a, b).is_le();
+    all_orderings
+        .iter()
+        .filter(|o| !o.is_sorted_by(bool_sorter_func))
+        .map(|o| {
+            let mut new_o = o.clone();
+            new_o.sort_by(get_sorter_func(rules));
+            new_o
+        })
+        .map(|o| o[o.len() / 2])
+        .sum()
 }
 
 fn main() -> io::Result<()> {
     let input: String = fs::read_to_string(env::args().nth(1).expect("missing cli argument"))?;
 
     let (rules, initial_orderings) = parse_input(&input);
-    let correct_middle_sum: i32 = initial_orderings
-        .iter()
-        .filter_map(|o| get_correct_middle(&rules, o))
-        .sum();
-    println!("P1: Sum of middle pages of correct orderings: {correct_middle_sum}");
-
-    let corrected_middle_sum: i32 = initial_orderings
-        .iter()
-        .filter(|o| get_first_incorrect_pair(&rules, o).is_some())
-        .map(|o| fix_ordering(&rules, o))
-        .filter_map(|o| get_correct_middle(&rules, &o))
-        .sum();
-    println!("P1: Sum of middle pages of corrected orderings: {corrected_middle_sum}");
-
+    println!(
+        "P1: Sum of middle pages of correct orderings: {}",
+        get_correct_middle_sum(&rules, &initial_orderings)
+    );
+    println!(
+        "P2: Sum of middle pages of correct orderings: {}",
+        get_corrected_middle_sum(&rules, &initial_orderings)
+    );
     Ok(())
 }
 
@@ -107,24 +109,12 @@ mod tests {
     #[test]
     fn ex1() {
         let (rules, initial_orderings) = parse_input(EX_INPUT);
-
-        let correct_middle_sum: i32 = initial_orderings
-            .iter()
-            .filter_map(|o| get_correct_middle(&rules, o))
-            .sum();
-        assert_eq!(correct_middle_sum, 143);
+        assert_eq!(get_correct_middle_sum(&rules, &initial_orderings), 143);
     }
 
     #[test]
     fn ex2() {
         let (rules, initial_orderings) = parse_input(EX_INPUT);
-
-        let corrected_middle_sum: i32 = initial_orderings
-            .iter()
-            .filter(|o| get_first_incorrect_pair(&rules, o).is_some())
-            .map(|o| fix_ordering(&rules, o))
-            .filter_map(|o| get_correct_middle(&rules, &o))
-            .sum();
-        assert_eq!(corrected_middle_sum, 123);
+        assert_eq!(get_corrected_middle_sum(&rules, &initial_orderings), 123);
     }
 }
