@@ -84,29 +84,11 @@ fn get_route_locations(
             },
         };
 
-        guard_pos = if obstacles.contains(&next_pos) {
+        if obstacles.contains(&next_pos) {
             guard_dir = guard_dir.turn_right();
-            match guard_dir {
-                Dir::Up => Coord {
-                    x: guard_pos.x,
-                    y: guard_pos.y - 1,
-                },
-                Dir::Right => Coord {
-                    x: guard_pos.x + 1,
-                    y: guard_pos.y,
-                },
-                Dir::Down => Coord {
-                    x: guard_pos.x,
-                    y: guard_pos.y + 1,
-                },
-                Dir::Left => Coord {
-                    x: guard_pos.x - 1,
-                    y: guard_pos.y,
-                },
-            }
         } else {
-            next_pos
-        };
+            guard_pos = next_pos;
+        }
     }
     let unique_positions = positions.iter().map(|(pos, _)| *pos).collect();
     (unique_positions, loop_detected)
@@ -127,7 +109,6 @@ fn get_num_possible_loops(
         new_obstacles.insert(*pos);
         let (_tmp, is_loop) = get_route_locations(&new_obstacles, max_coord, initial_guard_posdir);
         if is_loop {
-            //println!("{pos:?} {}", tmp.len());
             loop_count += 1;
         }
     }
