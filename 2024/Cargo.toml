@@ -4,6 +4,9 @@ version = "2024.1.0"
 authors = ["Charles Pigott <charlespigott@googlemail.com>"]
 edition = "2021"
 
+[profile.release]
+debug = true
+
 [dependencies]
 regex = "^1.11.1"
 itertools = "^0.13.0"
