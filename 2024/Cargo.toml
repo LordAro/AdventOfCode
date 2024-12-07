@@ -10,3 +10,4 @@ debug = true
 [dependencies]
 regex = "^1.11.1"
 itertools = "^0.13.0"
+rustc-hash = "2.0.0"

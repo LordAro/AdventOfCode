@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 use std::env;
 use std::fs;
 use std::io;
@@ -28,8 +28,8 @@ impl Dir {
     }
 }
 
-fn parse_input(input: &str) -> (HashSet<Coord>, Coord, (Coord, Dir)) {
-    let mut obstacles = HashSet::default();
+fn parse_input(input: &str) -> (FxHashSet<Coord>, Coord, (Coord, Dir)) {
+    let mut obstacles = FxHashSet::default();
     let mut max_coord = Coord { x: 0, y: 0 };
     let mut pos = Coord { x: 0, y: 0 };
     for (y_idx, line) in input.lines().enumerate() {
@@ -48,11 +48,11 @@ fn parse_input(input: &str) -> (HashSet<Coord>, Coord, (Coord, Dir)) {
 }
 
 fn get_route_locations(
-    obstacles: &HashSet<Coord>,
+    obstacles: &FxHashSet<Coord>,
     max_coord: Coord,
     guard_posdir: (Coord, Dir),
-) -> (HashSet<Coord>, bool) {
-    let mut positions: HashSet<(Coord, Dir)> = HashSet::default();
+) -> (FxHashSet<Coord>, bool) {
+    let mut positions: FxHashSet<(Coord, Dir)> = FxHashSet::default();
     let mut guard_pos = guard_posdir.0;
     let mut guard_dir = guard_posdir.1;
     let mut loop_detected = false;
@@ -95,22 +95,23 @@ fn get_route_locations(
 }
 
 fn get_num_possible_loops(
-    initial_obstacles: &HashSet<Coord>,
+    initial_obstacles: &FxHashSet<Coord>,
     max_coord: Coord,
     initial_guard_posdir: (Coord, Dir),
-    possible_obstacle_locations: &HashSet<Coord>,
+    possible_obstacle_locations: &FxHashSet<Coord>,
 ) -> usize {
     let mut loop_count = 0;
+    let mut new_obstacles = initial_obstacles.clone();
     for pos in possible_obstacle_locations {
         if *pos == initial_guard_posdir.0 {
             continue;
         }
-        let mut new_obstacles = initial_obstacles.clone();
         new_obstacles.insert(*pos);
         let (_tmp, is_loop) = get_route_locations(&new_obstacles, max_coord, initial_guard_posdir);
         if is_loop {
             loop_count += 1;
         }
+        new_obstacles.remove(pos);
     }
     loop_count
 }
