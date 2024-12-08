@@ -6,5 +6,5 @@ edition = "2021"
 
 [dependencies]
 regex = "^1.10"
-itertools = "^0.12"
+itertools = "^0.13"
 num = "^0.4.1"

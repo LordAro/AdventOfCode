@@ -19,7 +19,7 @@ struct Rock {
 fn move_rocks_north(rocks: &mut [Rock]) {
     rocks.sort_by(|a, b| a.c.x.cmp(&b.c.x).then(a.c.y.cmp(&b.c.y)));
 
-    for (_, group) in &rocks.iter_mut().group_by(|r| r.c.x) {
+    for (_, group) in &rocks.iter_mut().chunk_by(|r| r.c.x) {
         let mut previous: Option<&Rock> = None;
         for r in group {
             if !r.is_cube {
@@ -33,7 +33,7 @@ fn move_rocks_north(rocks: &mut [Rock]) {
 fn move_rocks_south(rocks: &mut [Rock], max_y: usize) {
     rocks.sort_by(|a, b| a.c.x.cmp(&b.c.x).then(b.c.y.cmp(&a.c.y)));
 
-    for (_, group) in &rocks.iter_mut().group_by(|r| r.c.x) {
+    for (_, group) in &rocks.iter_mut().chunk_by(|r| r.c.x) {
         let mut previous: Option<&Rock> = None;
         for r in group {
             if !r.is_cube {
@@ -47,7 +47,7 @@ fn move_rocks_south(rocks: &mut [Rock], max_y: usize) {
 fn move_rocks_west(rocks: &mut [Rock]) {
     rocks.sort_by(|a, b| a.c.y.cmp(&b.c.y).then(a.c.x.cmp(&b.c.x)));
 
-    for (_, group) in &rocks.iter_mut().group_by(|r| r.c.y) {
+    for (_, group) in &rocks.iter_mut().chunk_by(|r| r.c.y) {
         let mut previous: Option<&Rock> = None;
         for r in group {
             if !r.is_cube {
@@ -61,7 +61,7 @@ fn move_rocks_west(rocks: &mut [Rock]) {
 fn move_rocks_east(rocks: &mut [Rock], max_x: usize) {
     rocks.sort_by(|a, b| a.c.y.cmp(&b.c.y).then(b.c.x.cmp(&a.c.x)));
 
-    for (_, group) in &rocks.iter_mut().group_by(|r| r.c.y) {
+    for (_, group) in &rocks.iter_mut().chunk_by(|r| r.c.y) {
         let mut previous: Option<&Rock> = None;
         for r in group {
             if !r.is_cube {
