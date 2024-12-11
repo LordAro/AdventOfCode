@@ -11,3 +11,4 @@ debug = true
 regex = "^1.11.1"
 itertools = "^0.13.0"
 rustc-hash = "2.0.0"
+memoise = "0.3.2"
