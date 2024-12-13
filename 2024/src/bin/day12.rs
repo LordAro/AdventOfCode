@@ -68,34 +68,24 @@ fn get_perimeter(grid: &[Vec<u8>], group: &HashSet<Coord>) -> usize {
         .sum()
 }
 
-fn get_num_sides(grid: &[Vec<u8>], group: &HashSet<Coord>) -> usize {
-    let edge_pieces: HashSet<_> = group
-        .iter()
-        .filter(|c| {
-            coord_neighbours(grid, **c)
-                .filter(|n| group.contains(n))
-                .count()
-                != 4
-        })
-        .collect();
-
+fn get_num_sides(group: &HashSet<Coord>) -> usize {
     // sorting order (y,x) vs (x,y) is important to get the groups correct
-    let upward_edges: Vec<_> = edge_pieces
+    let upward_edges: Vec<_> = group
         .iter()
         .filter(|c| c.y == 0 || !group.contains(&Coord { x: c.x, y: c.y - 1 }))
         .sorted_by(|a, b| a.y.cmp(&b.y).then(a.x.cmp(&b.x)))
         .collect();
-    let leftward_edges: Vec<_> = edge_pieces
+    let leftward_edges: Vec<_> = group
         .iter()
         .filter(|c| c.x == 0 || !group.contains(&Coord { x: c.x - 1, y: c.y }))
         .sorted_by(|a, b| a.x.cmp(&b.x).then(a.y.cmp(&b.y)))
         .collect();
-    let rightward_edges: Vec<_> = edge_pieces
+    let rightward_edges: Vec<_> = group
         .iter()
         .filter(|c| !group.contains(&Coord { x: c.x + 1, y: c.y }))
         .sorted_by(|a, b| a.x.cmp(&b.x).then(a.y.cmp(&b.y)))
         .collect();
-    let downward_edges: Vec<_> = edge_pieces
+    let downward_edges: Vec<_> = group
         .iter()
         .filter(|c| !group.contains(&Coord { x: c.x, y: c.y + 1 }))
         .sorted_by(|a, b| a.y.cmp(&b.y).then(a.x.cmp(&b.x)))
@@ -128,10 +118,7 @@ fn main() -> io::Result<()> {
         .map(|g| get_perimeter(&grid, g) * g.len())
         .sum();
     println!("P1: Total fence price: {fence_price}");
-    let discount_fence_price: usize = groups
-        .iter()
-        .map(|g| get_num_sides(&grid, g) * g.len())
-        .sum();
+    let discount_fence_price: usize = groups.iter().map(|g| get_num_sides(g) * g.len()).sum();
     println!("P2: Total fence price: {discount_fence_price}");
 
     Ok(())
@@ -201,7 +188,7 @@ BBCC
 EEEC";
         let grid = parse_grid(input);
         let groups = get_groups(&grid);
-        let sides: Vec<_> = groups.iter().map(|g| get_num_sides(&grid, g)).collect();
+        let sides: Vec<_> = groups.iter().map(|g| get_num_sides(g)).collect();
         assert_eq!(sides, [4, 4, 8, 4, 4]);
     }
 
@@ -214,7 +201,7 @@ EXXXX
 EEEEE";
         let grid = parse_grid(input);
         let groups = get_groups(&grid);
-        let sides: Vec<_> = groups.iter().map(|g| get_num_sides(&grid, g)).collect();
+        let sides: Vec<_> = groups.iter().map(|g| get_num_sides(g)).collect();
         assert_eq!(sides, [12, 4, 4]);
     }
 
@@ -228,7 +215,7 @@ ABBAAA
 AAAAAA";
         let grid = parse_grid(input);
         let groups = get_groups(&grid);
-        let sides: Vec<_> = groups.iter().map(|g| get_num_sides(&grid, g)).collect();
+        let sides: Vec<_> = groups.iter().map(|g| get_num_sides(g)).collect();
         assert_eq!(sides, [12, 4, 4]);
     }
 
@@ -246,7 +233,7 @@ MIIISIJEEE
 MMMISSJEEE";
         let grid = parse_grid(input);
         let groups = get_groups(&grid);
-        let sides: Vec<_> = groups.iter().map(|g| get_num_sides(&grid, g)).collect();
+        let sides: Vec<_> = groups.iter().map(|g| get_num_sides(g)).collect();
         assert_eq!(sides, [10, 4, 22, 12, 10, 12, 4, 8, 16, 6, 6]);
     }
 }
