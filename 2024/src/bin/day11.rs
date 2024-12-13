@@ -1,7 +1,7 @@
+use memoise::memoise_map;
 use std::env;
 use std::fs;
 use std::io;
-use memoise::memoise_map;
 
 // todo: something that does not require vecs
 fn blink(stone: u64) -> Vec<u64> {
@@ -23,11 +23,17 @@ fn stone_count_after_n_blinks(stone: u64, remaining_blinks: u64) -> usize {
     if remaining_blinks == 0 {
         return 1;
     }
-    blink(stone).iter().map(|s| stone_count_after_n_blinks(*s, remaining_blinks - 1)).sum()
+    blink(stone)
+        .iter()
+        .map(|s| stone_count_after_n_blinks(*s, remaining_blinks - 1))
+        .sum()
 }
 
 fn blink_stones(stones: &[u64], blinks: u64) -> usize {
-    stones.iter().map(|s| stone_count_after_n_blinks(*s, blinks)).sum()
+    stones
+        .iter()
+        .map(|s| stone_count_after_n_blinks(*s, blinks))
+        .sum()
 }
 
 fn main() -> io::Result<()> {
@@ -36,8 +42,14 @@ fn main() -> io::Result<()> {
         .map(|n| n.trim().parse().unwrap())
         .collect();
 
-    println!("P1: Number of stones after blinking 25 times: {}", blink_stones(&input, 25));
-    println!("P2: Number of stones after blinking 75 times: {}", blink_stones(&input, 75));
+    println!(
+        "P1: Number of stones after blinking 25 times: {}",
+        blink_stones(&input, 25)
+    );
+    println!(
+        "P2: Number of stones after blinking 75 times: {}",
+        blink_stones(&input, 75)
+    );
     Ok(())
 }
 
