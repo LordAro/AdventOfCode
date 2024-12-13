@@ -77,18 +77,17 @@ fn get_button_presses<const OFFSET: i64>(prize: &Prize) -> Option<(i64, i64)> {
 fn main() -> io::Result<()> {
     let input = fs::read_to_string(env::args().nth(1).expect("missing cli argument"))?;
 
-    let prize_instrs: Vec<_> = input
-        .split("\n\n")
-        .map(|prize_str| parse_prize_instr(prize_str))
-        .collect();
+    let prize_instrs: Vec<_> = input.split("\n\n").map(parse_prize_instr).collect();
 
-    let p1_token_total: i64 = prize_instrs.iter()
-        .flat_map(|prize| get_button_presses::<0>(prize))
+    let p1_token_total: i64 = prize_instrs
+        .iter()
+        .flat_map(get_button_presses::<0>)
         .map(|(a, b)| a * 3 + b)
         .sum();
 
-    let p2_token_total: i64 = prize_instrs.iter()
-        .flat_map(|prize| get_button_presses::<10_000_000_000_000>(prize))
+    let p2_token_total: i64 = prize_instrs
+        .iter()
+        .flat_map(get_button_presses::<10_000_000_000_000>)
         .map(|(a, b)| a * 3 + b)
         .sum();
 
