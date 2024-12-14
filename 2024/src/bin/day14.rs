@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 use std::env;
 use std::fs;
 use std::io;
@@ -59,7 +59,7 @@ fn count_quadrants<const GRID_X: i64, const GRID_Y: i64>(guards: &[Coord]) -> Ve
 }
 
 #[allow(dead_code)] // debugging
-fn print_guards<const GRID_X: i64, const GRID_Y: i64>(guards: &HashSet<Coord>) {
+fn print_guards<const GRID_X: i64, const GRID_Y: i64>(guards: &FxHashSet<Coord>) {
     for y in 0..GRID_Y {
         for x in 0..GRID_X {
             if guards.contains(&Coord { x, y }) {
@@ -79,8 +79,9 @@ fn print_guards<const GRID_X: i64, const GRID_Y: i64>(guards: &HashSet<Coord>) {
 fn get_christmas_tree<const GRID_X: i64, const GRID_Y: i64>(guards: &[(Coord, Coord)]) -> i64 {
     // Very much underspecified problem :(
     // Look for filled in section of the top of the tree
-    for s in 0.. {
-        let guards_after_move: HashSet<_> = guards
+    // Upper bound of x * y iterations which contains a cycle
+    for s in 0..GRID_X * GRID_Y {
+        let guards_after_move: FxHashSet<_> = guards
             .iter()
             .map(|g| get_guard_position::<GRID_X, GRID_Y>(*g, s))
             .collect();
