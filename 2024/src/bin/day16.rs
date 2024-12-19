@@ -38,11 +38,17 @@ impl Dir {
     }
 }
 
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
+struct CoordDir {
+    pos: Coord,
+    dir: Dir,
+}
+
 // Used for ordered btreeset/binaryheap purposes
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq)]
 struct PathNode {
     cost: usize,
-    node: (Coord, Dir),
+    node: CoordDir,
 }
 
 fn parse_grid(input: &str) -> (FxHashSet<Coord>, Coord, Coord) {
@@ -64,12 +70,24 @@ fn parse_grid(input: &str) -> (FxHashSet<Coord>, Coord, Coord) {
     (map, start.unwrap(), end.unwrap())
 }
 
-fn get_next_coord(c: Coord, d: Dir) -> Coord {
-    match d {
-        Dir::Up => Coord { x: c.x, y: c.y - 1 },
-        Dir::Down => Coord { x: c.x, y: c.y + 1 },
-        Dir::Left => Coord { x: c.x - 1, y: c.y },
-        Dir::Right => Coord { x: c.x + 1, y: c.y },
+fn get_next_coord(cd: CoordDir) -> Coord {
+    match cd.dir {
+        Dir::Up => Coord {
+            x: cd.pos.x,
+            y: cd.pos.y - 1,
+        },
+        Dir::Down => Coord {
+            x: cd.pos.x,
+            y: cd.pos.y + 1,
+        },
+        Dir::Left => Coord {
+            x: cd.pos.x - 1,
+            y: cd.pos.y,
+        },
+        Dir::Right => Coord {
+            x: cd.pos.x + 1,
+            y: cd.pos.y,
+        },
     }
 }
 
@@ -78,51 +96,73 @@ fn find_all_shortest_paths(
     start_pos: Coord,
     end_pos: Coord,
 ) -> (usize, usize) {
-    let mut dist: FxHashMap<(Coord, Dir), usize> = FxHashMap::default();
-    dist.insert((start_pos, Dir::Right), 0);
-    let mut prev: FxHashMap<(Coord, Dir), Vec<(Coord, Dir)>> = FxHashMap::default();
+    let mut dist: FxHashMap<CoordDir, usize> = FxHashMap::default();
+    dist.insert(
+        CoordDir {
+            pos: start_pos,
+            dir: Dir::Right,
+        },
+        0,
+    );
+    let mut prev: FxHashMap<CoordDir, Vec<CoordDir>> = FxHashMap::default();
 
     let mut min_cost_found = None;
     // Q, ish
     let mut to_search = BTreeSet::from([PathNode {
         cost: 0,
-        node: (start_pos, Dir::Right),
+        node: CoordDir {
+            pos: start_pos,
+            dir: Dir::Right,
+        },
     }]);
     let mut searched = FxHashSet::default();
-    while let Some(PathNode {
-        cost,
-        node: (u_pos, u_dir),
-    }) = to_search.pop_first()
-    {
-        if u_pos == end_pos {
+    while let Some(PathNode { cost, node: u }) = to_search.pop_first() {
+        if u.pos == end_pos {
+            // Trying to start *from* the end position,
+            // so must have found all best routes *to* it already
             min_cost_found = Some(cost);
             break;
         }
 
-        searched.insert((u_pos, u_dir));
+        searched.insert(u);
 
-        let next_forward = (get_next_coord(u_pos, u_dir), u_dir);
-        let rot_left = (u_pos, u_dir.turn_left());
-        let rot_right = (u_pos, u_dir.turn_right());
-        for v in [next_forward, rot_left, rot_right] {
-            if !wall_map.contains(&v.0) && !searched.contains(&v) {
-                let alt = dist[&(u_pos, u_dir)] + if v.1 == u_dir { 1 } else { 1000 };
+        // Build neighbour edges.
+        let next_forward = Some(CoordDir {
+            pos: get_next_coord(u),
+            dir: u.dir,
+        });
+        // Don't turn if it's pointless
+        let rot_left = Some(CoordDir {
+            pos: u.pos,
+            dir: u.dir.turn_left(),
+        })
+        .filter(|cd| !wall_map.contains(&get_next_coord(*cd)));
+        let rot_right = Some(CoordDir {
+            pos: u.pos,
+            dir: u.dir.turn_right(),
+        })
+        .filter(|cd| !wall_map.contains(&get_next_coord(*cd)));
+
+        for v in [next_forward, rot_left, rot_right].into_iter().flatten() {
+            if !wall_map.contains(&v.pos) && !searched.contains(&v) {
+                let alt = dist[&u] + if v.dir == u.dir { 1 } else { 1000 };
                 to_search.insert(PathNode { cost: alt, node: v });
 
                 let dist_v = dist.entry(v).or_insert(usize::MAX);
                 if alt <= *dist_v {
                     *dist_v = alt;
-                    prev.entry(v).or_default().push((u_pos, u_dir));
+                    prev.entry(v).or_default().push(u);
                 }
             }
         }
     }
 
+    // BFS search of prev tree to find all best route tiles
     let mut total_tiles: FxHashSet<Coord> = FxHashSet::default();
     {
-        let mut to_search: BTreeSet<_> = prev.keys().filter(|c| c.0 == end_pos).collect();
+        let mut to_search: BTreeSet<_> = prev.keys().filter(|c| c.pos == end_pos).collect();
         while let Some(u) = to_search.pop_first() {
-            total_tiles.insert(u.0);
+            total_tiles.insert(u.pos);
             if prev.contains_key(u) {
                 to_search.extend(prev[u].iter());
             }
