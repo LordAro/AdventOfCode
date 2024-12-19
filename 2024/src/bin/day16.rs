@@ -1,6 +1,5 @@
-use rustc_hash::FxHashSet;
-use std::cmp::Ordering;
-use std::collections::BinaryHeap;
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::BTreeSet;
 use std::env;
 use std::fs;
 use std::io;
@@ -39,26 +38,11 @@ impl Dir {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-struct PathObj {
+// Used for ordered btreeset/binaryheap purposes
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq)]
+struct PathNode {
     cost: usize,
-    dir: Dir,
-    nodes: Vec<Coord>,
-}
-
-impl Ord for PathObj {
-    fn cmp(&self, other: &Self) -> Ordering {
-        other
-            .cost
-            .cmp(&self.cost) // reverse order for min-heap
-            .then(other.nodes.cmp(&self.nodes))
-    }
-}
-
-impl PartialOrd for PathObj {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
+    node: (Coord, Dir),
 }
 
 fn parse_grid(input: &str) -> (FxHashSet<Coord>, Coord, Coord) {
@@ -93,97 +77,67 @@ fn find_all_shortest_paths(
     wall_map: &FxHashSet<Coord>,
     start_pos: Coord,
     end_pos: Coord,
-) -> Vec<PathObj> {
-    let mut to_search = BinaryHeap::new();
-    to_search.push(PathObj {
+) -> (usize, usize) {
+    let mut dist: FxHashMap<(Coord, Dir), usize> = FxHashMap::default();
+    dist.insert((start_pos, Dir::Right), 0);
+    let mut prev: FxHashMap<(Coord, Dir), Vec<(Coord, Dir)>> = FxHashMap::default();
+
+    let mut min_cost_found = None;
+    // Q, ish
+    let mut to_search = BTreeSet::from([PathNode {
         cost: 0,
-        dir: Dir::Right,
-        nodes: vec![start_pos],
-    });
-
-    let mut min_path_cost = None;
-    let mut min_paths = vec![];
-
-    //let mut m = 1;
-
-    while let Some(pn) = to_search.pop() {
-        //println!("{pn:?}");
-        //if pn.cost > m * 1000 {
-        //    println!(
-        //        "current cost: {}, remaining paths to search: {}\n{:?}",
-        //        pn.cost,
-        //        to_search.len(),
-        //        pn.nodes
-        //    );
-        //    m += 1;
-        //}
-        if min_path_cost.is_some_and(|mpc| pn.cost > mpc) {
-            // no further possible results
+        node: (start_pos, Dir::Right),
+    }]);
+    let mut searched = FxHashSet::default();
+    while let Some(PathNode {
+        cost,
+        node: (u_pos, u_dir),
+    }) = to_search.pop_first()
+    {
+        if u_pos == end_pos {
+            min_cost_found = Some(cost);
             break;
         }
-        let cur_pos = pn.nodes.last().unwrap();
-        if *cur_pos == end_pos {
-            min_path_cost = Some(pn.cost);
-            min_paths.push(pn);
-            continue;
-        }
 
-        // this iterator will get slow with long lists,
-        // but we're not expecting paths to get all that long
-        // reversed as duplicate coords are more likely to be near where are currently
-        let next_coord = get_next_coord(*cur_pos, pn.dir);
-        if !pn.nodes.iter().rev().any(|n| *n == next_coord) && !wall_map.contains(&next_coord) {
-            let mut new_nodes = pn.nodes.clone();
-            new_nodes.push(next_coord);
-            to_search.push(PathObj {
-                cost: pn.cost + 1,
-                dir: pn.dir,
-                nodes: new_nodes,
-            });
-        }
+        searched.insert((u_pos, u_dir));
 
-        // no point turning such that we're facing a wall
-        let left = pn.dir.turn_left();
-        let left_next = get_next_coord(*cur_pos, left);
-        if !pn.nodes.iter().rev().any(|n| *n == left_next) && !wall_map.contains(&left_next) {
-            let mut new_nodes = pn.nodes.clone();
-            new_nodes.push(left_next);
-            to_search.push(PathObj {
-                cost: pn.cost + 1001,
-                dir: left,
-                nodes: new_nodes,
-            });
-        }
-        let right = pn.dir.turn_right();
-        let right_next = get_next_coord(*cur_pos, right);
-        if !pn.nodes.iter().rev().any(|n| *n == right_next) && !wall_map.contains(&right_next) {
-            let mut new_nodes = pn.nodes.clone();
-            new_nodes.push(right_next);
-            to_search.push(PathObj {
-                cost: pn.cost + 1001,
-                dir: right,
-                nodes: new_nodes,
-            });
+        let next_forward = (get_next_coord(u_pos, u_dir), u_dir);
+        let rot_left = (u_pos, u_dir.turn_left());
+        let rot_right = (u_pos, u_dir.turn_right());
+        for v in [next_forward, rot_left, rot_right] {
+            if !wall_map.contains(&v.0) && !searched.contains(&v) {
+                let alt = dist[&(u_pos, u_dir)] + if v.1 == u_dir { 1 } else { 1000 };
+                to_search.insert(PathNode { cost: alt, node: v });
+
+                let dist_v = dist.entry(v).or_insert(usize::MAX);
+                if alt <= *dist_v {
+                    *dist_v = alt;
+                    prev.entry(v).or_default().push((u_pos, u_dir));
+                }
+            }
         }
     }
-    min_paths
-}
 
-fn get_total_path_tiles(paths: &[PathObj]) -> usize {
-    let all_tiles: FxHashSet<_> = paths.iter().flat_map(|path| path.nodes.iter()).collect();
-    all_tiles.len()
+    let mut total_tiles: FxHashSet<Coord> = FxHashSet::default();
+    {
+        let mut to_search: BTreeSet<_> = prev.keys().filter(|c| c.0 == end_pos).collect();
+        while let Some(u) = to_search.pop_first() {
+            total_tiles.insert(u.0);
+            if prev.contains_key(u) {
+                to_search.extend(prev[u].iter());
+            }
+        }
+    }
+    (min_cost_found.unwrap(), total_tiles.len())
 }
 
 fn main() -> io::Result<()> {
     let (grid, start_pos, end_pos) = parse_grid(&fs::read_to_string(
         env::args().nth(1).expect("missing cli argument"),
     )?);
-    let all_paths = find_all_shortest_paths(&grid, start_pos, end_pos);
-    println!("P1: Shortest path cost: {}", all_paths[0].cost);
-    println!(
-        "P2: Number of best path tiles: {}",
-        get_total_path_tiles(&all_paths)
-    );
+    let (path_cost, total_tiles) = find_all_shortest_paths(&grid, start_pos, end_pos);
+    println!("P1: Shortest path cost: {path_cost}");
+    println!("P2: Number of best path tiles: {total_tiles}");
     Ok(())
 }
 
@@ -209,10 +163,9 @@ mod tests {
 #S..#.....#...#
 ###############";
         let (grid, start_pos, end_pos) = parse_grid(input);
-        let all_paths = find_all_shortest_paths(&grid, start_pos, end_pos);
-        assert_eq!(all_paths[0].cost, 7036);
-        assert_eq!(get_total_path_tiles(&all_paths), 45);
-        //assert_eq!(1, 0);
+        let (path_cost, total_tiles) = find_all_shortest_paths(&grid, start_pos, end_pos);
+        assert_eq!(path_cost, 7036);
+        assert_eq!(total_tiles, 45);
     }
 
     #[test]
@@ -235,8 +188,22 @@ mod tests {
 #S#.............#
 #################";
         let (grid, start_pos, end_pos) = parse_grid(input);
-        let all_paths = find_all_shortest_paths(&grid, start_pos, end_pos);
-        assert_eq!(all_paths[0].cost, 11048);
-        assert_eq!(get_total_path_tiles(&all_paths), 64);
+        let (path_cost, total_tiles) = find_all_shortest_paths(&grid, start_pos, end_pos);
+        assert_eq!(path_cost, 11048);
+        assert_eq!(total_tiles, 64);
+    }
+
+    #[test]
+    fn ex2c() {
+        let input = "#####
+#.E.#
+#.#.#
+#...#
+##S##
+#####";
+        let (grid, start_pos, end_pos) = parse_grid(input);
+        let (path_cost, total_tiles) = find_all_shortest_paths(&grid, start_pos, end_pos);
+        assert_eq!(path_cost, 4005);
+        assert_eq!(total_tiles, 9);
     }
 }
