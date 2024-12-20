@@ -2,10 +2,7 @@ use std::env;
 use std::fs;
 use std::io;
 
-extern crate advent_of_code;
 use advent_of_code::intcode;
-
-extern crate itertools;
 use itertools::{iproduct, Itertools};
 
 fn run_springdroid_program(

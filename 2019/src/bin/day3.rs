@@ -86,8 +86,8 @@ fn main() -> io::Result<()> {
         x: 0,
         y: 0,
     };
-    let mut min_dist = i32::max_value();
-    let mut min_signal_delay = usize::max_value();
+    let mut min_dist = i32::MAX;
+    let mut min_signal_delay = usize::MAX;
     for (dir, dist) in &route2 {
         let change = get_change_dir(*dir).unwrap();
         for _ in 0..*dist {

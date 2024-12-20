@@ -16,7 +16,7 @@ fn get_sequence(idx: usize) -> impl Iterator<Item = i32> {
         .skip(1)
 }
 
-fn next_phase(signal: &Vec<i32>) -> Vec<i32> {
+fn next_phase(signal: &[i32]) -> Vec<i32> {
     (0..signal.len())
         .map(|i| {
             signal
@@ -33,7 +33,7 @@ fn next_phase(signal: &Vec<i32>) -> Vec<i32> {
 // Everything after n/2 is just a sum of the subsequent digits. Abuse the fact that the message
 // offset is always > n/2 to work out the next (relevant bit of the) phase is
 // Thanks Alan
-fn next_phase_n2(signal: &Vec<i32>, message_offset: usize) -> Vec<i32> {
+fn next_phase_n2(signal: &[i32], message_offset: usize) -> Vec<i32> {
     assert!(message_offset >= signal.len() / 2);
     let mut new_signal = vec![0; signal.len()];
     let mut sum = 0;

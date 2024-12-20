@@ -4,11 +4,8 @@ use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
 
-extern crate permutohedron;
-use permutohedron::Heap;
-
-extern crate advent_of_code;
 use advent_of_code::intcode;
+use permutohedron::Heap;
 
 fn main() -> io::Result<()> {
     let program_str = BufReader::new(
@@ -28,7 +25,7 @@ fn main() -> io::Result<()> {
 
     let mut phases = vec![0, 1, 2, 3, 4];
     let phase_heap = Heap::new(&mut phases);
-    let mut max_output = isize::min_value();
+    let mut max_output = isize::MIN;
     for permutation in phase_heap {
         let mut input_val = 0;
         for phase in permutation {
@@ -42,7 +39,7 @@ fn main() -> io::Result<()> {
 
     let mut phases: Vec<isize> = vec![5, 6, 7, 8, 9];
     let phase_heap = Heap::new(&mut phases);
-    let mut max_output = isize::min_value();
+    let mut max_output = isize::MIN;
     for permutation in phase_heap {
         // Initialise machines
         let mut machines = Vec::with_capacity(5);

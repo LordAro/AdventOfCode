@@ -3,7 +3,6 @@ use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-extern crate advent_of_code;
 use advent_of_code::intcode;
 
 type Coord = (usize, usize);
@@ -45,7 +44,7 @@ fn parse_scaffolds(mach: &mut intcode::Machine) -> Vec<Vec<isize>> {
     scaffolds
 }
 
-fn get_next_pos(pos: Coord, dir: usize, scaffolds: &Vec<Vec<isize>>) -> Option<Coord> {
+fn get_next_pos(pos: Coord, dir: usize, scaffolds: &[Vec<isize>]) -> Option<Coord> {
     match dir {
         0 => {
             if pos.1 > 0 {
@@ -79,7 +78,7 @@ fn get_next_pos(pos: Coord, dir: usize, scaffolds: &Vec<Vec<isize>>) -> Option<C
     }
 }
 
-fn next_left(pos: Coord, dir: usize, scaffolds: &Vec<Vec<isize>>) -> isize {
+fn next_left(pos: Coord, dir: usize, scaffolds: &[Vec<isize>]) -> isize {
     let left_pos = get_next_pos(pos, (dir + 3) % 4, scaffolds);
     if let Some(left_pos) = left_pos {
         scaffolds[left_pos.1][left_pos.0]
@@ -88,7 +87,7 @@ fn next_left(pos: Coord, dir: usize, scaffolds: &Vec<Vec<isize>>) -> isize {
     }
 }
 
-fn next_right(pos: Coord, dir: usize, scaffolds: &Vec<Vec<isize>>) -> isize {
+fn next_right(pos: Coord, dir: usize, scaffolds: &[Vec<isize>]) -> isize {
     let right_pos = get_next_pos(pos, (dir + 1) % 4, scaffolds);
     if let Some(right_pos) = right_pos {
         scaffolds[right_pos.1][right_pos.0]
@@ -101,7 +100,7 @@ fn get_ascii_length(seq: &[String]) -> usize {
     seq.iter().map(|s| s.len()).sum::<usize>() + seq.len() - 1
 }
 
-fn compress(sequence: &Vec<String>) -> (Vec<String>, Vec<String>, Vec<String>, Vec<String>) {
+fn compress(sequence: &[String]) -> (Vec<String>, Vec<String>, Vec<String>, Vec<String>) {
     for step in (2..sequence.len() / 3).step_by(2) {
         let func_a = &sequence[0..step];
         if get_ascii_length(func_a) > 20 {

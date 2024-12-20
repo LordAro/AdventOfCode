@@ -2,11 +2,8 @@ use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-extern crate itertools;
-use itertools::Itertools;
-
-extern crate advent_of_code;
 use advent_of_code::intcode;
+use itertools::Itertools;
 
 fn is_point_covered(program: &[isize], x: isize, y: isize) -> bool {
     intcode::Machine::new(program, &[x, y])
@@ -44,11 +41,12 @@ fn main() {
     let mut prev_x = 0;
     'outer: for y in 0.. {
         // first position must be(?) within 2n of the first position found
+        let mut next_prev_x = prev_x;
         for x in prev_x..prev_x + 200 {
             if !is_point_covered(&program, x, y) {
                 continue;
             }
-            prev_x = x;
+            next_prev_x = x;
 
             if !is_point_covered(&program, x + 99, y) {
                 // can't be this row, move on to the next
@@ -68,5 +66,6 @@ fn main() {
             );
             break 'outer;
         }
+        prev_x = next_prev_x;
     }
 }

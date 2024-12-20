@@ -4,7 +4,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::iter::FromIterator;
 
-extern crate itertools;
 use itertools::Itertools;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -128,7 +127,7 @@ fn get_route(
                 }
             }
             let dist = g_score[&current] + 1;
-            if &dist < g_score.get(&adj).unwrap_or(&isize::max_value()) {
+            if &dist < g_score.get(&adj).unwrap_or(&isize::MAX) {
                 came_from.insert(adj, current);
                 g_score.insert(adj, dist);
                 open_set.push_back(adj);

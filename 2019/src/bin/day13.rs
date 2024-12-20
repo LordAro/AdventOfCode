@@ -2,7 +2,6 @@ use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-extern crate advent_of_code;
 use advent_of_code::intcode;
 
 fn main() {

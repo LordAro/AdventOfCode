@@ -3,11 +3,8 @@ use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-extern crate regex;
-use regex::Regex;
-
-extern crate itertools;
 use itertools::Itertools;
+use regex::Regex;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 struct Coord {

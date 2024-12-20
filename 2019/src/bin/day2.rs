@@ -3,14 +3,11 @@ use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
 
-extern crate rayon;
+use advent_of_code::intcode;
 use rayon::prelude::*;
 
 #[macro_use]
 extern crate itertools;
-
-extern crate advent_of_code;
-use advent_of_code::intcode;
 
 fn main() -> io::Result<()> {
     let program_str = BufReader::new(

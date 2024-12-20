@@ -30,10 +30,6 @@ fn parse_reactions<T: AsRef<str>>(input_str: &[T]) -> ReactionMap {
         .collect()
 }
 
-fn div_ceil(a: u64, b: u64) -> u64 {
-    (a + b - 1) / b
-}
-
 fn get_ore_count<'a>(
     reactions: &'a ReactionMap,
     target: &'a str,
@@ -54,7 +50,7 @@ fn get_ore_count<'a>(
         *wasted_count = 0;
     }
     let (reaction_output_count, inputs_required) = reactions.get(target).unwrap();
-    let reaction_count = div_ceil(quantity_required, *reaction_output_count);
+    let reaction_count = quantity_required.div_ceil(*reaction_output_count);
     *waste.entry(target).or_default() += reaction_output_count * reaction_count - quantity_required;
     inputs_required
         .iter()

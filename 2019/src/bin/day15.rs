@@ -5,7 +5,6 @@ use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-extern crate advent_of_code;
 use advent_of_code::intcode;
 
 type Coord = (i32, i32);
@@ -76,7 +75,7 @@ fn get_route(source: Coord, target: Coord, known_positions: &HashMap<Coord, Stat
 
         for adj in get_adjacents(current).iter() {
             let dist = g_score[&current] + 1;
-            if &dist < g_score.get(adj).unwrap_or(&isize::max_value()) {
+            if &dist < g_score.get(adj).unwrap_or(&isize::MAX) {
                 came_from.insert(*adj, current);
                 g_score.insert(*adj, dist);
                 open_set.push_back(*adj);

@@ -2,6 +2,7 @@
 name = "advent_of_code"
 version = "2019.0.0"
 authors = ["Charles Pigott <charlespigott@googlemail.com>"]
+edition = "2018"
 
 [dependencies]
 rayon = "^1.8"
