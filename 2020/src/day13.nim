@@ -9,7 +9,7 @@ proc bezout_coeffs(a: BigInt, b: BigInt): (BigInt, BigInt) =
     (old_s, s) = (1.initBigInt, 0.initBigInt)
     (old_t, t) = (0.initBigInt, 1.initBigInt)
 
-  while r != 0:
+  while r != 0.initBigInt:
     let quotient = old_r div r
     (old_r, r) = (r, old_r - (quotient * r))
     (old_s, s) = (s, old_s - (quotient * s))
