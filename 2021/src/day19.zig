@@ -68,7 +68,7 @@ pub fn main() !void {
     const input_file = args_iter.next() orelse unreachable;
     const input = std.fs.cwd().openFile(input_file, .{}) catch |err| {
         std.log.err("Could not open {s} due to: {}", .{ input_file, err });
-        std.os.exit(1);
+        std.process.exit(1);
     };
     defer input.close();
 
@@ -141,11 +141,11 @@ pub fn main() !void {
         }
     }
 
-    var max_manhattan_dist: i32 = 0;
+    var max_manhattan_dist: u32 = 0;
     for (scanner_positions.items, 0..) |scanner_a, i| {
         for (scanner_positions.items[i + 1 ..]) |scanner_b| {
             const diff = scanner_a.sub(scanner_b);
-            const manhattan = (try std.math.absInt(diff.x)) + (try std.math.absInt(diff.y)) + (try std.math.absInt(diff.z));
+            const manhattan = @abs(diff.x) + @abs(diff.y) + @abs(diff.z);
             max_manhattan_dist = @max(max_manhattan_dist, manhattan);
         }
     }
@@ -155,7 +155,7 @@ pub fn main() !void {
 }
 
 test "rotate all combinations" {
-    var alloc = std.testing.allocator;
+    const alloc = std.testing.allocator;
     var rotations = std.AutoHashMap(Coord, void).init(alloc);
     defer rotations.deinit();
     var rot_n: u32 = 0;

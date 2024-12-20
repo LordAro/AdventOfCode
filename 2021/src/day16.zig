@@ -152,7 +152,7 @@ pub fn main() anyerror!void {
     const input_file = args_iter.next() orelse unreachable;
     const input = std.fs.cwd().openFile(input_file, .{}) catch |err| {
         std.log.err("Could not open {s} due to: {}", .{ input_file, err });
-        std.os.exit(1);
+        std.process.exit(1);
     };
     defer input.close();
 
@@ -160,7 +160,7 @@ pub fn main() anyerror!void {
     var program_bits = try input_to_bits(alloc, (try input.reader().readUntilDelimiterOrEof(&buf, '\n')).?);
     defer program_bits.deinit();
 
-    var packets = parse_packets(alloc, program_bits.items);
+    const packets = parse_packets(alloc, program_bits.items);
     defer packetlist_deinit(packets);
 
     try stdout.print("Packet version sum: {}\n", .{get_packet_version(packets.items[0])});
@@ -168,7 +168,7 @@ pub fn main() anyerror!void {
 }
 
 test "example1" {
-    var test_alloc = std.testing.allocator;
+    const test_alloc = std.testing.allocator;
     const program = try input_to_bits(test_alloc, "D2FE28");
     defer program.deinit();
     std.debug.print("\n", .{});
@@ -185,7 +185,7 @@ test "example1" {
 }
 
 test "example2" {
-    var test_alloc = std.testing.allocator;
+    const test_alloc = std.testing.allocator;
     const program = try input_to_bits(test_alloc, "38006F45291200");
     defer program.deinit();
     std.debug.print("\n", .{});
@@ -201,7 +201,7 @@ test "example2" {
 }
 
 test "example3" {
-    var test_alloc = std.testing.allocator;
+    const test_alloc = std.testing.allocator;
     const program = try input_to_bits(test_alloc, "EE00D40C823060");
     defer program.deinit();
     std.debug.print("\n", .{});
@@ -215,7 +215,7 @@ test "example3" {
 }
 
 test "example4" {
-    var test_alloc = std.testing.allocator;
+    const test_alloc = std.testing.allocator;
     const program = try input_to_bits(test_alloc, "8A004A801A8002F478");
     defer program.deinit();
     std.debug.print("\n", .{});
@@ -230,7 +230,7 @@ test "example4" {
 }
 
 test "p2_examples" {
-    var test_alloc = std.testing.allocator;
+    const test_alloc = std.testing.allocator;
     const inputs = [_][]const u8{
         "C200B40A82",
         "04005AC33890",

@@ -82,7 +82,7 @@ pub fn main() anyerror!void {
     const input_file = args_iter.next() orelse unreachable;
     const input = std.fs.cwd().openFile(input_file, .{}) catch |err| {
         std.log.err("Could not open {s} due to: {}", .{ input_file, err });
-        std.os.exit(1);
+        std.process.exit(1);
     };
     defer input.close();
 
@@ -94,9 +94,9 @@ pub fn main() anyerror!void {
     var buf: [64]u8 = undefined;
     while (try input.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
         var it = std.mem.split(u8, line, " ");
-        var coord1 = parse_coord(it.next().?);
+        const coord1 = parse_coord(it.next().?);
         _ = it.next();
-        var coord2 = parse_coord(it.next().?);
+        const coord2 = parse_coord(it.next().?);
 
         const is_diagonal = coord1.x != coord2.x and coord1.y != coord2.y;
         var line_it = LineIterator.init(coord1, coord2);

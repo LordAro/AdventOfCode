@@ -81,7 +81,7 @@ pub fn main() !void {
     const input_file = args_iter.next() orelse unreachable;
     const input = std.fs.cwd().openFile(input_file, .{}) catch |err| {
         std.log.err("Could not open {s} due to: {}", .{ input_file, err });
-        std.os.exit(1);
+        std.process.exit(1);
     };
     defer input.close();
 
@@ -113,7 +113,7 @@ pub fn main() !void {
         if (enhance_step == 2) {
             num_lit2 = count_lit(previous_grid);
         }
-        var enhanced = try enhance(alloc, previous_grid, enhancement, enhance_step % 2 == 1 and enhancement[0] == '#');
+        const enhanced = try enhance(alloc, previous_grid, enhancement, enhance_step % 2 == 1 and enhancement[0] == '#');
         previous_grid.deinit();
         previous_grid = enhanced;
     }
@@ -123,7 +123,7 @@ pub fn main() !void {
 }
 
 test "get num" {
-    var alloc = std.testing.allocator;
+    const alloc = std.testing.allocator;
     var img = Image.init(alloc);
     defer img.deinit();
 

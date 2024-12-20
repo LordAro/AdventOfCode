@@ -22,7 +22,7 @@ pub fn main() anyerror!void {
     const input_file = args_iter.next() orelse unreachable;
     const input = std.fs.cwd().openFile(input_file, .{}) catch |err| {
         std.log.err("Could not open {s} due to: {}", .{ input_file, err });
-        std.os.exit(1);
+        std.process.exit(1);
     };
     defer input.close();
 
@@ -58,7 +58,7 @@ pub fn main() anyerror!void {
     var velo_x: i32 = 0;
     while (velo_x < target_br.x * 2) : (velo_x += 1) {
         var velo_y: i32 = target_br.y;
-        while (velo_y < try std.math.absInt(target_br.y)) : (velo_y += 1) {
+        while (velo_y < @abs(target_br.y)) : (velo_y += 1) {
             const initial_velocity = Coord{ .x = velo_x, .y = velo_y };
             var max_y: i32 = 0;
             var pos = Coord{ .x = 0, .y = 0 };

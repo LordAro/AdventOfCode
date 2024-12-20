@@ -1,8 +1,8 @@
 const std = @import("std");
 
 fn dup(alloc: std.mem.Allocator, s: []const u8) []u8 {
-    var newStr = alloc.alloc(u8, s.len) catch unreachable;
-    std.mem.copy(u8, newStr, s);
+    const newStr = alloc.alloc(u8, s.len) catch unreachable;
+    @memcpy(newStr, s);
     return newStr;
 }
 
@@ -25,7 +25,7 @@ fn has_dup_lowercase(alloc: std.mem.Allocator, arr: std.ArrayList([]const u8)) b
     defer uniq.deinit();
     for (arr.items) |r| {
         if (!is_lowercase(r)) continue;
-        var gop = uniq.getOrPut(r) catch unreachable;
+        const gop = uniq.getOrPut(r) catch unreachable;
         if (gop.found_existing) {
             return true;
         }
@@ -83,7 +83,7 @@ pub fn main() anyerror!void {
     const input_file = args_iter.next() orelse unreachable;
     const input = std.fs.cwd().openFile(input_file, .{}) catch |err| {
         std.log.err("Could not open {s} due to: {}", .{ input_file, err });
-        std.os.exit(1);
+        std.process.exit(1);
     };
     defer input.close();
 
@@ -93,11 +93,11 @@ pub fn main() anyerror!void {
     var buf: [16]u8 = undefined;
     while (try input.reader().readUntilDelimiterOrEof(&buf, '\n')) |line| {
         var it = std.mem.split(u8, line, "-");
-        var a = dup(alloc, it.next().?);
-        var b = dup(alloc, it.next().?);
+        const a = dup(alloc, it.next().?);
+        const b = dup(alloc, it.next().?);
 
         if (!std.mem.eql(u8, b, "start") and !std.mem.eql(u8, a, "end")) {
-            var a_gop = try graph.getOrPut(a);
+            const a_gop = try graph.getOrPut(a);
             if (!a_gop.found_existing) {
                 a_gop.value_ptr.* = std.ArrayList([]u8).init(alloc);
             }
@@ -105,7 +105,7 @@ pub fn main() anyerror!void {
         }
 
         if (!std.mem.eql(u8, b, "end") and !std.mem.eql(u8, a, "start")) {
-            var b_gop = try graph.getOrPut(b);
+            const b_gop = try graph.getOrPut(b);
             if (!b_gop.found_existing) {
                 b_gop.value_ptr.* = std.ArrayList([]u8).init(alloc);
             }

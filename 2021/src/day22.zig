@@ -22,7 +22,7 @@ pub fn main() !void {
     const input_file = args_iter.next() orelse unreachable;
     const input = std.fs.cwd().openFile(input_file, .{}) catch |err| {
         std.log.err("Could not open {s} due to: {}", .{ input_file, err });
-        std.os.exit(1);
+        std.process.exit(1);
     };
     defer input.close();
 
@@ -34,7 +34,7 @@ pub fn main() !void {
     var buf: [1024]u8 = undefined;
     while (try input_reader.readUntilDelimiterOrEof(&buf, '\n')) |line| {
         const is_on = std.mem.indexOf(u8, line, "on") == 0;
-        var first_space = std.mem.indexOf(u8, line, " ") orelse unreachable;
+        const first_space = std.mem.indexOf(u8, line, " ") orelse unreachable;
 
         var axis_split = std.mem.split(u8, line[first_space + 1 ..], ",");
 

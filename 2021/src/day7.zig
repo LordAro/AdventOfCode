@@ -11,7 +11,7 @@ pub fn main() anyerror!void {
     const input_file = args_iter.next() orelse unreachable;
     const input = std.fs.cwd().openFile(input_file, .{}) catch |err| {
         std.log.err("Could not open {s} due to: {}", .{ input_file, err });
-        std.os.exit(1);
+        std.process.exit(1);
     };
     defer input.close();
 
@@ -39,7 +39,7 @@ pub fn main() anyerror!void {
         var fuelCost: u32 = 0;
         var fuelCost2: u32 = 0;
         for (numbers.items) |n| {
-            const distance = @as(u32, @intCast(try std.math.absInt(@as(i32, @intCast(n)) - @as(i32, @intCast(pos)))));
+            const distance = @abs(@as(i32, @intCast(n)) - @as(i32, @intCast(pos)));
             fuelCost += distance;
             fuelCost2 += distance * (distance + 1) / 2; // triangle numbers
         }

@@ -83,7 +83,7 @@ pub fn main() anyerror!void {
     const input_file = args_iter.next() orelse unreachable;
     const input = std.fs.cwd().openFile(input_file, .{}) catch |err| {
         std.log.err("Could not open {s} due to: {}", .{ input_file, err });
-        std.os.exit(1);
+        std.process.exit(1);
     };
     defer input.close();
 
@@ -105,7 +105,7 @@ pub fn main() anyerror!void {
         if (parse_map) {
             var it = std.mem.split(u8, line, " -> ");
 
-            var lr = it.next().?;
+            const lr = it.next().?;
             try insertion_rules.put(Pair{ .a = lr[0], .b = lr[1] }, it.next().?[0]);
         } else {
             var i: usize = 0;
@@ -125,7 +125,7 @@ pub fn main() anyerror!void {
             p1_score = try get_polymer_score(alloc, polymer_pairs, last_letter);
         }
 
-        var new_polymer_pairs = try apply_insertion_rules(alloc, insertion_rules, polymer_pairs);
+        const new_polymer_pairs = try apply_insertion_rules(alloc, insertion_rules, polymer_pairs);
         polymer_pairs.deinit();
         polymer_pairs = new_polymer_pairs;
     }

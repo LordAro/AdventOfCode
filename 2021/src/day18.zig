@@ -10,7 +10,7 @@ const TreeNode = struct {
     right_child: ?*TreeNode,
 
     fn init(alloc: std.mem.Allocator) !*TreeNode {
-        var node = try alloc.create(TreeNode);
+        const node = try alloc.create(TreeNode);
         node.* = TreeNode{
             .allocator = alloc,
             .parent = null,
@@ -56,7 +56,7 @@ const TreeNode = struct {
         }
 
         while (true) {
-            var parent = node.parent;
+            const parent = node.parent;
             if (parent) |p| {
                 if (node != p.right_child)
                     return p;
@@ -76,7 +76,7 @@ const TreeNode = struct {
         }
 
         while (true) {
-            var parent = node.parent;
+            const parent = node.parent;
             if (parent) |p| {
                 if (node != p.left_child)
                     return p;
@@ -274,7 +274,7 @@ pub fn main() anyerror!void {
     const input_file = args_iter.next() orelse unreachable;
     const input = std.fs.cwd().openFile(input_file, .{}) catch |err| {
         std.log.err("Could not open {s} due to: {}", .{ input_file, err });
-        std.os.exit(1);
+        std.process.exit(1);
     };
     defer input.close();
 
@@ -317,7 +317,7 @@ pub fn main() anyerror!void {
 }
 
 test "parse snail" {
-    var alloc = std.testing.allocator;
+    const alloc = std.testing.allocator;
     const inputs = [_][]const u8{
         "[1,2]",
         "[[1,2],3]",
@@ -335,7 +335,7 @@ test "parse snail" {
 }
 
 test "find deep" {
-    var alloc = std.testing.allocator;
+    const alloc = std.testing.allocator;
     const s = try parse_snail(alloc, "[[[[[9,8],1],2],3],4]");
     defer s.deinit();
     const deep = find_deep(s, 0, 5);
@@ -346,7 +346,7 @@ test "find deep" {
 }
 
 test "find deep 2" {
-    var alloc = std.testing.allocator;
+    const alloc = std.testing.allocator;
     const s = try parse_snail(alloc, "[7,[6,[5,[4,[3,2]]]]]");
     defer s.deinit();
     const deep = find_deep(s, 0, 5);
@@ -357,7 +357,7 @@ test "find deep 2" {
 }
 
 test "prev next 1" {
-    var alloc = std.testing.allocator;
+    const alloc = std.testing.allocator;
     const s = try parse_snail(alloc, "[[[[[9,8],1],2],3],4]");
     defer s.deinit();
     const deep = find_deep(s, 0, 5);
@@ -370,7 +370,7 @@ test "prev next 1" {
 }
 
 test "prev next 2" {
-    var alloc = std.testing.allocator;
+    const alloc = std.testing.allocator;
     const s = try parse_snail(alloc, "[7,[6,[5,[4,[3,2]]]]]");
     defer s.deinit();
     const deep = find_deep(s, 0, 5);
@@ -383,7 +383,7 @@ test "prev next 2" {
 }
 
 test "prev next 3" {
-    var alloc = std.testing.allocator;
+    const alloc = std.testing.allocator;
     const s = try parse_snail(alloc, "[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]");
     defer s.deinit();
     const deep = find_deep(s, 0, 5);
@@ -398,7 +398,7 @@ test "prev next 3" {
 }
 
 test "explode tree" {
-    var alloc = std.testing.allocator;
+    const alloc = std.testing.allocator;
     const s = try parse_snail(alloc, "[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]");
     defer s.deinit();
     const exploded = try explode_tree(s);
@@ -410,7 +410,7 @@ test "explode tree" {
 }
 
 test "add node 1" {
-    var alloc = std.testing.allocator;
+    const alloc = std.testing.allocator;
     const s1 = try parse_snail(alloc, "[[[[4,3],4],4],[7,[[8,4],9]]]");
     defer s1.deinit();
     const s2 = try parse_snail(alloc, "[1,1]");
