@@ -33,7 +33,7 @@ fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64) {
 fn get_release_time(discs: &[(i64, i64)]) -> i64 {
     let big_m: i64 = discs.iter().map(|(_, m)| m).product();
 
-    return discs
+    discs
         .iter()
         .map(|&(a, m)| {
             let b = big_m / m;
@@ -43,7 +43,7 @@ fn get_release_time(discs: &[(i64, i64)]) -> i64 {
             a * b * b_inverse
         })
         .sum::<i64>()
-        .rem_euclid(big_m);
+        .rem_euclid(big_m)
 }
 
 fn main() {

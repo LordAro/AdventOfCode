@@ -2,6 +2,7 @@
 name = "AdventofCode"
 version = "2016.14.0"
 authors = ["Charles Pigott <charlespigott@googlemail.com>"]
+edition = "2015"
 
 [dependencies]
 itertools = "^0.12"

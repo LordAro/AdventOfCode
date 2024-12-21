@@ -62,7 +62,7 @@ fn main() {
     let mut valid_indexes2016 = vec![];
 
     let mut hasher = Md5::new();
-    for i in 0..std::u64::MAX {
+    for i in 0..u64::MAX {
         hasher.input(key);
         hasher.input(i.to_string().as_bytes());
 

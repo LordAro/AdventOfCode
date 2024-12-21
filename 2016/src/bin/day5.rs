@@ -21,7 +21,7 @@ fn main() {
     let mut password = String::new();
     let mut password2 = String::from("........"); // "NaN"
     let mut hasher = Md5::new();
-    for i in 0..std::u64::MAX {
+    for i in 0..u64::MAX {
         hasher.input(key);
         hasher.input(i.to_string().as_bytes());
 

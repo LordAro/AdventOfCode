@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 fn data_to_string(a: &[bool]) -> String {
-    return a.iter().map(|&b| if b { '1' } else { '0' }).collect();
+    a.iter().map(|&b| if b { '1' } else { '0' }).collect()
 }
 
 fn toggled(a: &[bool]) -> Vec<bool> {

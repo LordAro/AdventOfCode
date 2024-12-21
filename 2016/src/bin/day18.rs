@@ -4,7 +4,7 @@ use std::io::{BufRead, BufReader};
 
 fn build_next_line(line: &str) -> String {
     // edges treated as 'safe'
-    return [&[b'.'], line.as_bytes(), &[b'.']]
+    [b".", line.as_bytes(), b"."]
         .concat()
         .windows(3)
         .map(|slice| match slice {
@@ -15,7 +15,7 @@ fn build_next_line(line: &str) -> String {
             [_, _, _] => '.',
             _ => unreachable!(),
         })
-        .collect();
+        .collect()
 }
 
 fn main() {

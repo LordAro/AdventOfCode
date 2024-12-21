@@ -7,7 +7,7 @@ fn parse_reg(word: &str) -> Option<char> {
     word.chars().next()
 }
 
-fn run_prog(registers: &mut HashMap<char, i32>, prog: &Vec<Vec<&str>>) {
+fn run_prog(registers: &mut HashMap<char, i32>, prog: &[Vec<&str>]) {
     let mut pc = 0;
     while pc < prog.len() {
         let ins = &prog[pc];

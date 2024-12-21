@@ -11,7 +11,7 @@ fn get_route_hash(key: &[u8], route: &str) -> String {
     let mut hasher = Md5::new();
     hasher.input(key);
     hasher.input(route.as_bytes());
-    return hasher.result_str().chars().take(4).collect();
+    hasher.result_str().chars().take(4).collect()
 }
 
 fn get_new_pos(p: (u64, u64), dir: char) -> (u64, u64) {

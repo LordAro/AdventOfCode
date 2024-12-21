@@ -22,7 +22,7 @@ fn five_most_common(s: &str) -> String {
     let mut count_vec: Vec<_> = count.into_iter().collect();
     // Reverse sort the vector of pairs by "value" (sorted by "key" in case of tie)
     count_vec.sort_by(|a, b| b.1.cmp(&a.1));
-    return count_vec.iter().take(5).map(|&(k, _)| k).collect();
+    count_vec.iter().take(5).map(|&(k, _)| k).collect()
 }
 
 // Rotate a string n times (n == 13 would be rot13)

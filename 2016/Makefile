@@ -8,3 +8,4 @@ include ../common.mk
 
 $(BINDIR)/day%: $(SRCDIR)/day%.rs
 	@RUSTFLAGS='$(FLAGS) $(FLAGS_DAY_$*)' cargo build $(CARGO_FLAGS) --target-dir builds --bin day$*
+	@RUSTFLAGS='$(FLAGS) $(FLAGS_DAY_$*)' cargo clippy $(CARGO_FLAGS) --target-dir builds --bin day$*

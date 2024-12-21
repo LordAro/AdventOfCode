@@ -32,7 +32,7 @@ fn main() {
         .lines()
         .map(|l| {
             l.unwrap()
-                .split(|c| c == '[' || c == ']')
+                .split(['[', ']'])
                 .map(String::from)
                 .collect::<Vec<_>>()
         })
