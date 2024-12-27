@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeSet;
 use std::env;
@@ -44,23 +45,22 @@ fn flood_fill(
     max_bound: Coord,
     walls: &FxHashSet<Coord>,
     start_pos: Coord,
-    find_walls: bool,
-    distance_limit: Option<usize>,
 ) -> FxHashMap<Coord, usize> {
     let mut searched: FxHashMap<Coord, usize> = FxHashMap::default();
     let mut to_search = BTreeSet::from([(0, start_pos)]);
     while let Some((cost, u)) = to_search.pop_first() {
-        if distance_limit.is_some_and(|dl| cost >= dl) {
-            break;
-        }
         searched.insert(u, cost);
         for v in coord_neighbours(max_bound, u)
-            .filter(|v| walls.contains(v) == find_walls && !searched.contains_key(v))
+            .filter(|v| !walls.contains(v) && !searched.contains_key(v))
         {
             to_search.insert((cost + 1, v));
         }
     }
     searched
+}
+
+fn manhattan_dist(a: &Coord, b: &Coord) -> usize {
+    a.x.abs_diff(b.x) + a.y.abs_diff(b.y)
 }
 
 fn get_all_path_differences(
@@ -70,41 +70,27 @@ fn get_all_path_differences(
     end_pos: Coord,
     max_cheat_len: usize,
 ) -> FxHashMap<isize, usize> {
-    let distances_from_start = flood_fill(max_bound, walls, start_pos, false, None);
-    let distances_from_end = flood_fill(max_bound, walls, end_pos, false, None);
-
-    let mut all_possible_wall_skips: FxHashSet<(Coord, Coord, usize)> = FxHashSet::default();
-    for cheat_start in distances_from_start.keys() {
-        // find reachable walls within max_cheat_len limit
-        // TODO cheats don't *have* to use walls. It's just a general noclip
-        let possible_exit_distances =
-            flood_fill(max_bound, walls, *cheat_start, true, Some(max_cheat_len));
-        let possible_exits: Vec<_> = possible_exit_distances
-            .iter()
-            .filter(|(c, _)| *c != cheat_start)
-            .flat_map(|(c, dist)| {
-                coord_neighbours(max_bound, *c)
-                    .filter(|c| !walls.contains(c))
-                    .map(move |exit| (exit, dist + 1))
-            })
-            .collect();
-        for (possible_exit, dist) in possible_exits {
-            all_possible_wall_skips.insert((*cheat_start, possible_exit, dist));
-        }
-    }
+    let distances_from_start = flood_fill(max_bound, walls, start_pos);
+    let distances_from_end = flood_fill(max_bound, walls, end_pos);
 
     let length_no_cheat = distances_from_start[&end_pos];
 
     let mut route_diff_count: FxHashMap<isize, usize> = FxHashMap::default();
-    for (wall_skip_start, wall_skip_end, skip_dist) in all_possible_wall_skips {
-        let route_len =
-            distances_from_start[&wall_skip_start] + skip_dist + distances_from_end[&wall_skip_end];
-        let route_diff = route_len as isize - length_no_cheat as isize;
-        if route_diff == -74 {
-            println!("{:?} -> {:?}", wall_skip_start, wall_skip_end);
+    // cheating is just noclipping for some amount of time
+    // - so compute distances between every two points and calculate resulting route length diff
+    for ((a, a_cost), (b, b_cost)) in distances_from_start
+        .iter()
+        .cartesian_product(distances_from_end.iter())
+    {
+        let cheat_dist = manhattan_dist(a, b);
+        if cheat_dist == 0 || cheat_dist > max_cheat_len {
+            continue;
         }
+        let route_len = a_cost + cheat_dist + b_cost;
+        let route_diff = route_len as isize - length_no_cheat as isize;
         *route_diff_count.entry(route_diff).or_default() += 1;
     }
+
     route_diff_count
 }
 
@@ -190,14 +176,9 @@ mod tests {
         let max_y = walls.iter().max_by_key(|c| c.y).unwrap().y;
         let max_bound = Coord { x: max_x, y: max_y };
         let p2_path_diffs = get_all_path_differences(max_bound, &walls, start_pos, end_pos, 20);
-        for (k, v) in &p2_path_diffs {
-            if *k <= -74 {
-                println!("{k}: {v}");
-            }
-        }
         let saving: usize = p2_path_diffs
             .iter()
-            .filter(|(&k, _)| k <= -74)
+            .filter(|(&k, _)| k == -50)
             .map(|(_, n)| n)
             .sum();
         assert_eq!(saving, 32);
