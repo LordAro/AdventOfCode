@@ -7,11 +7,10 @@ use std::iter;
 fn get_sequence(idx: usize) -> impl Iterator<Item = i32> {
     let base_pattern = [0, 1, 0, -1];
 
-    iter::repeat(base_pattern[0])
-        .take(idx + 1)
-        .chain(iter::repeat(base_pattern[1]).take(idx + 1))
-        .chain(iter::repeat(base_pattern[2]).take(idx + 1))
-        .chain(iter::repeat(base_pattern[3]).take(idx + 1))
+    iter::repeat_n(base_pattern[0], idx + 1)
+        .chain(iter::repeat_n(base_pattern[1], idx + 1))
+        .chain(iter::repeat_n(base_pattern[2], idx + 1))
+        .chain(iter::repeat_n(base_pattern[3], idx + 1))
         .cycle()
         .skip(1)
 }
@@ -46,7 +45,7 @@ fn next_phase_n2(signal: &[i32], message_offset: usize) -> Vec<i32> {
 }
 
 fn repeat_10000(signal: Vec<i32>) -> Vec<i32> {
-    iter::repeat(signal).take(10000).flatten().collect()
+    iter::repeat_n(signal, 10000).flatten().collect()
 }
 
 fn main() {

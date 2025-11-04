@@ -161,24 +161,26 @@ fn main() {
     let mut cur_move_count = 0;
     loop {
         let next_pos = get_next_pos(robot_pos, robot_dir, &scaffolds);
-        if next_pos.is_none() || scaffolds[next_pos.unwrap().1][next_pos.unwrap().0] == SPACE {
-            if cur_move_count != 0 {
-                seq.push(cur_move_count.to_string());
+        if let Some(next_pos) = next_pos {
+            if scaffolds[next_pos.1][next_pos.0] != SPACE {
+                robot_pos = next_pos;
+                cur_move_count += 1;
+                continue;
             }
-            cur_move_count = 0;
-            // change dir
-            if next_left(robot_pos, robot_dir, &scaffolds) != SPACE {
-                seq.push("L".to_string());
-                robot_dir = (robot_dir + 3) % 4;
-            } else if next_right(robot_pos, robot_dir, &scaffolds) != SPACE {
-                seq.push("R".to_string());
-                robot_dir = (robot_dir + 1) % 4;
-            } else {
-                break; // we're done
-            }
+        }
+        if cur_move_count != 0 {
+            seq.push(cur_move_count.to_string());
+        }
+        cur_move_count = 0;
+        // change dir
+        if next_left(robot_pos, robot_dir, &scaffolds) != SPACE {
+            seq.push("L".to_string());
+            robot_dir = (robot_dir + 3) % 4;
+        } else if next_right(robot_pos, robot_dir, &scaffolds) != SPACE {
+            seq.push("R".to_string());
+            robot_dir = (robot_dir + 1) % 4;
         } else {
-            robot_pos = next_pos.unwrap();
-            cur_move_count += 1;
+            break; // we're done
         }
     }
     println!("Generated movement sequence: {:?}", seq);

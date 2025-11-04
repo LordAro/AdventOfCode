@@ -12,10 +12,10 @@ fn expand_disk_map(disk_map: &str) -> Vec<usize> {
         .filter_map(|(n, c)| c.to_digit(10).map(|d| (n, d as usize)))
     {
         if n % 2 == 0 {
-            disk_layout.extend(iter::repeat(id).take(d));
+            disk_layout.extend(iter::repeat_n(id, d));
             id += 1;
         } else {
-            disk_layout.extend(iter::repeat(usize::MAX).take(d));
+            disk_layout.extend(iter::repeat_n(usize::MAX, d));
         }
     }
     disk_layout

@@ -26,9 +26,9 @@ fn do_move(positions: &mut [Vec<usize>], move_no: usize) {
     let next_col = (cur_col + 1) % positions.len();
     let next_col_len = positions[next_col].len();
 
-    let mut is_left_side = ((clapper / next_col_len) % 2) == 0;
+    let mut is_left_side = (clapper / next_col_len).is_multiple_of(2);
     let mut new_clapper_pos = clapper;
-    if clapper % next_col_len == 0 {
+    if clapper.is_multiple_of(next_col_len) {
         new_clapper_pos = next_col_len;
         is_left_side = !is_left_side;
     } else {

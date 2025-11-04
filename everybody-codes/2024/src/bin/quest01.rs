@@ -9,9 +9,11 @@ fn potion_requirement(c: char, count: usize) -> usize {
         'D' => 5,
         'x' => 0,
         _ => unreachable!(),
-    }) + (c != 'x')
-        .then_some(count.saturating_sub(1))
-        .unwrap_or_default()
+    }) + if c != 'x' {
+        count.saturating_sub(1)
+    } else {
+        Default::default()
+    }
 }
 
 fn required_potions<const GROUP_SIZE: usize>(creatures: &[char]) -> usize {

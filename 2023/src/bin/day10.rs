@@ -173,7 +173,7 @@ fn main() -> io::Result<()> {
     })
     .collect();
 
-    let max_distance = (route.len() + 1) / 2;
+    let max_distance = route.len().div_ceil(2);
     println!("Maximum distance from start: {}", max_distance);
 
     let enclosed_tiles = get_enclosed_pieces(&map, &route);

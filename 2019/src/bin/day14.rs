@@ -5,7 +5,7 @@ use std::io::{BufRead, BufReader};
 
 type ReactionMap<'a> = HashMap<&'a str, (u64, Vec<(&'a str, u64)>)>;
 
-fn parse_reactions<T: AsRef<str>>(input_str: &[T]) -> ReactionMap {
+fn parse_reactions<T: AsRef<str>>(input_str: &[T]) -> ReactionMap<'_> {
     input_str
         .iter()
         .map(|s| {

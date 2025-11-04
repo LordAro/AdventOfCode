@@ -9,7 +9,7 @@ fn blink(stone: u64) -> Vec<u64> {
         return vec![1];
     }
     let num_digits = stone.ilog10() + 1;
-    if num_digits % 2 == 0 {
+    if num_digits.is_multiple_of(2) {
         return vec![
             stone / 10_u32.pow(num_digits / 2) as u64,
             stone % 10_u32.pow(num_digits / 2) as u64,

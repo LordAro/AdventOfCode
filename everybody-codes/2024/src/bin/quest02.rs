@@ -95,8 +95,7 @@ fn main() -> io::Result<()> {
                         // minor short circuit
                         continue;
                     }
-                    let ltr_coords: Vec<_> = iter::repeat(y)
-                        .take(word.len())
+                    let ltr_coords: Vec<_> = iter::repeat_n(y, word.len())
                         .zip((x..x + word.len()).map(|x2| x2 % inscription[y].len()))
                         .collect();
 
@@ -111,7 +110,7 @@ fn main() -> io::Result<()> {
                     // top and bottom don't wrap round
                     if y + word.len() <= inscription.len() {
                         let ttb_coords: Vec<_> = (y..y + word.len())
-                            .zip(iter::repeat(x).take(word.len()))
+                            .zip(iter::repeat_n(x, word.len()))
                             .collect();
                         let ttb_word: String = ttb_coords
                             .iter()

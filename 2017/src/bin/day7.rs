@@ -9,14 +9,14 @@ use std::io::{BufRead, BufReader};
 fn get_total_weight(map: &HashMap<String, (i32, Vec<String>)>, item: &str) -> i32 {
     match map.get(item) {
         Some(&(weight, ref children)) => {
-            return weight
+            weight
                 + children
                     .iter()
                     .map(|i| get_total_weight(map, i))
                     .sum::<i32>()
         }
         None => panic!("Unknown item: {}", item),
-    };
+    }
 }
 
 fn get_child_weights(map: &HashMap<String, (i32, Vec<String>)>, item: &str) -> Vec<(String, i32)> {

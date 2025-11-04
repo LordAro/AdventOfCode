@@ -6,7 +6,6 @@ BINDIR=target/release
 endif
 FLAGS=-Wwarnings -Wbad-style -Wfuture-incompatible -Wunused
 
-FILEEXT=rs
 SRCDIR=src/bin
 
 PERF?=perf

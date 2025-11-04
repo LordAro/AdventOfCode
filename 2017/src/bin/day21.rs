@@ -89,7 +89,7 @@ fn main() {
     ];
 
     for n in 0..18 {
-        let g_size = if grid.len() % 2 == 0 { 2 } else { 3 };
+        let g_size = if grid.len().is_multiple_of(2) { 2 } else { 3 };
         let len = grid.len() / g_size;
 
         let mut newgrid = if g_size == 2 {
@@ -112,7 +112,7 @@ fn main() {
                     .filter(|&(k, _)| {
                         k.len() == subgrid.len() && light_total(k) == light_total(&subgrid)
                     })
-                    .find(|&(k, _)| variants(k).iter().any(|p| *p == subgrid))
+                    .find(|&(k, _)| variants(k).contains(&subgrid))
                     .unwrap()
                     .1
                     .clone();

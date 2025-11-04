@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 // rotate right
-fn spin_transform<T: Clone>(input: &Vec<T>, idx: usize) -> Vec<T> {
+fn spin_transform<T: Clone>(input: &[T], idx: usize) -> Vec<T> {
     [&input[(input.len() - idx)..], &input[..(input.len() - idx)]].concat()
 }
 

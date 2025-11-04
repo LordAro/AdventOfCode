@@ -26,18 +26,17 @@ fn knot_hash(input: &[u8]) -> Vec<u8> {
             pos = (pos + ins as usize + skip + (r * input2.len())) % 256;
         }
     }
-    return rope
-        .chunks(16)
+    rope.chunks(16)
         .map(|c| c.iter().fold(0, |a, b| a ^ b))
         .map(|c| c as u8)
-        .collect();
+        .collect()
 }
 
 fn flood_fill(grid: &Vec<Vec<u8>>, x: usize, y: usize, filled: &mut Vec<(usize, usize)>) {
     if grid[x][y] != 1 {
         return;
     }
-    if filled.iter().any(|&t| t == (x, y)) {
+    if filled.contains(&(x, y)) {
         return;
     }
     filled.push((x, y));

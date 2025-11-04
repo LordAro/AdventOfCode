@@ -1,5 +1,6 @@
 [package]
 name = "AdventofCode"
+edition = "2015"
 version = "2017.8.1"
 authors = ["Charles Pigott <charlespigott@googlemail.com>"]
 
