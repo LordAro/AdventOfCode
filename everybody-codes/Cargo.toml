@@ -1,11 +1,11 @@
 [package]
 name = "everybody_codes"
-version = "2024.1.0"
+version = "2025.1.0"
 authors = ["Charles Pigott <charlespigott@googlemail.com>"]
-edition = "2021"
+edition = "2024"
 
 [dependencies]
-itertools = "0.13.0"
+itertools = "0.14.0"
 memoise = "0.3.2"
 fixedbitset = "0.5.7"
 rustc-hash = "2.0.0"
