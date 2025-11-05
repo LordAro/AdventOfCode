@@ -12,8 +12,8 @@ pub fn get_input_files() -> io::Result<(String, String, String)> {
         .skip("quest".len())
         .collect();
     Ok((
-        format!("inputs/everybody_codes_e2024_q{exe_name}_p1.txt"),
-        format!("inputs/everybody_codes_e2024_q{exe_name}_p2.txt"),
-        format!("inputs/everybody_codes_e2024_q{exe_name}_p3.txt"),
+        format!("inputs/everybody_codes_e2025_q{exe_name}_p1.txt"),
+        format!("inputs/everybody_codes_e2025_q{exe_name}_p2.txt"),
+        format!("inputs/everybody_codes_e2025_q{exe_name}_p3.txt"),
     ))
 }
