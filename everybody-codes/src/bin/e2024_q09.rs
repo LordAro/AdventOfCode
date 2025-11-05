@@ -12,10 +12,10 @@ fn get_beetle_count(available_stamps: &[usize], sparkball: usize) -> Option<usiz
         let n = sparkball
             .checked_sub(*stamp)
             .and_then(|n| get_beetle_count(available_stamps, n));
-        if let Some(n) = n {
-            if min_count.is_none() || n < min_count? {
-                min_count = Some(n + 1);
-            }
+        if let Some(n) = n
+            && (min_count.is_none() || n < min_count?)
+        {
+            min_count = Some(n + 1);
         }
     }
     min_count

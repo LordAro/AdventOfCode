@@ -156,12 +156,12 @@ fn process_merged_grid(full_grid: &[Vec<char>]) -> usize {
         ) {
             let mut made_changes_local = false;
             for (y, x) in iproduct!(2..6, 2..6) {
-                if grid[gy + y][gx + x] == '.' {
-                    if let Some(r) = try_find_symbol(&grid, gx, gy, x, y) {
-                        grid[gy + y][gx + x] = r;
-                        made_changes += 1;
-                        made_changes_local = true;
-                    }
+                if grid[gy + y][gx + x] == '.'
+                    && let Some(r) = try_find_symbol(&grid, gx, gy, x, y)
+                {
+                    grid[gy + y][gx + x] = r;
+                    made_changes += 1;
+                    made_changes_local = true;
                 }
             }
             if made_changes_local {

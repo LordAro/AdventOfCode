@@ -31,9 +31,7 @@ fn engrave_point(a: Point) -> Option<Point> {
         r = mul(r, r);
         r = div(r, (100_000, 100_000));
         r = add(r, a);
-        if !(-1_000_000..=1_000_000).contains(&r.0)
-            || !(-1_000_000..=1_000_000).contains(&r.1)
-        {
+        if !(-1_000_000..=1_000_000).contains(&r.0) || !(-1_000_000..=1_000_000).contains(&r.1) {
             return None;
         }
     }
