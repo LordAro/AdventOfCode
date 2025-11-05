@@ -26,42 +26,43 @@ fn mul(a: Point, b: Point) -> Point {
 }
 
 fn engrave_point(a: Point) -> Option<Point> {
-    let mut r_com = (0, 0);
+    let mut r = (0, 0);
     for _ in 0..100 {
-        r_com = mul(r_com, r_com);
-        r_com = div(r_com, (100_000, 100_000));
-        r_com = add(r_com, a);
-        if !(-1_000_000..=1_000_000).contains(&r_com.0)
-            || !(-1_000_000..=1_000_000).contains(&r_com.1)
+        r = mul(r, r);
+        r = div(r, (100_000, 100_000));
+        r = add(r, a);
+        if !(-1_000_000..=1_000_000).contains(&r.0)
+            || !(-1_000_000..=1_000_000).contains(&r.1)
         {
             return None;
         }
     }
-    Some(r_com)
+    Some(r)
 }
 
 fn main() -> io::Result<()> {
-    let (p1_input_filename, p2_input_filename, p3_input_filename) =
+    let (p1_input_filename, p2_input_filename, _p3_input_filename) =
         everybody_codes::get_input_files()?;
 
     let a_com = get_a(&p1_input_filename)?;
 
-    let mut r_com = (0, 0);
+    let mut r = (0, 0);
     for _ in 0..3 {
         // R = R * R
-        r_com = mul(r_com, r_com);
+        r = mul(r, r);
         // R = R / [10,10]
-        r_com = div(r_com, (10, 10));
+        r = div(r, (10, 10));
         // R = R + A
-        r_com = add(r_com, a_com);
+        r = add(r, a_com);
     }
 
+    // p3 input is the same(!), so merge loops
     let a_com = get_a(&p2_input_filename)?;
 
     let mut p2_will_engrave = 0;
     let mut p3_will_engrave = 0;
-    for a_x in (a_com.0..=a_com.0 + 1000) {
-        for a_y in (a_com.1..=a_com.1 + 1000) {
+    for a_x in a_com.0..=a_com.0 + 1000 {
+        for a_y in a_com.1..=a_com.1 + 1000 {
             let cur_a = (a_x, a_y);
             let point = engrave_point(cur_a);
             if point.is_some() {
@@ -73,7 +74,7 @@ fn main() -> io::Result<()> {
         }
     }
 
-    println!("P1: Result: [{},{}]", r_com.0, r_com.1);
+    println!("P1: Result: [{},{}]", r.0, r.1);
     println!("P2: Number of engraved points: {p2_will_engrave}");
     println!("P2: Number of detailed engraved points: {p3_will_engrave}");
     Ok(())
