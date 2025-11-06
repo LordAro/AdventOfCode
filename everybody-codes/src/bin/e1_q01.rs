@@ -23,34 +23,6 @@ fn parse_input(input_str: &str) -> Vec<InputTuple> {
         .collect()
 }
 
-
-fn gcd(a: usize, b: usize) -> usize {
-    // Use Stein's algorithm
-    let mut m = a;
-    let mut n = b;
-    if m == 0 || n == 0 {
-        return (m | n);
-    }
-
-    // find common factors of 2
-    let shift = (m | n).trailing_zeros();
-
-    // divide n and m by 2 until odd
-    m >>= m.trailing_zeros();
-    n >>= n.trailing_zeros();
-
-    while m != n {
-        if m > n {
-            m -= n;
-            m >>= m.trailing_zeros();
-        } else {
-            n -= m;
-            n >>= n.trailing_zeros();
-        }
-    }
-    m << shift
-}
-
 fn eni(n: usize, exp: usize, mod_: usize) -> usize {
     let mut res = 0;
     let mut score = 1;
@@ -85,7 +57,6 @@ fn eni_lim(n: usize, exp: usize, mod_: usize) -> usize {
 }
 
 fn eni_sum(n: usize, exp: usize, mod_: usize) -> usize {
-    println!("eni_sum({n}, {exp}, {mod_})");
     let mut res = vec![];
     let mut score = 1;
     let mut repeat_idx = 0;
@@ -99,21 +70,13 @@ fn eni_sum(n: usize, exp: usize, mod_: usize) -> usize {
     }
     let rem_start: usize = res.iter().take(repeat_idx).sum(); // always at most 1?
     let repeat_sum: usize = res.iter().skip(repeat_idx).sum();
-    let repeated_total = exp - 1) / (res.len() - repeat_idx) * repeat_sum;
-    let rem_end: usize = res.iter().skip(exp % (res.len() - repeat_idx)).sum();
-    println!("{exp} == {repeat_idx} + {} + {}", exp / (res.len() - repeat_idx), exp % (res.len() - repeat_idx));
-    assert_eq!(repeat_idx + (exp / (res.len() - repeat_idx)) + (exp % (res.len() - repeat_idx)), exp);
+    let repeated_total = (exp - repeat_idx) / (res.len() - repeat_idx) * repeat_sum;
+    let rem_end: usize = res
+        .iter()
+        .skip(repeat_idx)
+        .take((exp - repeat_idx) % (res.len() - repeat_idx))
+        .sum();
     rem_start + repeated_total + rem_end
-}
-
-fn eni_sum_dumb(n: usize, exp: usize, mod_: usize) -> usize {
-    let mut res = vec![];
-    let mut score = 1;
-    for _ in 0..exp {
-        score = (score * n).rem_euclid(mod_);
-        res.push(score);
-    }
-    res.iter().sum()
 }
 
 fn main() -> io::Result<()> {
@@ -215,6 +178,5 @@ A=7334 B=9016 C=8524 X=297284338 Y=1565962337 Z=86750102612 M=145";
             .max()
             .unwrap();
         assert_eq!(max_calc, 7276515438396);
-
     }
 }
