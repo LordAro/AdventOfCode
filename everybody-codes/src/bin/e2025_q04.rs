@@ -9,18 +9,18 @@ fn main() -> io::Result<()> {
         .lines()
         .map(|l| l.parse::<f64>().unwrap())
         .collect();
-    let mut num_turns = 2025.;
+    let mut p1_num_turns = 2025.;
     for win in p1_input.windows(2) {
-        num_turns *= win[0] / win[1];
+        p1_num_turns *= win[0] / win[1];
     }
 
     let p2_input: Vec<_> = fs::read_to_string(p2_input_filename)?
         .lines()
         .map(|l| l.parse::<f64>().unwrap())
         .collect();
-    let mut target: f64 = 10_000_000_000_000.;
+    let mut p2_needed_turns: f64 = 10_000_000_000_000.;
     for win in p2_input.windows(2) {
-        target *= win[1] / win[0];
+        p2_needed_turns *= win[1] / win[0];
     }
 
     let p3_input: Vec<_> = fs::read_to_string(p3_input_filename)?
@@ -34,14 +34,13 @@ fn main() -> io::Result<()> {
             }
         })
         .collect();
-
     let mut p3_num_turns: f64 = 100.;
     for win in p3_input.windows(2) {
         p3_num_turns *= win[0].1 / win[1].0;
     }
 
-    println!("P1: Number of final gear turns: {}", num_turns.floor());
-    println!("P2: Number of first gear turns: {}", target.ceil());
+    println!("P1: Number of final gear turns: {}", p1_num_turns.floor());
+    println!("P2: Number of first gear turns: {}", p2_needed_turns.ceil());
     println!("P3: Number of final gear turns: {}", p3_num_turns.floor());
     Ok(())
 }
