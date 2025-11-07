@@ -74,6 +74,6 @@ fn main() -> io::Result<()> {
 
     println!("P1: Result: [{},{}]", r.0, r.1);
     println!("P2: Number of engraved points: {p2_will_engrave}");
-    println!("P2: Number of detailed engraved points: {p3_will_engrave}");
+    println!("P3: Number of detailed engraved points: {p3_will_engrave}");
     Ok(())
 }
