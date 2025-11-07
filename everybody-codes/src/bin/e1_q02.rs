@@ -1,12 +1,13 @@
 use std::fs;
 use std::io;
-use std::mem;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 struct Symbol {
     rank: usize,
     id: usize,
     symbol: char,
+    left: Option<Box<Self>>,
+    right: Option<Box<Self>>,
 }
 
 #[derive(Debug)]
@@ -29,6 +30,8 @@ fn parse_input(input: &str) -> Vec<Cmd> {
                     rank: left_rank,
                     symbol: left_sym,
                     id,
+                    left: None,
+                    right: None,
                 };
                 let right_elts: Vec<_> = it.next().unwrap()[6..].split(',').collect();
                 let right_rank = right_elts[0][1..].parse().unwrap();
@@ -37,6 +40,8 @@ fn parse_input(input: &str) -> Vec<Cmd> {
                     rank: right_rank,
                     symbol: right_sym,
                     id,
+                    left: None,
+                    right: None,
                 };
                 Cmd::Add(left, right)
             } else {
@@ -47,129 +52,94 @@ fn parse_input(input: &str) -> Vec<Cmd> {
         .collect()
 }
 
-fn overwrite_elt(tree: &mut Vec<Option<Symbol>>, idx: usize, new_node: Option<Symbol>) {
-    tree.resize(tree.len().max(idx + 1), None);
-    tree[idx] = new_node;
-}
-
-fn insert_elt(tree: &mut Vec<Option<Symbol>>, parent_idx: usize, new_node: Symbol) {
-    // input strictly ordered, no need to check for equality
-    let child_idx = if new_node.rank < tree[parent_idx].unwrap().rank {
-        2 * parent_idx + 1
+fn insert_elt(tree: &mut Box<Symbol>, new_node: Box<Symbol>) {
+    if tree.rank < new_node.rank {
+        if let Some(left) = &mut tree.left {
+            insert_elt(left, new_node);
+        } else {
+            tree.left = Some(new_node);
+        }
+    } else if tree.rank > new_node.rank {
+        if let Some(right) = &mut tree.right {
+            insert_elt(right, new_node);
+        } else {
+            tree.right = Some(new_node);
+        }
     } else {
-        2 * parent_idx + 2
-    };
-
-    if tree.len() > child_idx && tree[child_idx].is_some() {
-        insert_elt(tree, child_idx, new_node);
-    } else {
-        overwrite_elt(tree, child_idx, Some(new_node));
+        // input strictly ordered, no need to check for equality
+        unreachable!();
     }
 }
 
-fn swap_elt(l_tree: &mut [Option<Symbol>], r_tree: &mut [Option<Symbol>], id: usize) {
-    let l_node_idx = l_tree
-        .iter()
-        .position(|n| n.is_some_and(|v| v.id == id))
-        .unwrap();
-    let r_node_idx = r_tree
-        .iter()
-        .position(|n| n.is_some_and(|v| v.id == id))
-        .unwrap();
-    mem::swap(&mut l_tree[l_node_idx], &mut r_tree[r_node_idx]);
-}
-
-fn extract_subtree(tree: &mut [Option<Symbol>], idx: usize) -> Vec<Option<Symbol>> {
-    let mut subtree = Vec::new();
-    let mut to_search = vec![(idx, 0)];
-    while let Some((cur_ix, new_ix)) = to_search.pop() {
-        if cur_ix < tree.len() && tree[cur_ix].is_some() {
-            overwrite_elt(&mut subtree, new_ix, tree[cur_ix]);
-            tree[cur_ix] = None;
-            to_search.push((2 * cur_ix + 1, 2 * new_ix + 1));
-            to_search.push((2 * cur_ix + 2, 2 * new_ix + 2));
+fn find_elts(tree: &mut Symbol, id: usize) -> Vec<&mut Symbol> {
+    let mut res = vec![];
+    let mut to_search = vec![tree];
+    while let Some(elt) = to_search.pop() {
+        // Prevent horrible explosions from nodes with the same ids being part of the same subtree
+        if elt.id == id {
+            res.push(elt);
+        } else {
+            if let Some(left) = &mut elt.left {
+                to_search.push(left);
+            }
+            if let Some(right) = &mut elt.right {
+                to_search.push(right);
+            }
         }
     }
-    subtree
+    res
 }
 
-fn enplace_subtree(
-    tree: &mut Vec<Option<Symbol>>,
-    subtree: &[Option<Symbol>],
-    tree_ix: usize,
-    sub_ix: usize,
-) {
-    if sub_ix < subtree.len() && subtree[sub_ix].is_some() {
-        overwrite_elt(tree, tree_ix, subtree[sub_ix]);
-        enplace_subtree(tree, subtree, 2 * tree_ix + 1, 2 * sub_ix + 1);
-        enplace_subtree(tree, subtree, 2 * tree_ix + 2, 2 * sub_ix + 2);
-    }
+fn swap_elt(left_tree: &mut Box<Symbol>, right_tree: &mut Box<Symbol>, id: usize) {
+    let l = &mut find_elts(left_tree, id)[0];
+    let r = &mut find_elts(right_tree, id)[0];
+    // Swap the values
+    let l_sym = l.symbol;
+    let l_rank = l.rank;
+    let r_sym = r.symbol;
+    let r_rank = r.rank;
+    l.symbol = r_sym;
+    l.rank = r_rank;
+    r.symbol = l_sym;
+    r.rank = l_rank;
 }
 
-fn swap_elt_recursive(
-    l_tree: &mut Vec<Option<Symbol>>,
-    r_tree: &mut Vec<Option<Symbol>>,
-    id: usize,
-) {
-    let l_node_idxs: Vec<_> = l_tree
-        .iter()
-        .enumerate()
-        .filter(|(_, n)| n.is_some_and(|v| v.id == id))
-        .map(|(i, _)| i)
-        .collect();
-    let r_node_idxs: Vec<_> = r_tree
-        .iter()
-        .enumerate()
-        .filter(|(_, n)| n.is_some_and(|v| v.id == id))
-        .map(|(i, _)| i)
-        .collect();
-
-    if l_node_idxs.len() > 1 {
-        // Swaps have meant both nodes with same id have ended up on same subtree.
-        // Needs some thought (what if one is now an ancestor of the other??)
-        let l1_extracted_subtree = extract_subtree(l_tree, l_node_idxs[0]);
-        assert!(l_tree[l_node_idxs[1]].is_some()); // shouldn't have been removed by extract
-        let l2_extracted_subtree = extract_subtree(l_tree, l_node_idxs[1]);
-        enplace_subtree(l_tree, &l1_extracted_subtree, l_node_idxs[1], 0);
-        enplace_subtree(l_tree, &l2_extracted_subtree, l_node_idxs[0], 0);
-    } else if r_node_idxs.len() > 1 {
-        let r1_extracted_subtree = extract_subtree(r_tree, r_node_idxs[0]);
-        assert!(r_tree[r_node_idxs[1]].is_some()); // shouldn't have been removed by extract
-        let r2_extracted_subtree = extract_subtree(r_tree, r_node_idxs[1]);
-        enplace_subtree(r_tree, &r1_extracted_subtree, r_node_idxs[1], 0);
-        enplace_subtree(r_tree, &r2_extracted_subtree, r_node_idxs[0], 0);
-    } else if l_node_idxs.len() == 1 && r_node_idxs.len() == 1 {
-        let l_extracted_subtree = extract_subtree(l_tree, l_node_idxs[0]);
-        let r_extracted_subtree = extract_subtree(r_tree, r_node_idxs[0]);
-        enplace_subtree(r_tree, &l_extracted_subtree, r_node_idxs[0], 0);
-        enplace_subtree(l_tree, &r_extracted_subtree, l_node_idxs[0], 0);
+fn swap_tree(left_tree: &mut Box<Symbol>, right_tree: &mut Box<Symbol>, id: usize) {
+    let mut ls = find_elts(left_tree, id);
+    let mut rs = find_elts(right_tree, id);
+    if ls.len() == 1 && rs.len() == 1 {
+        std::mem::swap(ls[0], rs[0]);
+    } else if ls.len() == 2 {
+        let mut it = ls.into_iter();
+        let a = it.next().unwrap();
+        let b = it.next().unwrap();
+        std::mem::swap(a, b);
+    } else if rs.len() == 2 {
+        let mut it = rs.into_iter();
+        let a = it.next().unwrap();
+        let b = it.next().unwrap();
+        std::mem::swap(a, b);
     } else {
         unreachable!();
     }
 }
 
-fn build_trees<const RECURSIVE_SWAP: bool>(
-    input_syms: &[Cmd],
-) -> (Vec<Option<Symbol>>, Vec<Option<Symbol>>) {
-    let mut left_tree = Vec::new();
-    let mut right_tree = Vec::new();
-    match input_syms[0] {
-        Cmd::Add(left, right) => {
-            left_tree.push(Some(left));
-            right_tree.push(Some(right));
-        }
+fn build_trees<const RECURSIVE_SWAP: bool>(input_syms: &[Cmd]) -> (Box<Symbol>, Box<Symbol>) {
+    // roots
+    let (mut left_tree, mut right_tree) = match &input_syms[0] {
+        Cmd::Add(left, right) => (Box::new(left.clone()), Box::new(right.clone())),
         _ => unreachable!(),
-    }
+    };
 
     for cmd in &input_syms[1..] {
         match cmd {
             Cmd::Add(left, right) => {
-                insert_elt(&mut left_tree, 0, *left);
-                insert_elt(&mut right_tree, 0, *right);
+                insert_elt(&mut left_tree, Box::new(left.clone()));
+                insert_elt(&mut right_tree, Box::new(right.clone()));
             }
             Cmd::Swap(id) => {
                 if RECURSIVE_SWAP {
-                    swap_elt_recursive(&mut left_tree, &mut right_tree, *id);
+                    swap_tree(&mut left_tree, &mut right_tree, *id);
                 } else {
                     swap_elt(&mut left_tree, &mut right_tree, *id);
                 }
@@ -180,25 +150,25 @@ fn build_trees<const RECURSIVE_SWAP: bool>(
     (left_tree, right_tree)
 }
 
-fn get_nodes_at_level(tree: &[Option<Symbol>], level: u32) -> Vec<Symbol> {
-    let start_index = 2_usize.pow(level) - 1;
-    if start_index > tree.len() {
-        return vec![];
+fn get_widest_level(tree: &Symbol) -> Vec<&Symbol> {
+    let mut levels = vec![];
+    // DFS to maintain order (though I don't think it matters?)
+    let mut to_search = vec![(tree, 0)];
+    while let Some((elt, lvl)) = to_search.pop() {
+        if levels.len() <= lvl {
+            levels.push(vec![]); // can be at most 1 out
+        }
+        levels[lvl].push(elt);
+        if let Some(left) = &elt.left {
+            to_search.push((left, lvl + 1));
+        }
+        if let Some(right) = &elt.right {
+            to_search.push((right, lvl + 1));
+        }
     }
-    let end_index = 2_usize.pow(level + 1) - 2;
-
-    tree[start_index..tree.len().min(end_index + 1)]
-        .iter()
-        .flatten()
-        .copied()
-        .collect()
-}
-
-fn get_largest_level(tree: &[Option<Symbol>]) -> Vec<Symbol> {
-    (0..)
-        .map(|lvl| get_nodes_at_level(tree, lvl))
-        .take_while(|ns| !ns.is_empty())
-        // cheap and dirty way of getting the first element (closest to the root)
+    // cheap and dirty way of getting the first element (closest to the root)
+    levels
+        .into_iter()
         .min_by_key(|ns| -(ns.len() as isize))
         .unwrap()
 }
@@ -210,8 +180,8 @@ fn main() -> io::Result<()> {
     let input = parse_input(&fs::read_to_string(p1_input_filename)?);
     let (left_tree, right_tree) = build_trees::<false>(&input);
 
-    let largest_left_level = get_largest_level(&left_tree);
-    let largest_right_level = get_largest_level(&right_tree);
+    let largest_left_level = get_widest_level(&left_tree);
+    let largest_right_level = get_widest_level(&right_tree);
     let p1_lvl_str: String = largest_left_level
         .iter()
         .map(|s| s.symbol)
@@ -221,8 +191,8 @@ fn main() -> io::Result<()> {
     let input = parse_input(&fs::read_to_string(p2_input_filename)?);
     let (left_tree, right_tree) = build_trees::<false>(&input);
 
-    let largest_left_level = get_largest_level(&left_tree);
-    let largest_right_level = get_largest_level(&right_tree);
+    let largest_left_level = get_widest_level(&left_tree);
+    let largest_right_level = get_widest_level(&right_tree);
     let p2_lvl_str: String = largest_left_level
         .iter()
         .map(|s| s.symbol)
@@ -232,8 +202,8 @@ fn main() -> io::Result<()> {
     let input = parse_input(&fs::read_to_string(p3_input_filename)?);
     let (left_tree, right_tree) = build_trees::<true>(&input);
 
-    let largest_left_level = get_largest_level(&left_tree);
-    let largest_right_level = get_largest_level(&right_tree);
+    let largest_left_level = get_widest_level(&left_tree);
+    let largest_right_level = get_widest_level(&right_tree);
     let p3_lvl_str: String = largest_left_level
         .iter()
         .map(|s| s.symbol)
@@ -262,14 +232,38 @@ ADD id=7 left=[4,E] right=[21,N]";
         let input = parse_input(input_str);
         let (left_tree, right_tree) = build_trees::<false>(&input);
 
-        let largest_left_level = get_largest_level(&left_tree);
-        let largest_right_level = get_largest_level(&right_tree);
+        let largest_left_level = get_widest_level(&left_tree);
+        let largest_right_level = get_widest_level(&right_tree);
         let lvl_str: String = largest_left_level
             .iter()
             .map(|s| s.symbol)
             .chain(largest_right_level.iter().map(|s| s.symbol))
             .collect();
         assert_eq!(lvl_str, "CFGNLK");
+    }
+
+    #[test]
+    fn ex2() {
+        let input_str = "ADD id=1 left=[10,A] right=[30,H]
+ADD id=2 left=[15,D] right=[25,I]
+ADD id=3 left=[12,F] right=[31,J]
+ADD id=4 left=[5,B] right=[27,L]
+ADD id=5 left=[3,C] right=[28,M]
+SWAP 1
+SWAP 5
+ADD id=6 left=[20,G] right=[32,K]
+ADD id=7 left=[4,E] right=[21,N]";
+        let input = parse_input(input_str);
+        let (left_tree, right_tree) = build_trees::<false>(&input);
+
+        let largest_left_level = get_widest_level(&left_tree);
+        let largest_right_level = get_widest_level(&right_tree);
+        let lvl_str: String = largest_left_level
+            .iter()
+            .map(|s| s.symbol)
+            .chain(largest_right_level.iter().map(|s| s.symbol))
+            .collect();
+        assert_eq!(lvl_str, "MGFLNK");
     }
 
     #[test]
@@ -287,8 +281,8 @@ SWAP 2";
         let input = parse_input(input_str);
         let (left_tree, right_tree) = build_trees::<true>(&input);
 
-        let largest_left_level = get_largest_level(&left_tree);
-        let largest_right_level = get_largest_level(&right_tree);
+        let largest_left_level = get_widest_level(&left_tree);
+        let largest_right_level = get_widest_level(&right_tree);
         let lvl_str: String = largest_left_level
             .iter()
             .map(|s| s.symbol)
@@ -313,8 +307,8 @@ SWAP 5";
         let input = parse_input(input_str);
         let (left_tree, right_tree) = build_trees::<true>(&input);
 
-        let largest_left_level = get_largest_level(&left_tree);
-        let largest_right_level = get_largest_level(&right_tree);
+        let largest_left_level = get_widest_level(&left_tree);
+        let largest_right_level = get_widest_level(&right_tree);
         let lvl_str: String = largest_left_level
             .iter()
             .map(|s| s.symbol)
