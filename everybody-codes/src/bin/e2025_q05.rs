@@ -1,6 +1,5 @@
 use std::fs;
 use std::io;
-use std::iter;
 
 #[derive(Debug)]
 struct Node {
@@ -43,16 +42,15 @@ fn num_digits(n: usize) -> u32 {
     if n > 0 { n.ilog10() + 1 } else { 1 }
 }
 
+// real inputs don't appear to use values > 9, but the example input does, so ilog it is
 fn get_quality(bone: &[Node]) -> usize {
     bone.iter()
         .fold(0, |acc, s| acc * 10usize.pow(num_digits(s.num)) + s.num)
 }
 
 fn get_node_num(node: &Node) -> usize {
-    // Overly complex, but means I can use flatten to fold over all remaining numbers
-    iter::once(node.left)
-        .chain(iter::once(Some(node.num)))
-        .chain(iter::once(node.right))
+    [node.left, Some(node.num), node.right]
+        .into_iter()
         .flatten()
         .fold(0, |acc, s| acc * 10usize.pow(num_digits(s)) + s)
 }
