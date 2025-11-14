@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::fs;
 use std::io;
 
@@ -6,20 +5,12 @@ fn count_crossings_for_point<const NUM_NAILS: usize>(
     existing_crossings: &[(usize, usize)],
     new_line: (usize, usize),
 ) -> usize {
-    let (a, b) = new_line;
-    // work out which direction to look for crossings
-    // (there's got to be a better way of doing this?)
-    let side1: HashSet<_> = (a + 1..b).collect();
-    let side2: HashSet<_> = (b + 1..a + NUM_NAILS).map(|x| x % NUM_NAILS).collect();
+    let (ns, ne) = new_line;
 
-    // For every line that we've already placed
     existing_crossings
         .iter()
-        // Remove lines that start/end at one of our points - can't cross
-        .filter(|(c, d)| a != *c && b != *c && a != *d && b != *d)
-        // Remove lines that are exclusive on one side or the other and don't cross over
-        .filter(|(c, d)| !(side1.contains(c) && side1.contains(d)))
-        .filter(|(c, d)| !(side2.contains(c) && side2.contains(d)))
+        // line intersects (copied from AW)
+        .filter(|(ls, le)| (ns < *ls && *ls < ne && ne < *le) || (*ls < ns && ns < *le && *le < ne))
         .count()
 }
 
@@ -27,9 +18,8 @@ fn generate_crossings<const NUM_NAILS: usize>(input: &[usize]) -> (usize, Vec<(u
     let mut total_crossings = 0;
     let mut seen_crossings: Vec<(usize, usize)> = vec![];
     for ab in input.windows(2) {
-        // 1-based to 0-based
-        let a = (ab[0] - 1).min(ab[1] - 1);
-        let b = (ab[1] - 1).max(ab[0] - 1);
+        let a = ab[0].min(ab[1]);
+        let b = ab[1].max(ab[0]);
 
         let new_crossings = count_crossings_for_point::<NUM_NAILS>(&seen_crossings, (a, b));
         total_crossings += new_crossings;
