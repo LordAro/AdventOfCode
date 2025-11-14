@@ -1,10 +1,9 @@
-use std::cmp;
 use std::fs;
 use std::io;
 
 fn count_crossings<const NUM_NAILS: usize>(input: &[usize]) -> usize {
     let mut num_crossings = 0;
-    let mut seen_crossings = vec![];
+    let mut seen_crossings: Vec<(usize, usize)> = vec![];
     for ab in input.windows(2) {
         // 1-based to 0-based
         let a = (ab[0] - 1).min(ab[1] - 1);
@@ -15,24 +14,22 @@ fn count_crossings<const NUM_NAILS: usize>(input: &[usize]) -> usize {
             continue;
         }
 
+        // inclusive, as if start/end at the same point, can't be a crossing
         // work out which direction to look for crossings
         // (there's got to be a better way of doing this?)
-        let n = (a + 1..b).collect::<Vec<_>>();
-        let m = (b + 1..a + NUM_NAILS)
+        let not_crossed1: Vec<_> = (a..=b).collect::<Vec<_>>();
+        let not_crossed2: Vec<_> = (b..=a + NUM_NAILS)
             .map(|x| x % NUM_NAILS)
             .collect::<Vec<_>>();
-        let crossing_indexes = cmp::min_by_key(n, m, |c| c.len());
 
-        println!("ab: {:?}", (a, b));
+        //println!("ab: {:?}", (a, b));
         let new_crossings = seen_crossings
             .iter()
-            .filter(|(c, d)| {
-                (crossing_indexes.contains(c) && *d != a && *d != b)
-                    || (crossing_indexes.contains(d) && *c != a && *c != b)
-            })
-            .inspect(|cd| println!("crossing: {:?}", cd))
+            .filter(|(c, d)| !(not_crossed1.contains(c) && not_crossed1.contains(d)))
+            .filter(|(c, d)| !(not_crossed2.contains(c) && not_crossed2.contains(d)))
+            //.inspect(|cd| println!("  => crossed: {cd:?}"))
             .count();
-        println!("  => {}", new_crossings);
+        //println!("  => {}", new_crossings);
         num_crossings += new_crossings;
 
         seen_crossings.push((a, b));
