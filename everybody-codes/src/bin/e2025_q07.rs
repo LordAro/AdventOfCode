@@ -31,6 +31,14 @@ fn does_name_match(name: &str, mapping: &HashMap<u8, Vec<u8>>) -> bool {
 }
 
 fn count_unique_names(prefix: &str, mapping: &HashMap<u8, Vec<u8>>) -> usize {
+    // Only need to keep track of the last byte
+    // (and hope that there aren't any converging mappings at any point in the input,
+    // as the solutions will then not be unique)
+    //   A
+    //  / \
+    //  B C
+    //  \ /
+    //   D
     let mut to_search = vec![(prefix.as_bytes().last().unwrap(), prefix.len())];
     let mut count = 0;
     while let Some((last_b, len)) = to_search.pop() {
