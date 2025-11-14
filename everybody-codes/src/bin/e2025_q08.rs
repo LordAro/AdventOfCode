@@ -72,8 +72,9 @@ fn main() -> io::Result<()> {
         .map(|s| s.parse::<usize>().unwrap())
         .collect();
     let (_, p3_crossings) = generate_crossings::<256>(&p3_input);
-    let p3_max_num_cuts = (0..255)
-        .flat_map(|a| (a + 1..256).map(move |b| (a, b)))
+    let p3_max_num_cuts = (0..254)
+        // skip +1 as that can't create cuts
+        .flat_map(|a| (a + 2..256).map(move |b| (a, b)))
         .map(|(a, b)| {
             // number of lines we cross, and those that are the same point
             count_crossings_for_point::<256>(&p3_crossings, (a, b))
@@ -112,8 +113,8 @@ mod tests {
     fn ex3() {
         let input = [1, 5, 2, 6, 8, 4, 1, 7, 3, 6];
         let (_, crossings) = generate_crossings::<8>(&input);
-        let max_num_cuts = (0..8)
-            .flat_map(|a| (0..8).map(move |b| (a, b)))
+        let max_num_cuts = (0..6)
+            .flat_map(|a| (a + 2..8).map(move |b| (a, b)))
             .map(|(a, b)| {
                 count_crossings_for_point::<8>(&crossings, (a, b))
                     + crossings.iter().filter(|(c, d)| a == *c && b == *d).count()
