@@ -1,40 +1,34 @@
+use std::collections::HashSet;
 use std::fs;
 use std::io;
 
 fn count_crossings<const NUM_NAILS: usize>(input: &[usize]) -> usize {
-    let mut num_crossings = 0;
+    let mut total_crossings = 0;
     let mut seen_crossings: Vec<(usize, usize)> = vec![];
     for ab in input.windows(2) {
         // 1-based to 0-based
         let a = (ab[0] - 1).min(ab[1] - 1);
         let b = (ab[1] - 1).max(ab[0] - 1);
 
-        if a + 1 == b {
-            // no crossings possible, skip
-            continue;
-        }
-
-        // inclusive, as if start/end at the same point, can't be a crossing
         // work out which direction to look for crossings
         // (there's got to be a better way of doing this?)
-        let not_crossed1: Vec<_> = (a..=b).collect::<Vec<_>>();
-        let not_crossed2: Vec<_> = (b..=a + NUM_NAILS)
-            .map(|x| x % NUM_NAILS)
-            .collect::<Vec<_>>();
+        let side1: HashSet<_> = (a + 1..b).collect();
+        let side2: HashSet<_> = (b + 1..a + NUM_NAILS).map(|x| x % NUM_NAILS).collect();
 
-        //println!("ab: {:?}", (a, b));
+        // For every line that we've already placed
         let new_crossings = seen_crossings
             .iter()
-            .filter(|(c, d)| !(not_crossed1.contains(c) && not_crossed1.contains(d)))
-            .filter(|(c, d)| !(not_crossed2.contains(c) && not_crossed2.contains(d)))
-            //.inspect(|cd| println!("  => crossed: {cd:?}"))
+            // Remove lines that start/end at one of our points - can't cross
+            .filter(|(c, d)| a != *c && b != *c && a != *d && b != *d)
+            // Remove lines that are exclusive on one side or the other and don't cross over
+            .filter(|(c, d)| !(side1.contains(c) && side1.contains(d)))
+            .filter(|(c, d)| !(side2.contains(c) && side2.contains(d)))
             .count();
-        //println!("  => {}", new_crossings);
-        num_crossings += new_crossings;
+        total_crossings += new_crossings;
 
         seen_crossings.push((a, b));
     }
-    num_crossings
+    total_crossings
 }
 
 fn count_centre_crossings<const NUM_NAILS: usize>(input: &[usize]) -> usize {
@@ -63,7 +57,7 @@ fn main() -> io::Result<()> {
         .split(',')
         .map(|s| s.parse::<usize>().unwrap())
         .collect();
-    let p2_num_crossings = count_crossings::<128>(&p2_input);
+    let p2_num_crossings = count_crossings::<256>(&p2_input);
 
     println!("P1: Number of centre passes: {p1_num_centre_passes}");
     println!("P2: Number of knots required: {p2_num_crossings}");
