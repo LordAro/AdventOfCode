@@ -66,7 +66,7 @@ fn main() -> io::Result<()> {
     let p2_input = parse_input(&fs::read_to_string(p2_input_filename)?);
     let mut p2_total_similarity = 0;
     for ci in 0..p2_input.len() {
-        for p1 in 0..p2_input.len() - 1 {
+        'outer: for p1 in 0..p2_input.len() - 1 {
             if p1 == ci {
                 continue;
             }
@@ -77,6 +77,7 @@ fn main() -> io::Result<()> {
                 if is_child_of(&p2_input[ci], &p2_input[p1], &p2_input[p2]) {
                     p2_total_similarity += get_similarity(&p2_input[ci], &p2_input[p1])
                         * get_similarity(&p2_input[ci], &p2_input[p2]);
+                    break 'outer;
                 }
             }
         }
@@ -87,7 +88,7 @@ fn main() -> io::Result<()> {
     let mut p3_child_to_parent = HashMap::<usize, (usize, usize)>::new();
     let mut p3_parent_to_child = HashMap::<usize, Vec<usize>>::new();
     for ci in 0..p3_input.len() {
-        for p1 in 0..p3_input.len() - 1 {
+        'outer: for p1 in 0..p3_input.len() - 1 {
             if p1 == ci {
                 continue;
             }
@@ -105,6 +106,7 @@ fn main() -> io::Result<()> {
                         .entry(p2)
                         .and_modify(|e| e.push(ci))
                         .or_insert(vec![ci]);
+                    break 'outer;
                 }
             }
         }
