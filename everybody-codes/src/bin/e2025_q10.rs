@@ -3,22 +3,26 @@ use std::collections::HashSet;
 use std::fs;
 use std::io;
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 struct Coord {
     x: usize,
     y: usize,
 }
 
-struct State {
+struct PlayerState {
     dragon: Coord,
-    limit: Coord,
-    sheep: HashSet<Coord>,
-    hideouts: HashSet<Coord>,
+    sheep: Vec<Coord>,
 }
 
-fn parse_grid(input: &str) -> State {
+struct GameState {
+    limit: Coord,
+    hideouts: HashSet<Coord>,
+    ps: PlayerState,
+}
+
+fn parse_grid(input: &str) -> GameState {
     let mut dragon = Coord { x: 0, y: 0 };
-    let mut sheep = HashSet::new();
+    let mut sheep = Vec::new();
     let mut hideouts = HashSet::new();
     let mut limit = Coord { x: 0, y: 0 };
     for (y, row) in input.lines().enumerate() {
@@ -26,18 +30,17 @@ fn parse_grid(input: &str) -> State {
         for (x, cell) in row.chars().enumerate() {
             limit.x = limit.x.max(x);
             match cell {
-                'S' => _ = sheep.insert(Coord { x, y }),
+                'S' => sheep.push(Coord { x, y }),
                 'D' => dragon = Coord { x, y },
                 '#' => _ = hideouts.insert(Coord { x, y }),
                 _ => {}
             }
         }
     }
-    State {
-        dragon,
+    GameState {
         limit,
-        sheep,
         hideouts,
+        ps: PlayerState { dragon, sheep },
     }
 }
 
@@ -115,15 +118,20 @@ fn get_dragon_positions(dragon: Coord, limit: Coord, num_moves: usize) -> HashSe
     total_positions
 }
 
-fn num_sheep_in_range_after_n(state: &State, num_moves: usize) -> usize {
-    let dragons = get_dragon_positions(state.dragon, state.limit, num_moves);
-    state.sheep.intersection(&dragons).count()
+fn num_sheep_in_range_after_n(state: &GameState, num_moves: usize) -> usize {
+    let dragons = get_dragon_positions(state.ps.dragon, state.limit, num_moves);
+    state
+        .ps
+        .sheep
+        .iter()
+        .filter(|s| dragons.contains(s))
+        .count()
 }
 
-fn num_sheep_in_range_with_movement(state: &State, num_moves: usize) -> usize {
+fn num_sheep_in_range_with_movement(state: &GameState, num_moves: usize) -> usize {
     let mut num_eaten = 0;
-    let mut dragons = HashSet::from([state.dragon]);
-    let mut remaining_sheep = state.sheep.clone();
+    let mut dragons = HashSet::from([state.ps.dragon]);
+    let mut remaining_sheep = state.ps.sheep.clone();
     for _ in 0..num_moves {
         let new_dragon_positions: HashSet<Coord> = dragons
             .iter()
@@ -138,7 +146,7 @@ fn num_sheep_in_range_with_movement(state: &State, num_moves: usize) -> usize {
 
         // sheep move
         // oops, sheep moved into a dragon
-        let new_sheep_positions: HashSet<_> = remaining_sheep
+        let new_sheep_positions: Vec<_> = remaining_sheep
             .iter()
             .map(|s| Coord { x: s.x, y: s.y + 1 })
             .collect();
@@ -150,9 +158,14 @@ fn num_sheep_in_range_with_movement(state: &State, num_moves: usize) -> usize {
     num_eaten
 }
 
-fn count_unique_sequences(state: State, cache: &mut HashMap<(Coord, Vec<Coord>), usize>) -> usize {
+fn count_unique_sequences(
+    state: PlayerState,
+    hideouts: &HashSet<Coord>,
+    limit: Coord,
+    cache: &mut HashMap<(Coord, Vec<Coord>), usize>,
+) -> usize {
     // sheep escaped, not a winning game
-    if state.sheep.iter().any(|s| s.y > state.limit.y) {
+    if state.sheep.iter().any(|s| s.y > limit.y) {
         return 0;
     }
 
@@ -161,56 +174,70 @@ fn count_unique_sequences(state: State, cache: &mut HashMap<(Coord, Vec<Coord>),
         return 1;
     }
 
-    let state_key = (state.dragon, state.sheep.clone().into_iter().collect());
+    let state_key = (state.dragon, state.sheep.clone());
     if let Some(seqs) = cache.get(&state_key) {
         return *seqs;
     }
 
     let mut total_seqs = 0;
     let mut has_sheep_moved = false;
-    for sheep in &state.sheep {
+    for sheep_to_move in &state.sheep {
         // if sheep can move, it must
         let new_sheep = Coord {
-            x: sheep.x,
-            y: sheep.y + 1,
+            x: sheep_to_move.x,
+            y: sheep_to_move.y + 1,
         };
-        if new_sheep == state.dragon && !state.hideouts.contains(&new_sheep) {
+        if new_sheep == state.dragon && !hideouts.contains(&new_sheep) {
             // sheep don't move into a dragon
             continue;
         }
-        has_sheep_moved = true;
-        let mut new_sheeps = state.sheep.clone();
-        new_sheeps.remove(sheep);
-        new_sheeps.insert(new_sheep);
 
-        for new_dragon in knight_move(state.dragon, state.limit) {
-            let mut sheep_after_dragon = new_sheeps.clone();
-            if new_sheeps.contains(&new_dragon) && !state.hideouts.contains(&new_dragon) {
-                sheep_after_dragon.remove(&new_dragon);
-            }
-            let new_state = State {
+        has_sheep_moved = true;
+
+        for new_dragon in knight_move(state.dragon, limit) {
+            let sheep_after_dragon = state
+                .sheep
+                .iter()
+                .flat_map(|&sheep| {
+                    let sheep = if sheep == *sheep_to_move {
+                        new_sheep
+                    } else {
+                        sheep
+                    };
+                    if sheep == new_dragon && !hideouts.contains(&new_dragon) {
+                        None
+                    } else {
+                        Some(sheep)
+                    }
+                })
+                .collect();
+
+            let new_state = PlayerState {
                 dragon: new_dragon,
-                limit: state.limit,
                 sheep: sheep_after_dragon,
-                hideouts: state.hideouts.clone(),
             };
-            total_seqs += count_unique_sequences(new_state, cache);
+            total_seqs += count_unique_sequences(new_state, hideouts, limit, cache);
         }
     }
 
     if !has_sheep_moved {
-        for new_dragon in knight_move(state.dragon, state.limit) {
-            let mut sheep_after_dragon = state.sheep.clone();
-            if sheep_after_dragon.contains(&new_dragon) && !state.hideouts.contains(&new_dragon) {
-                sheep_after_dragon.remove(&new_dragon);
-            }
-            let new_state = State {
+        for new_dragon in knight_move(state.dragon, limit) {
+            let sheep_after_dragon = state
+                .sheep
+                .iter()
+                .flat_map(|&sheep| {
+                    if sheep == new_dragon && !hideouts.contains(&new_dragon) {
+                        None
+                    } else {
+                        Some(sheep)
+                    }
+                })
+                .collect();
+            let new_state = PlayerState {
                 dragon: new_dragon,
-                limit: state.limit,
                 sheep: sheep_after_dragon,
-                hideouts: state.hideouts.clone(),
             };
-            total_seqs += count_unique_sequences(new_state, cache);
+            total_seqs += count_unique_sequences(new_state, hideouts, limit, cache);
         }
     }
     cache.insert(state_key, total_seqs);
@@ -229,7 +256,12 @@ fn main() -> io::Result<()> {
 
     let p3_state = parse_grid(&fs::read_to_string(p3_input_filename)?);
     let mut p3_cache = HashMap::new();
-    let p3_move_sequence_count = count_unique_sequences(p3_state, &mut p3_cache);
+    let p3_move_sequence_count = count_unique_sequences(
+        p3_state.ps,
+        &p3_state.hideouts,
+        p3_state.limit,
+        &mut p3_cache,
+    );
 
     println!("P1: Number of sheep coverable in 4 moves: {p1_num_sheep}");
     println!("P2: Number of sheep eaten after 20 moves: {p2_num_eaten}");
@@ -269,7 +301,10 @@ SS.....S..S..";
 #D.";
         let state = parse_grid(input);
         let mut cache = HashMap::new();
-        assert_eq!(count_unique_sequences(state, &mut cache), 15);
+        assert_eq!(
+            count_unique_sequences(state.ps, &state.hideouts, state.limit, &mut cache),
+            15
+        );
     }
 
     #[test]
@@ -281,7 +316,10 @@ SS.....S..S..";
 .D#";
         let state = parse_grid(input);
         let mut cache = HashMap::new();
-        assert_eq!(count_unique_sequences(state, &mut cache), 8);
+        assert_eq!(
+            count_unique_sequences(state.ps, &state.hideouts, state.limit, &mut cache),
+            8
+        );
     }
 
     #[test]
@@ -293,6 +331,9 @@ SS.....S..S..";
 ..D..";
         let state = parse_grid(input);
         let mut cache = HashMap::new();
-        assert_eq!(count_unique_sequences(state, &mut cache), 44);
+        assert_eq!(
+            count_unique_sequences(state.ps, &state.hideouts, state.limit, &mut cache),
+            44
+        );
     }
 }
