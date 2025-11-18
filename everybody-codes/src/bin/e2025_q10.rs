@@ -15,7 +15,8 @@ struct PlayerState {
 }
 
 struct GameState {
-    limit: Coord,
+    heights: Vec<usize>, // last row in each column that a sheep is not safe
+    board_limit: Coord,  // size of grid (inclusive)
     hideouts: HashSet<Coord>,
     ps: PlayerState,
 }
@@ -24,11 +25,11 @@ fn parse_grid(input: &str) -> GameState {
     let mut dragon = Coord { x: 0, y: 0 };
     let mut sheep = Vec::new();
     let mut hideouts = HashSet::new();
-    let mut limit = Coord { x: 0, y: 0 };
+    let mut board_limit = Coord { x: 0, y: 0 };
     for (y, row) in input.lines().enumerate() {
-        limit.y = limit.y.max(y);
+        board_limit.y = board_limit.y.max(y);
         for (x, cell) in row.chars().enumerate() {
-            limit.x = limit.x.max(x);
+            board_limit.x = board_limit.x.max(x);
             match cell {
                 'S' => sheep.push(Coord { x, y }),
                 'D' => dragon = Coord { x, y },
@@ -37,8 +38,19 @@ fn parse_grid(input: &str) -> GameState {
             }
         }
     }
+
+    let heights: Vec<_> = (0..=board_limit.x)
+        .map(|x| {
+            let mut y = board_limit.y;
+            while hideouts.contains(&Coord { x, y }) {
+                y -= 1;
+            }
+            y
+        })
+        .collect();
     GameState {
-        limit,
+        heights,
+        board_limit,
         hideouts,
         ps: PlayerState { dragon, sheep },
     }
@@ -119,7 +131,7 @@ fn get_dragon_positions(dragon: Coord, limit: Coord, num_moves: usize) -> HashSe
 }
 
 fn num_sheep_in_range_after_n(state: &GameState, num_moves: usize) -> usize {
-    let dragons = get_dragon_positions(state.ps.dragon, state.limit, num_moves);
+    let dragons = get_dragon_positions(state.ps.dragon, state.board_limit, num_moves);
     state
         .ps
         .sheep
@@ -135,7 +147,7 @@ fn num_sheep_in_range_with_movement(state: &GameState, num_moves: usize) -> usiz
     for _ in 0..num_moves {
         let new_dragon_positions: HashSet<Coord> = dragons
             .iter()
-            .flat_map(|p| knight_move(*p, state.limit))
+            .flat_map(|p| knight_move(*p, state.board_limit))
             .collect();
         dragons = new_dragon_positions;
         let non_hidden_dragons: HashSet<_> = dragons.difference(&state.hideouts).collect();
@@ -161,11 +173,12 @@ fn num_sheep_in_range_with_movement(state: &GameState, num_moves: usize) -> usiz
 fn count_unique_sequences(
     state: PlayerState,
     hideouts: &HashSet<Coord>,
+    heights: &[usize],
     limit: Coord,
     cache: &mut HashMap<(Coord, Vec<Coord>), usize>,
 ) -> usize {
     // sheep escaped, not a winning game
-    if state.sheep.iter().any(|s| s.y > limit.y) {
+    if state.sheep.iter().any(|s| s.y > heights[s.x]) {
         return 0;
     }
 
@@ -216,7 +229,7 @@ fn count_unique_sequences(
                 dragon: new_dragon,
                 sheep: sheep_after_dragon,
             };
-            total_seqs += count_unique_sequences(new_state, hideouts, limit, cache);
+            total_seqs += count_unique_sequences(new_state, hideouts, heights, limit, cache);
         }
     }
 
@@ -237,7 +250,7 @@ fn count_unique_sequences(
                 dragon: new_dragon,
                 sheep: sheep_after_dragon,
             };
-            total_seqs += count_unique_sequences(new_state, hideouts, limit, cache);
+            total_seqs += count_unique_sequences(new_state, hideouts, heights, limit, cache);
         }
     }
     cache.insert(state_key, total_seqs);
@@ -259,7 +272,8 @@ fn main() -> io::Result<()> {
     let p3_move_sequence_count = count_unique_sequences(
         p3_state.ps,
         &p3_state.hideouts,
-        p3_state.limit,
+        &p3_state.heights,
+        p3_state.board_limit,
         &mut p3_cache,
     );
 
@@ -302,7 +316,13 @@ SS.....S..S..";
         let state = parse_grid(input);
         let mut cache = HashMap::new();
         assert_eq!(
-            count_unique_sequences(state.ps, &state.hideouts, state.limit, &mut cache),
+            count_unique_sequences(
+                state.ps,
+                &state.hideouts,
+                &state.heights,
+                state.board_limit,
+                &mut cache
+            ),
             15
         );
     }
@@ -317,7 +337,13 @@ SS.....S..S..";
         let state = parse_grid(input);
         let mut cache = HashMap::new();
         assert_eq!(
-            count_unique_sequences(state.ps, &state.hideouts, state.limit, &mut cache),
+            count_unique_sequences(
+                state.ps,
+                &state.hideouts,
+                &state.heights,
+                state.board_limit,
+                &mut cache
+            ),
             8
         );
     }
@@ -332,7 +358,13 @@ SS.....S..S..";
         let state = parse_grid(input);
         let mut cache = HashMap::new();
         assert_eq!(
-            count_unique_sequences(state.ps, &state.hideouts, state.limit, &mut cache),
+            count_unique_sequences(
+                state.ps,
+                &state.hideouts,
+                &state.heights,
+                state.board_limit,
+                &mut cache
+            ),
             44
         );
     }
