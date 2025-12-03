@@ -1,0 +1,10 @@
+[package]
+name = "advent_of_code"
+version = "2025.1.0"
+authors = ["Charles Pigott <charlespigott@googlemail.com>"]
+edition = "2024"
+
+[profile.release]
+debug = true
+
+[dependencies]

@@ -1,0 +1,11 @@
+use std::env;
+use std::fs;
+use std::io;
+
+fn main() -> io::Result<()> {
+    let input: String = fs::read_to_string(env::args().nth(1).expect("missing cli argument"))?;
+
+    println!("P1: ");
+    Ok(())
+}
+
