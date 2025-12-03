@@ -12,8 +12,19 @@ Some complete, some (mostly) not
 * 2020 - Nim*
 * 2021 - Zig
 * 2022 - C++(17)*
+* 2023 - Rust
+* 2024 - Rust
+* 2025 - Rust
 
 \* Complete
 
 # Instructions
 Automatically downloads input files using a cookie.txt file in the root - see `cookie.example.txt` for format
+
+## Everybody.codes
+
+Also these. All in Rust.
+
+* 2024
+* 2025
+* E1*
