@@ -8,3 +8,4 @@ edition = "2024"
 debug = true
 
 [dependencies]
+itertools = "*"
