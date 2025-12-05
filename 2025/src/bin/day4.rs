@@ -30,7 +30,7 @@ fn count_neighbours(rolls: &HashSet<Coord>, c: Coord) -> usize {
     ]
     .into_iter()
     .flatten()
-    .filter(|c| rolls.contains(&c))
+    .filter(|c| rolls.contains(c))
     .count()
 }
 
