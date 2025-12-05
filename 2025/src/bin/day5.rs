@@ -11,38 +11,32 @@ fn main() -> io::Result<()> {
         .lines()
         .map(|l| {
             let (s, e) = l.split_once('-').unwrap();
-            let s = s.parse::<usize>().unwrap();
-            let e = e.parse::<usize>().unwrap();
-            s..=e
+            (s.parse::<usize>().unwrap(), e.parse::<usize>().unwrap())
         })
         .collect();
-    ranges.sort_by(|a, b| a.start().cmp(b.start()).then(a.end().cmp(b.end())));
+    ranges.sort();
 
     let p1_fresh_ingredients: usize = ingredient_ids_str
         .lines()
         .map(|l| l.parse::<usize>().unwrap())
-        .filter(|i| ranges.iter().any(|r| r.contains(i)))
+        .filter(|i| ranges.iter().any(|r| *i >= r.0 && *i <= r.1))
         .count();
 
-    let mut merged_ranges = vec![];
+    let mut p2_total_fresh_ids = 0;
     let mut i = 0;
     while i < ranges.len() {
-        let start = ranges[i].start();
-        let mut end = ranges[i].end();
+        let (start, mut end) = ranges[i];
 
-        while i < ranges.len() - 1 && ranges[i + 1].end() <= end {
-            i += 1;
-        }
-        while i < ranges.len() - 1 && *ranges[i + 1].start() <= end + 1 {
-            end = ranges[i + 1].end();
+        // merge
+        while i < ranges.len() - 1 && ranges[i + 1].0 <= end + 1 {
+            end = end.max(ranges[i + 1].1); // ignore if totally enclosed
             i += 1;
         }
 
-        merged_ranges.push(start..=end);
+        p2_total_fresh_ids += end - start + 1; // don't need to actually keep the ids themselves
         i += 1;
     }
 
-    let p2_total_fresh_ids: usize = merged_ranges.iter().map(|r| *r.end() - *r.start() + 1).sum();
     println!("P1: Number of fresh ingredients: {p1_fresh_ingredients}");
     println!("P2: Total fresh ingredient IDs: {p2_total_fresh_ids}");
     Ok(())
