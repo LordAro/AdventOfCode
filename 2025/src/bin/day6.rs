@@ -59,7 +59,6 @@ fn main() -> io::Result<()> {
         }
         if cur_num > 0 {
             cur_nums.push(cur_num);
-            cur_num = 0;
         }
     }
 
