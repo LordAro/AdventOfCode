@@ -4,10 +4,14 @@ use std::fs;
 use std::io;
 use std::iter;
 
-#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone)]
 struct Coord {
     x: usize,
     y: usize,
+}
+
+fn area_calc(a: &Coord, b: &Coord) -> usize {
+    (a.x.abs_diff(b.x) + 1) * (a.y.abs_diff(b.y) + 1)
 }
 
 fn main() -> io::Result<()> {
@@ -27,7 +31,7 @@ fn main() -> io::Result<()> {
         .combinations(2)
         .map(|ab| {
             let [a, b] = ab[..] else { unreachable!() };
-            (a.x.abs_diff(b.x) + 1) * (a.y.abs_diff(b.y) + 1)
+            area_calc(a, b)
         })
         .max()
         .unwrap();
@@ -45,11 +49,13 @@ fn main() -> io::Result<()> {
             let [a, b] = ab[..] else { unreachable!() };
             (a, b)
         })
+        // sort by area in descending order so we can just take the first valid rectangle
+        .sorted_by_key(|(a, b)| -(area_calc(a, b) as isize))
         .filter(|(a, b)| {
             // line segments aren't going to be largest rectangle, ignore
             a.x != b.x && a.y != b.y
         })
-        .filter(|(a, b)| {
+        .find(|(a, b)| {
             // remove any rectangles that have intersecting line segments
             let tl = Coord {
                 x: a.x.min(b.x),
@@ -110,8 +116,7 @@ fn main() -> io::Result<()> {
                     }
                 })
         })
-        .map(|(a, b)| (a.x.abs_diff(b.x) + 1) * (a.y.abs_diff(b.y) + 1))
-        .max()
+        .map(|(a, b)| area_calc(a, b))
         .unwrap();
 
     println!("P1: Largest rectangle area: {p1_max_rect}");
