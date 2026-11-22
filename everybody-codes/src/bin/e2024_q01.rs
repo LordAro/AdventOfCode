@@ -18,7 +18,9 @@ fn potion_requirement(c: char, count: usize) -> usize {
 
 fn required_potions<const GROUP_SIZE: usize>(creatures: &[char]) -> usize {
     creatures
-        .chunks_exact(GROUP_SIZE)
+        .as_chunks::<GROUP_SIZE>()
+        .0
+        .iter()
         .map(|creature_team| {
             let count_creatures = creature_team.iter().filter(|c| **c != 'x').count();
             creature_team
